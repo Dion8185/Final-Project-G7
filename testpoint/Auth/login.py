@@ -41,7 +41,10 @@ def login():
             session['admin_logged_in'] = True
             flash('Admin login successful!', 'success')
             return redirect(url_for('admin.admin_dashboard'))
-        
-
     
     return render_template('login.html')
+
+@auth.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return redirect(url_for('auth.login'))
