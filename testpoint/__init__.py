@@ -4,7 +4,7 @@ db_config = {
     'host': 'localhost',
     'user': 'root',
     'password': '',
-    'database': 'salaveria_db',
+    'database': 'test_point',
     'auth_plugin': 'mysql_native_password'
 }
 

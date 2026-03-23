@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from testpoint import db_config
+import mysql.connector
 
 auth = Blueprint('auth', __name__, template_folder='templates', static_folder='static', 
                  static_url_path='/auth/static')
@@ -34,18 +35,49 @@ def login():
         return redirect(url_for('admin.admin_dashboard'))
      
     if request.method == 'POST':
-        username_input = request.form['username']
+        email_input = request.form['email']
         password_input = request.form['password']
         
-        if username_input == 'admin' and password_input == 'admin123':
-            session['admin_logged_in'] = True
-            flash('Admin login successful!', 'success')
-            return redirect(url_for('admin.admin_dashboard'))
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        query_fetch_user = "SELECT * FROM users WHERE email = %s"
+        cursor.execute(query_fetch_user, (email_input,))
+        user = cursor.fetchone()
+        cursor.close()
         
-        elif username_input == 'user' and password_input == 'user123':
-            session['user_logged_in'] = True
-            flash('User login successful!', 'success')
-            return redirect(url_for('student.student_dashboard'))
+        if not user:
+            flash('Invalid username or password!', 'error')
+            return render_template('login.html')
+
+        user_userID = user[0]
+        user_email = user[1]
+        user_password = user[2]
+        user_role = user[3]
+        user_isVerified = user[4]
+        
+        if user_isVerified == 1:
+                if user_role == 'admin' and user_email == email_input and password_input == user_password:
+                    session['admin_logged_in'] = True
+                    flash('Admin login successful!', 'success')
+                    return redirect(url_for('admin.admin_dashboard'))
+                
+                elif user_role == 'examinee' and user_email == email_input and password_input == user_password:
+                    session['user_logged_in'] = True
+                    flash('User login successful!', 'success')
+                    return redirect(url_for('student.student_dashboard'))
+                
+                else:
+                    flash('Invalid username or password!', 'error')
+
+        # if email_input == 'admin@example.com' and password_input == 'admin123':
+        #     session['admin_logged_in'] = True
+        #     flash('Admin login successful!', 'success')
+        #     return redirect(url_for('admin.admin_dashboard'))
+        
+        # elif email_input == 'user@example.com' and password_input == 'user123':
+        #     session['user_logged_in'] = True
+        #     flash('User login successful!', 'success')
+        #     return redirect(url_for('student.student_dashboard'))
         
         else:
             flash('Invalid username or password!', 'error')
