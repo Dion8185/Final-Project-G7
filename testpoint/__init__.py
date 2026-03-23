@@ -15,9 +15,11 @@ def create_app():
     
     from testpoint.Auth.login import auth, register
     from testpoint.Admin.admin import admin
+    from testpoint.Student.student import student
     
     app.register_blueprint(admin)
     app.register_blueprint(auth)
+    app.register_blueprint(student)
     app.register_blueprint(register, url_prefix='/register')
     
     return app

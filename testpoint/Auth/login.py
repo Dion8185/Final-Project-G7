@@ -8,7 +8,7 @@ register = Blueprint('register', __name__, template_folder='templates', static_f
                     static_url_path='/register/static')
 
 def user_logged_in():
-    return session.get('logged_in', False)
+    return session.get('user_logged_in', False)
 
 def admin_logged_in():
     return session.get('admin_logged_in', False)
@@ -16,7 +16,7 @@ def admin_logged_in():
 @auth.route('/')
 def index():
     if user_logged_in():
-        return render_template('babaguhin pa to')
+        return redirect(url_for('student.student_dashboard'))
     
     elif admin_logged_in():
         return redirect(url_for('admin.admin_dashboard'))
@@ -28,7 +28,7 @@ def index():
 def login():
     
     if user_logged_in():
-        return render_template('babaguhin pa to')
+        return redirect(url_for('student.student_dashboard'))
     
     if admin_logged_in():
         return redirect(url_for('admin.admin_dashboard'))
@@ -41,6 +41,14 @@ def login():
             session['admin_logged_in'] = True
             flash('Admin login successful!', 'success')
             return redirect(url_for('admin.admin_dashboard'))
+        
+        elif username_input == 'user' and password_input == 'user123':
+            session['user_logged_in'] = True
+            flash('User login successful!', 'success')
+            return redirect(url_for('student.student_dashboard'))
+        
+        else:
+            flash('Invalid username or password!', 'error')
     
     return render_template('login.html')
 
