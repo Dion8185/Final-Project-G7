@@ -71,16 +71,6 @@ def login():
         else:
             flash('Your account is not verified yet. Please wait for admin approval.', 'warning')
 
-        # if email_input == 'admin@example.com' and password_input == 'admin123':
-        #     session['admin_logged_in'] = True
-        #     flash('Admin login successful!', 'success')
-        #     return redirect(url_for('admin.admin_dashboard'))
-        
-        # elif email_input == 'user@example.com' and password_input == 'user123':
-        #     session['user_logged_in'] = True
-        #     flash('User login successful!', 'success')
-        #     return redirect(url_for('student.student_dashboard'))
-        
     return render_template('login.html')
 
 @auth.route('/logout', methods=['POST'])
