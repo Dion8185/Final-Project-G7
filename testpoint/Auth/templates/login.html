@@ -52,30 +52,43 @@
                                         <p class="mb-4">Welcome back! Please login to your account.</p>
                                     </div>
 
-                                    <form method="POST" action="{{url_for('auth.login')}}" class="user">
+                                    <!-- Flash Messages -->
+                                    {% with messages = get_flashed_messages(with_categories=true) %}
+                                        {% if messages %}
+                                            {% for category, message in messages %}
+                                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                                    {{ message }}
+                                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endwith %}
+
+                                    <form method="POST" action="{{ url_for('auth.login') }}" class="user">
 
                                         <div class="form-group">
-                                            <input type="email" name="email" class="form-control form-control-user"
+                                            <input type="text" name="username" class="form-control form-control-user"
                                                 id="exampleInputEmail" aria-describedby="emailHelp"
-                                                placeholder="Enter Email Address...">
+                                                placeholder="Enter Username...">
                                         </div>
                                         <div class="form-group">
                                             <input type="password" name="password" class="form-control form-control-user"
                                                 id="exampleInputPassword" placeholder="Password">
                                         </div>
                                         
-                                       <button class="btn btn-primary btn-user btn-block" type="submit">
-                                               Login
-                                       </button>
+                                        <button class="btn btn-primary btn-user btn-block" type="submit">
+                                            Login
+                                        </button>
+                                        <button class="btn btn-primary btn-user btn-block" type="submit">
+                                            Register
+                                        </button>                                        
                                     </form>
                                     
                                     <hr>
                                     <div class="text-center">
-                                        <a class="small" href="#">Create an Account!</a>
-                                    </div>
-                                    <div class="text-center">
                                         <a class="small" href="#">Forgot Password?</a>
-                                        
                                     </div>
                                 </div>
                             </div>
@@ -88,7 +101,6 @@
         </div>
 
     </div>
- 
 
     <!-- Bootstrap core JavaScript-->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
