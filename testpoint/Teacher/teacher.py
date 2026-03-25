@@ -9,6 +9,7 @@ teacher = Blueprint('teacher', __name__, template_folder='templates', static_fol
 def teacher_dashboard():
     
     if teacher_logged_in():
+        print("Teacher is logged in, rendering dashboard.")
         return render_template('teacher_dashboard.html')
     
     else:
