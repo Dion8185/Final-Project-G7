@@ -110,6 +110,10 @@ def register_page():
             flash('Please fill in all required fields.', 'danger')
             return render_template('register.html')
         
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'danger')
+            return render_template('register.html')
+        
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
