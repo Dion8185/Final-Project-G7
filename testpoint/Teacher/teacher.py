@@ -6,7 +6,7 @@ import mysql.connector
 teacher = Blueprint('teacher', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/teacher/static')
 
-@teacher.route('/teacher')
+@teacher.route('/teacher') 
 def teacher_dashboard():
     
     if teacher_logged_in():

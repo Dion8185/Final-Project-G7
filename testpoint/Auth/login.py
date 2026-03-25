@@ -59,11 +59,9 @@ def login():
         connection.close()
 
         if not user:
-            flash('Invalid username or password!', 'danger')
+            flash('Input an email and password!', 'danger')
             return render_template('login.html')
-
-        user_userID = user[0]
-        user_email = user[1]
+        
         user_password = user[2]
         user_role = user[3]
         user_isVerified = user[4]
