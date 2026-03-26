@@ -7,9 +7,6 @@ import mysql.connector
 auth = Blueprint('auth', __name__, template_folder='templates', static_folder='static', 
                  static_url_path='/auth/static')
 
-register = Blueprint('register', __name__, template_folder='templates', static_folder='static',
-                    static_url_path='/register/static')
-
 def user_logged_in():
     return session.get('user_logged_in', False)
 
@@ -90,7 +87,7 @@ def login():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
 
-        query_fetch_user = "SELECT * FROM users WHERE email = %s"
+        query_fetch_user = "SELECT * FROM users WHERE email = %s;"
         cursor.execute(query_fetch_user, (email_input,))
         user = cursor.fetchone()
 
@@ -127,7 +124,7 @@ def login():
 
     return render_template('login.html')
 
-@auth.route('/register', methods=['GET', 'POST'])
+@auth.route('/register-student', methods=['GET', 'POST'])
 def register_page():
     
     if user_logged_in():
@@ -136,6 +133,9 @@ def register_page():
     if admin_logged_in():
         return redirect(url_for('admin.admin_dashboard'))
     
+    if teacher_logged_in():
+        return redirect(url_for('teacher.teacher_dashboard'))
+    
     if request.method == 'POST':
         firstname = request.form.get('firstname','').strip()
         middlename = request.form.get('middlename','').strip()
@@ -143,7 +143,6 @@ def register_page():
         email = request.form.get('email','').strip()
         password = request.form.get('password','').strip()
         confirm_password = request.form.get('confirm_password','').strip()
-        role = request.form.get('role','').strip()
         
         if not all([firstname, lastname, email, password, confirm_password]):
             flash('Please fill in all required fields.', 'danger')
@@ -200,13 +199,8 @@ def register_page():
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
         
-        if role not in ['student', 'teacher']:
-            flash('Invalid role selected.', 'danger')
-            return render_template('register.html')
-        
         # hashing
         hashed_password = generate_password_hash(password)
-        
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor() 
     
