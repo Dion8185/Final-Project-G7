@@ -106,14 +106,15 @@ def login():
         if user_isVerified != 1:
             flash('Your account is not verified yet. Please wait for admin approval.', 'warning')
             return render_template('login.html')
-
-        if not (user_password == password_input):
-            flash('Invalid username or password!', 'danger')
-            return render_template('login.html')
-
-        if user_role == 'admin':
+        
+        
+        if user_role == 'admin' and user_password == password_input:
             session['admin_logged_in'] = True
             return redirect(url_for('admin.admin_dashboard'))
+        
+        if not check_password_hash(user_password, password_input):
+            flash('Invalid username or password!', 'danger')
+            return render_template('login.html')
 
         elif user_role == 'student':
             session['user_logged_in'] = True
@@ -144,7 +145,6 @@ def register_student():
         password = request.form.get('password','').strip()
         confirm_password = request.form.get('confirm_password','').strip()
 
-        # ---------------- VALIDATION ---------------- #
         if not all([firstname, lastname, email, password, confirm_password]):
             flash('Please fill in all required fields.', 'danger')
             return render_template('register.html')
@@ -204,7 +204,7 @@ def register_student():
             connection.start_transaction()  
             cursor = connection.cursor()
 
-            query_check_email = "SELECT id FROM users WHERE email = %s;"
+            query_check_email = "SELECT user_id FROM users WHERE email = %s;"
             cursor.execute(query_check_email, (email,))
             if cursor.fetchone():
                 flash('Email is already registered.', 'danger')
@@ -214,16 +214,16 @@ def register_student():
             student_id = generate_id('S')
             
             query_insert_user = """
-                INSERT INTO users (id, email, password, role)
+                INSERT INTO users (user_id, email, password, role)
                 VALUES (%s, %s, %s, 'student');
             """
             cursor.execute(query_insert_user, (student_id, email, hashed_password))
 
             query_insert_student = """
-                INSERT INTO students (student_id, firstname, middlename, lastname)
-                VALUES (%s, %s, %s, %s);
+                INSERT INTO students (student_id, email, firstname, middlename, lastname)
+                VALUES (%s, %s, %s, %s, %s);
             """
-            cursor.execute(query_insert_student, (student_id, firstname, middlename, lastname))
+            cursor.execute(query_insert_student, (student_id, email, firstname, middlename, lastname))
 
             connection.commit()
             flash('Registration successful!', 'success')
@@ -262,10 +262,10 @@ def generate_id(role):
     like_pattern = f"{role}{year_suffix}-%"
 
     query = """
-        SELECT id
+        SELECT user_id
         FROM users
-        WHERE id LIKE %s
-        ORDER BY id DESC
+        WHERE user_id LIKE %s
+        ORDER BY user_id DESC
         LIMIT 1;
     """
 
