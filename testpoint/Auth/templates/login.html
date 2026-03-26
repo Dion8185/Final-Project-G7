@@ -81,7 +81,7 @@
                                         </button>
                                         
                                         <!-- Changed Register to a link leading to Student Registration -->
-                                        <a href="{{ url_for('auth.register_page') }}" class="btn btn-outline-primary btn-user btn-block">
+                                        <a href="{{ url_for('auth.register_student') }}" class="btn btn-outline-primary btn-user btn-block">
                                             Register as Student
                                         </a>                                        
                                     </form>
@@ -104,34 +104,6 @@
             </div>
         </div>
     </div>
-
-    <!-- TEACHER INVITE CODE MODAL
-    <div class="modal fade" id="teacherCodeModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow">
-                <div class="modal-header bg-gradient-primary text-white">
-                    <h5 class="modal-title" id="modalLabel">Teacher Access</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
-                This form should point to a route that verifies the code
-                <form action="{{ url_for('auth.verify_teacher_code') }}" method="POST" class="user">
-                    <div class="modal-body text-center">
-                        <p class="text-gray-900">Please enter the invitation code</p>
-                        <div class="form-group">
-                            <input type="text" name="invite_code" class="form-control form-control-user text-center" 
-                                placeholder="Enter Invite Code (e.g. TCH-2024)" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-primary" type="submit">Verify & Proceed</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div> -->
 
     <!-- Bootstrap core JavaScript-->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

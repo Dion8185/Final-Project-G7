@@ -112,7 +112,7 @@
                             {% endwith %}
 
                             <form id="teacherRegisterForm" class="user" method="POST"
-                                  action="{{ url_for('auth.teacher_register_page') }}" novalidate>
+                                  action="{{ url_for('auth.register_teacher') }}" novalidate>
 
                                 <!-- Hidden role -->
                                 <input type="hidden" name="role" value="teacher">
