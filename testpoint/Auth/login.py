@@ -1,5 +1,4 @@
 import re
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from testpoint import db_config
@@ -23,7 +22,6 @@ def teacher_logged_in():
 NAME_REGEX = re.compile(r"^[A-Za-zñÑ]+([ '-][A-Za-zñÑ]+)*$") 
 
 EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
-
 
 def validate_name(field_name, value):
             value = value.strip()
@@ -166,46 +164,38 @@ def register_page():
             return render_template('register.html')
         
         # Password Validation
-        if len(password) < 6:
-            flash('Password must be at least 6 characters long.', 'danger')
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
             return render_template('register.html')
-        
+
         if not any(char.isupper() for char in password):
             flash('Password must contain at least one uppercase letter.', 'danger')
             return render_template('register.html')
-        
+
         if not any(char.islower() for char in password):
             flash('Password must contain at least one lowercase letter.', 'danger')
             return render_template('register.html')
-        
+
         if not any(char.isdigit() for char in password):
             flash('Password must contain at least one digit.', 'danger')
             return render_template('register.html')
-        
-        if not any(char in '!@#$%^&*()_+-=[]{}|;:,.<>?/' for char in password):
+
+        if not any(not char.isalnum() for char in password):
             flash('Password must contain at least one special character.', 'danger')
             return render_template('register.html')
-        
+
         if ' ' in password:
             flash('Password cannot contain spaces.', 'danger')
             return render_template('register.html')
-        
+
         if password.lower() in ['password', '123456', '12345678', 'qwerty', 'abc123']:
             flash('Password is too common. Please choose a stronger password.', 'danger')
             return render_template('register.html')
-        
-        if password.isdigit():
-            flash('Password cannot be entirely numeric.', 'danger')
-            return render_template('register.html')
-        
-        if password.isalpha():
-            flash('Password cannot be entirely alphabetic.', 'danger')
-            return render_template('register.html')
-        
+
         if password == email:
             flash('Password cannot be the same as the email address.', 'danger')
             return render_template('register.html')
-             
+
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
@@ -214,6 +204,7 @@ def register_page():
             flash('Invalid role selected.', 'danger')
             return render_template('register.html')
         
+        # hashing
         hashed_password = generate_password_hash(password)
         
         connection = mysql.connector.connect(**db_config)
