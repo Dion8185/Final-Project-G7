@@ -5,20 +5,20 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Register</title>
+    <title>Teacher Register</title>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
 
     <style>
-        .bg-register-image {
-            background: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80');
+        .bg-register-teacher {
+            background: url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80');
             background-position: center;
             background-size: cover;
         }
 
-        /* ── Subtitle height-match: ensures both pages render subtitle at same height ── */
+        /* ── Subtitle height-match: same min-height as student page ── */
         .register-subtitle {
             min-height: 2.8rem;
             display: flex;
@@ -27,12 +27,17 @@
             margin-bottom: 1rem !important;
         }
 
+        /* ── Icon: red to match danger theme ── */
+        .text-danger-theme {
+            color: #e74a3b !important;   /* SB Admin 2's --danger */
+        }
+
         /* ── Live-validation glow ── */
         .form-control.is-valid,
         .form-control.is-valid:focus {
             border-color: #28a745 !important;
             box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, .25) !important;
-            background-image: none !important; /* remove Bootstrap's default icon */
+            background-image: none !important;
         }
 
         .form-control.is-invalid,
@@ -49,7 +54,7 @@
             padding: .375rem 1rem;
         }
 
-        /* feedback text under each field */
+        /* feedback text */
         .field-feedback {
             font-size: 0.70rem;
             margin-top: 0.2rem;
@@ -60,7 +65,7 @@
         .field-feedback.valid-msg   { color: #28a745; }
         .field-feedback.invalid-msg { color: #dc3545; }
 
-        /* address section divider label */
+        /* address section label */
         .address-section-label {
             font-size: 0.75rem;
             font-weight: 700;
@@ -72,23 +77,24 @@
     </style>
 </head>
 
-<body class="bg-gradient-primary">
+<body class="bg-gradient-danger">
 
     <div class="container">
         <div class="card o-hidden border-0 shadow-lg my-5">
             <div class="card-body p-0">
                 <div class="row">
-                    <div class="col-lg-5 d-none d-lg-block bg-register-image"></div>
+                    <div class="col-lg-5 d-none d-lg-block bg-register-teacher"></div>
                     <div class="col-lg-7">
                         <div class="p-5">
 
                             <!-- Header -->
                             <div class="text-center">
                                 <div class="mb-2">
-                                    <i class="fas fa-book-reader fa-3x text-primary"></i>
+                                    <!-- Icon colour updated to red (danger theme) -->
+                                    <i class="fas fa-book-reader fa-3x text-danger-theme"></i>
                                 </div>
-                                <h1 class="h4 text-gray-900 mb-2">Student Registration</h1>
-                                <p class="register-subtitle">Create a student account and take your exams now!</p>
+                                <h1 class="h4 text-gray-900 mb-2">Teacher Registration</h1>
+                                <p class="register-subtitle">Create a professional account to manage exams and students.</p>
                             </div>
 
                             <!-- Flash Messages -->
@@ -105,8 +111,11 @@
                               {% endif %}
                             {% endwith %}
 
-                            <form id="studentRegisterForm" class="user" method="POST"
-                                  action="{{ url_for('auth.register_page') }}" novalidate>
+                            <form id="teacherRegisterForm" class="user" method="POST"
+                                  action="{{ url_for('auth.teacher_register_page') }}" novalidate>
+
+                                <!-- Hidden role -->
+                                <input type="hidden" name="role" value="teacher">
 
                                 <!-- ── Name ── -->
                                 <div class="form-group row">
@@ -133,7 +142,7 @@
                                 <div class="form-group">
                                     <input type="email" class="form-control form-control-user"
                                            id="email" name="email"
-                                           placeholder="Email Address" required>
+                                           placeholder="Professional Email Address" required>
                                     <span class="field-feedback" id="email-feedback"></span>
                                 </div>
 
@@ -199,7 +208,7 @@
                                 </div>
 
                                 <hr>
-                                <button type="submit" class="btn btn-primary btn-user btn-block">
+                                <button type="submit" class="btn btn-danger btn-user btn-block">
                                     Register Account
                                 </button>
 
@@ -316,7 +325,6 @@
                     var res = rule.check(val);
                     res.ok ? setValid(input, rule.fbId, res.msg)
                            : setInvalid(input, rule.fbId, res.msg);
-                    // cascade: re-check confirm when password changes
                     if (name === 'password') {
                         var cfm = document.getElementById('confirm_password');
                         if (cfm && cfm.value) cfm.dispatchEvent(new Event('input'));
@@ -344,7 +352,7 @@
         });
 
         /* ── Form submit guard ──────────────────── */
-        document.getElementById('studentRegisterForm').addEventListener('submit', function (e) {
+        document.getElementById('teacherRegisterForm').addEventListener('submit', function (e) {
             var allOk = true;
 
             Object.keys(rules).forEach(function (name) {

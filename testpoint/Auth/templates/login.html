@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>TestPoint</title>
+    <title>TestPoint - Login</title>
 
     <!-- Custom fonts for this template-->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" type="text/css">
@@ -15,11 +15,15 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
 
     <style>
-        /* Custom background for the login side-image */
         .bg-login-exam {
             background: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80');
             background-position: center;
             background-size: cover;
+        }
+        /* Make modal inputs look like the rest of the theme */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
         }
     </style>
 </head>
@@ -30,21 +34,17 @@
 
         <!-- Outer Row -->
         <div class="row justify-content-center">
-
             <div class="col-xl-10 col-lg-12 col-md-9">
-
                 <div class="card o-hidden border-0 shadow-lg my-5">
                     <div class="card-body p-0">
-                        <!-- Nested Row within Card Body -->
                         <div class="row">
-                            <!-- Left Side Image (Visible on Large screens) -->
+                            <!-- Left Side Image -->
                             <div class="col-lg-6 d-none d-lg-block bg-login-exam"></div>
                             
                             <!-- Right Side Form -->
                             <div class="col-lg-6">
                                 <div class="p-5">
                                     <div class="text-center">
-                                        <!-- Examination System Icon -->
                                         <div class="mb-2">
                                             <i class="fas fa-book-reader fa-3x text-primary"></i>
                                         </div>
@@ -67,40 +67,71 @@
                                     {% endwith %}
 
                                     <form method="POST" action="{{ url_for('auth.login') }}" class="user">
-
                                         <div class="form-group">
                                             <input type="email" name="email" class="form-control form-control-user"
-                                                id="exampleInputEmail" aria-describedby="emailHelp"
-                                                placeholder="Enter Email Address...">
+                                                id="exampleInputEmail" placeholder="Enter Email Address..." required>
                                         </div>
                                         <div class="form-group">
                                             <input type="password" name="password" class="form-control form-control-user"
-                                                id="exampleInputPassword" placeholder="Password">
+                                                id="exampleInputPassword" placeholder="Password" required>
                                         </div>
                                         
                                         <button class="btn btn-primary btn-user btn-block" type="submit">
                                             Login
                                         </button>
-                                        <button class="btn btn-primary btn-user btn-block" type="submit">
-                                            Register
-                                        </button>                                        
+                                        
+                                        <!-- Changed Register to a link leading to Student Registration -->
+                                        <a href="{{ url_for('auth.register_page') }}" class="btn btn-outline-primary btn-user btn-block">
+                                            Register as Student
+                                        </a>                                        
                                     </form>
                                     
                                     <hr>
                                     <div class="text-center">
                                         <a class="small" href="#">Forgot Password?</a>
                                     </div>
+                                    <div class="text-center">
+                                        <!-- MODAL TRIGGER -->
+                                        <a class="small text-primary font-weight-bold" href="#" data-toggle="modal" data-target="#teacherCodeModal">
+                                            <i class="fas fa-chalkboard-teacher mr-1"></i> Enter Teacher's Code
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
-
         </div>
-
     </div>
+
+    <!-- TEACHER INVITE CODE MODAL
+    <div class="modal fade" id="teacherCodeModal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title" id="modalLabel">Teacher Access</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                This form should point to a route that verifies the code
+                <form action="{{ url_for('auth.verify_teacher_code') }}" method="POST" class="user">
+                    <div class="modal-body text-center">
+                        <p class="text-gray-900">Please enter the invitation code</p>
+                        <div class="form-group">
+                            <input type="text" name="invite_code" class="form-control form-control-user text-center" 
+                                placeholder="Enter Invite Code (e.g. TCH-2024)" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary" type="submit">Verify & Proceed</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div> -->
 
     <!-- Bootstrap core JavaScript-->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -113,5 +144,4 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
 
 </body>
-
 </html>
