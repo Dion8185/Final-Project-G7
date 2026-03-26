@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Register - Examination System</title>
+
+    <!-- Custom fonts for this template-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+    <!-- Custom styles for this template (SB Admin 2) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+
+    <style>
+        .bg-register-image {
+            background: url('https://images.unsplash.com/photo-1513258496099-48168024adb0?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80');
+            background-position: center;
+            background-size: cover;
+        }
+        /* Style adjustments for the user-themed select box */
+        .form-control-user-select {
+            border-radius: 10rem;
+            padding: 0.5rem 1rem;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-primary">
+
+    <div class="container">
+
+        <div class="card o-hidden border-0 shadow-lg my-5">
+            <div class="card-body p-0">
+                <!-- Nested Row within Card Body -->
+                <div class="row">
+                    <div class="col-lg-5 d-none d-lg-block bg-register-image"></div>
+                    <div class="col-lg-7">
+                        <div class="p-5">
+                            <div class="text-center">
+                                <h1 class="h4 text-gray-900 mb-4">Create an Account!</h1>
+                            </div>
+
+                            <!-- FLASH MESSAGES SECTION -->
+                            <!-- This will display the flash('message', 'danger') from your backend -->
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                              {% if messages %}
+                                {% for category, message in messages %}
+                                  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                      <span aria-hidden="true">&times;</span>
+                                    </button>
+                                  </div>
+                                {% endfor %}
+                              {% endif %}
+                            {% endwith %}
+
+                            <form class="user" method="POST" action="{{ url_for('auth.register_page') }}">
+                                
+                                <!-- Name Section (Matches firstname, middlename, lastname) -->
+                                <div class="form-group row">
+                                    <div class="col-sm-4 mb-3 mb-sm-0">
+                                        <input type="text" class="form-control form-control-user" name="firstname"
+                                            placeholder="First Name" required>
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <input type="text" class="form-control form-control-user" name="middlename"
+                                            placeholder="Middle Name (Optional)">
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <input type="text" class="form-control form-control-user" name="lastname"
+                                            placeholder="Last Name" required>
+                                    </div>
+                                </div>
+
+                                <!-- Email Section -->
+                                <div class="form-group">
+                                    <input type="email" class="form-control form-control-user" name="email"
+                                        placeholder="Email Address" required>
+                                </div>
+
+                                <!-- Password Section (Matches password and confirm_password) -->
+                                <div class="form-group row">
+                                    <div class="col-sm-6 mb-3 mb-sm-0">
+                                        <input type="password" class="form-control form-control-user"
+                                            name="password" placeholder="Password" required>
+                                        <small class="text-muted ml-3" style="font-size: 0.7rem;">
+                                            Min. 6 chars, 1 Upper, 1 Lower, 1 Digit, 1 Special
+                                        </small>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <input type="password" class="form-control form-control-user"
+                                            name="confirm_password" placeholder="Repeat Password" required>
+                                    </div>
+                                </div>
+                                <hr> 
+                                <button type="submit" class="btn btn-primary btn-user btn-block">
+                                    Register Account
+                                </button>                               
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap core JavaScript-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+
+    <!-- Custom scripts for all pages-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
+
+</body>
+
+</html>
