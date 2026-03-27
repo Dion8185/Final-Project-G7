@@ -7,9 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Teacher Register</title>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"
+        type="text/css">
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
+        rel="stylesheet">
 
     <style>
         .bg-register-teacher {
@@ -18,7 +22,6 @@
             background-size: cover;
         }
 
-        /* ── Subtitle height-match: same min-height as student page ── */
         .register-subtitle {
             min-height: 2.8rem;
             display: flex;
@@ -27,12 +30,10 @@
             margin-bottom: 1rem !important;
         }
 
-        /* ── Icon: red to match danger theme ── */
         .text-danger-theme {
-            color: #e74a3b !important;   /* SB Admin 2's --danger */
+            color: #e74a3b !important;
         }
 
-        /* ── Live-validation glow ── */
         .form-control.is-valid,
         .form-control.is-valid:focus {
             border-color: #28a745 !important;
@@ -47,14 +48,12 @@
             background-image: none !important;
         }
 
-        /* pill style on selects */
         select.form-control-user {
             border-radius: 10rem;
             height: auto;
             padding: .375rem 1rem;
         }
 
-        /* feedback text */
         .field-feedback {
             font-size: 0.70rem;
             margin-top: 0.2rem;
@@ -62,10 +61,15 @@
             min-height: 1rem;
             display: block;
         }
-        .field-feedback.valid-msg   { color: #28a745; }
-        .field-feedback.invalid-msg { color: #dc3545; }
 
-        /* address section label */
+        .field-feedback.valid-msg {
+            color: #28a745;
+        }
+
+        .field-feedback.invalid-msg {
+            color: #dc3545;
+        }
+
         .address-section-label {
             font-size: 0.75rem;
             font-weight: 700;
@@ -87,71 +91,64 @@
                     <div class="col-lg-7">
                         <div class="p-5">
 
-                            <!-- Header -->
                             <div class="text-center">
                                 <div class="mb-2">
-                                    <!-- Icon colour updated to red (danger theme) -->
                                     <i class="fas fa-book-reader fa-3x text-danger-theme"></i>
                                 </div>
                                 <h1 class="h4 text-gray-900 mb-2">Teacher Registration</h1>
-                                <p class="register-subtitle">Create a professional account to manage exams and students.</p>
+                                <p class="register-subtitle">Create a professional account to manage exams and students.
+                                </p>
                             </div>
 
-                            <!-- Flash Messages -->
                             {% with messages = get_flashed_messages(with_categories=true) %}
-                              {% if messages %}
-                                {% for category, message in messages %}
-                                  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                      <span aria-hidden="true">&times;</span>
-                                    </button>
-                                  </div>
-                                {% endfor %}
-                              {% endif %}
+                            {% if messages %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
                             {% endwith %}
 
                             <form id="teacherRegisterForm" class="user" method="POST"
-                                  action="{{ url_for('auth.register_teacher') }}" novalidate>
+                                action="{{ url_for('auth.teacher_register_teacher') }}" novalidate>
 
-                                <!-- Hidden role -->
                                 <input type="hidden" name="role" value="teacher">
 
                                 <!-- ── Name ── -->
                                 <div class="form-group row">
                                     <div class="col-sm-4 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user"
-                                               id="firstname" name="firstname"
-                                               placeholder="First Name" required>
+                                        <input type="text" class="form-control form-control-user" id="firstname"
+                                            name="firstname" placeholder="First Name" required>
                                         <span class="field-feedback" id="firstname-feedback"></span>
                                     </div>
                                     <div class="col-sm-4 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user"
-                                               id="middlename" name="middlename"
-                                               placeholder="Middle Name (Optional)">
+                                        <input type="text" class="form-control form-control-user" id="middlename"
+                                            name="middlename" placeholder="Middle Name (Optional)">
+                                        <span class="field-feedback" id="middlename-feedback"></span>
                                     </div>
                                     <div class="col-sm-4">
-                                        <input type="text" class="form-control form-control-user"
-                                               id="lastname" name="lastname"
-                                               placeholder="Last Name" required>
+                                        <input type="text" class="form-control form-control-user" id="lastname"
+                                            name="lastname" placeholder="Last Name" required>
                                         <span class="field-feedback" id="lastname-feedback"></span>
                                     </div>
                                 </div>
 
                                 <!-- ── Email ── -->
                                 <div class="form-group">
-                                    <input type="email" class="form-control form-control-user"
-                                           id="email" name="email"
-                                           placeholder="Professional Email Address" required>
+                                    <input type="email" class="form-control form-control-user" id="email" name="email"
+                                        placeholder="Professional Email Address" required>
                                     <span class="field-feedback" id="email-feedback"></span>
                                 </div>
 
                                 <!-- ── Password ── -->
                                 <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <input type="password" class="form-control form-control-user"
-                                               id="password" name="password"
-                                               placeholder="Password" required>
+                                        <input type="password" class="form-control form-control-user" id="password"
+                                            name="password" placeholder="Password" required>
                                         <small class="text-muted ml-3" style="font-size:0.7rem;">
                                             Min. 8 chars, Upper, Lower, Digit, Special
                                         </small>
@@ -159,8 +156,8 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <input type="password" class="form-control form-control-user"
-                                               id="confirm_password" name="confirm_password"
-                                               placeholder="Repeat Password" required>
+                                            id="confirm_password" name="confirm_password" placeholder="Repeat Password"
+                                            required>
                                         <span class="field-feedback" id="confirm-feedback"></span>
                                     </div>
                                 </div>
@@ -171,17 +168,18 @@
                                     <i class="fas fa-map-marker-alt mr-1"></i>Philippine Address
                                 </div>
 
-                                <!-- Row 1: Region + Province -->
                                 <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <select name="region" class="form-control form-control-user" id="region" required>
+                                        <select name="region" class="form-control form-control-user" id="region"
+                                            required>
                                             <option value="">— Region —</option>
                                         </select>
                                         <input type="hidden" name="region_text" id="region-text">
                                         <span class="field-feedback" id="region-feedback"></span>
                                     </div>
                                     <div class="col-sm-6">
-                                        <select name="province" class="form-control form-control-user" id="province" required>
+                                        <select name="province" class="form-control form-control-user" id="province"
+                                            required>
                                             <option value="">— Province —</option>
                                         </select>
                                         <input type="hidden" name="province_text" id="province-text">
@@ -189,7 +187,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Row 2: City + Barangay -->
                                 <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
                                         <select name="city" class="form-control form-control-user" id="city" required>
@@ -199,7 +196,8 @@
                                         <span class="field-feedback" id="city-feedback"></span>
                                     </div>
                                     <div class="col-sm-6">
-                                        <select name="barangay" class="form-control form-control-user" id="barangay" required>
+                                        <select name="barangay" class="form-control form-control-user" id="barangay"
+                                            required>
                                             <option value="">— Barangay —</option>
                                         </select>
                                         <input type="hidden" name="barangay_text" id="barangay-text">
@@ -213,6 +211,10 @@
                                 </button>
 
                             </form>
+                            <hr>
+                            <div class="text-center">
+                                <a class="small" href="{{ url_for('auth.login') }}">Already have an account? Login!</a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -220,165 +222,325 @@
         </div>
     </div>
 
-    <!-- Core JS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
+    <script src="{{ url_for('auth.static', filename='js/ph-address-selector.js') }}"></script>
 
-    <!-- Philippine Address Selector — point to your local copy -->
-    <script src="ph-address-selector.js"></script>
-
-    <!-- ════════════════════════════════════════════
-         LIVE VALIDATION
-    ════════════════════════════════════════════ -->
     <script>
-    (function () {
-        'use strict';
+        (function () {
+            'use strict';
 
-        /* ── Utilities ─────────────────────────── */
-        function setValid(el, fbId, msg) {
-            el.classList.remove('is-invalid');
-            el.classList.add('is-valid');
-            var fb = document.getElementById(fbId);
-            if (fb) { fb.textContent = msg || ''; fb.className = 'field-feedback valid-msg'; }
-        }
-
-        function setInvalid(el, fbId, msg) {
-            el.classList.remove('is-valid');
-            el.classList.add('is-invalid');
-            var fb = document.getElementById(fbId);
-            if (fb) { fb.textContent = msg || ''; fb.className = 'field-feedback invalid-msg'; }
-        }
-
-        function clearState(el, fbId) {
-            el.classList.remove('is-valid', 'is-invalid');
-            var fb = document.getElementById(fbId);
-            if (fb) { fb.textContent = ''; fb.className = 'field-feedback'; }
-        }
-
-        /* ── Validation rules ───────────────────── */
-        var rules = {
-            firstname: {
-                fbId: 'firstname-feedback',
-                check: function (v) {
-                    if (!v)          return { ok: false, msg: 'First name is required.' };
-                    if (v.length < 2) return { ok: false, msg: 'Must be at least 2 characters.' };
-                    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]+$/.test(v)) return { ok: false, msg: 'Letters only.' };
-                    return { ok: true, msg: '✓ Looks good!' };
-                }
-            },
-            lastname: {
-                fbId: 'lastname-feedback',
-                check: function (v) {
-                    if (!v)          return { ok: false, msg: 'Last name is required.' };
-                    if (v.length < 2) return { ok: false, msg: 'Must be at least 2 characters.' };
-                    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-]+$/.test(v)) return { ok: false, msg: 'Letters only.' };
-                    return { ok: true, msg: '✓ Looks good!' };
-                }
-            },
-            email: {
-                fbId: 'email-feedback',
-                check: function (v) {
-                    if (!v) return { ok: false, msg: 'Email is required.' };
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return { ok: false, msg: 'Enter a valid email address.' };
-                    return { ok: true, msg: '✓ Valid email.' };
-                }
-            },
-            password: {
-                fbId: 'password-feedback',
-                check: function (v) {
-                    if (!v)          return { ok: false, msg: 'Password is required.' };
-                    if (v.length < 8) return { ok: false, msg: 'Must be at least 8 characters.' };
-                    if (!/[A-Z]/.test(v)) return { ok: false, msg: 'Add at least one uppercase letter (A-Z).' };
-                    if (!/[a-z]/.test(v)) return { ok: false, msg: 'Add at least one lowercase letter (a-z).' };
-                    if (!/[0-9]/.test(v)) return { ok: false, msg: 'Add at least one digit (0-9).' };
-                    if (!/[!@#$%^&*()\-_=+\[\]{};:'",.<>?\/\\|`~]/.test(v))
-                        return { ok: false, msg: 'Add at least one special character (e.g. !@#$).' };
-                    return { ok: true, msg: '✓ Strong password!' };
-                }
-            },
-            confirm_password: {
-                fbId: 'confirm-feedback',
-                check: function (v) {
-                    var pw = document.getElementById('password').value;
-                    if (!v)      return { ok: false, msg: 'Please confirm your password.' };
-                    if (v !== pw) return { ok: false, msg: 'Passwords do not match.' };
-                    return { ok: true, msg: '✓ Passwords match!' };
-                }
+            /* ══════════════════════════════════════════
+               UTILITIES
+            ══════════════════════════════════════════ */
+            function setValid(el, fbId, msg) {
+                el.classList.remove('is-invalid');
+                el.classList.add('is-valid');
+                var fb = document.getElementById(fbId);
+                if (fb) { fb.textContent = msg || ''; fb.className = 'field-feedback valid-msg'; }
             }
-        };
 
-        /* ── Attach input/blur listeners ────────── */
-        Object.keys(rules).forEach(function (name) {
-            var input = document.getElementById(name);
-            if (!input) return;
-            var rule = rules[name];
+            function setInvalid(el, fbId, msg) {
+                el.classList.remove('is-valid');
+                el.classList.add('is-invalid');
+                var fb = document.getElementById(fbId);
+                if (fb) { fb.textContent = msg || ''; fb.className = 'field-feedback invalid-msg'; }
+            }
 
-            ['input', 'blur'].forEach(function (evt) {
-                input.addEventListener(evt, function () {
-                    var val = input.value.trim();
-                    if (val === '' && evt === 'input') {
-                        clearState(input, rule.fbId);
-                        return;
+            function clearState(el, fbId) {
+                el.classList.remove('is-valid', 'is-invalid');
+                var fb = document.getElementById(fbId);
+                if (fb) { fb.textContent = ''; fb.className = 'field-feedback'; }
+            }
+
+            /* ── Shared name-field checker ── */
+            function checkNameField(v, label, required) {
+                if (!v) {
+                    return required
+                        ? { ok: false, msg: label + ' is required.' }
+                        : { ok: true, msg: '' };
+                }
+
+                if (v.length < 2)
+                    return { ok: false, msg: label + ' must be at least 2 characters.' };
+                if (v.length > 50)
+                    return { ok: false, msg: label + ' must not exceed 50 characters.' };
+
+                if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]+$/.test(v))
+                    return { ok: false, msg: 'Only letters, spaces, hyphens, apostrophes, and periods are allowed.' };
+
+                if (/^(.)\1+$/.test(v.replace(/\s/g, '')))
+                    return { ok: false, msg: 'Name cannot be all the same letter.' };
+
+                if (/(.)\1{3,}/.test(v))
+                    return { ok: false, msg: 'Too many consecutive repeated characters.' };
+
+                var lower = v.toLowerCase().replace(/[^a-z]/g, '');
+                if (lower.length >= 4) {
+                    var seqCount = 1, maxSeq = 1;
+                    for (var i = 1; i < lower.length; i++) {
+                        seqCount = (lower.charCodeAt(i) === lower.charCodeAt(i - 1) + 1) ? seqCount + 1 : 1;
+                        if (seqCount > maxSeq) maxSeq = seqCount;
                     }
-                    var res = rule.check(val);
-                    res.ok ? setValid(input, rule.fbId, res.msg)
-                           : setInvalid(input, rule.fbId, res.msg);
-                    if (name === 'password') {
-                        var cfm = document.getElementById('confirm_password');
-                        if (cfm && cfm.value) cfm.dispatchEvent(new Event('input'));
+                    if (maxSeq >= 4)
+                        return { ok: false, msg: 'Name cannot contain sequential letter runs (e.g. abcd).' };
+                }
+
+                if (/\d/.test(v))
+                    return { ok: false, msg: 'Name must not contain numbers.' };
+
+                if (/\s{2,}/.test(v))
+                    return { ok: false, msg: 'Multiple consecutive spaces are not allowed.' };
+                if (/^\s|\s$/.test(v))
+                    return { ok: false, msg: 'Name must not start or end with a space.' };
+
+                if (/[-]{2,}|'{2,}/.test(v))
+                    return { ok: false, msg: 'Consecutive hyphens or apostrophes are not allowed.' };
+
+                if (/^['\-]|['\-]$/.test(v))
+                    return { ok: false, msg: 'Name must not start or end with a hyphen or apostrophe.' };
+
+                if (/^[A-Z]{2,}$/.test(v.replace(/\s/g, '')) && v.replace(/\s/g, '').length > 4)
+                    return { ok: false, msg: 'Avoid typing in all-caps for your name.' };
+
+                return { ok: true, msg: '✓ Looks good!' };
+            }
+
+            /* ══════════════════════════════════════════
+               VALIDATION RULES
+            ══════════════════════════════════════════ */
+            var rules = {
+
+                firstname: {
+                    fbId: 'firstname-feedback',
+                    check: function (v) { return checkNameField(v, 'First name', true); }
+                },
+
+                middlename: {
+                    fbId: 'middlename-feedback',
+                    check: function (v) { return checkNameField(v, 'Middle name', false); }
+                },
+
+                lastname: {
+                    fbId: 'lastname-feedback',
+                    check: function (v) { return checkNameField(v, 'Last name', true); }
+                },
+
+                email: {
+                    fbId: 'email-feedback',
+                    check: function (v) {
+                        if (!v) return { ok: false, msg: 'Email is required.' };
+
+                        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v))
+                            return { ok: false, msg: 'Enter a valid email address.' };
+
+                        var parts = v.split('@');
+                        var local = parts[0];
+                        var domain = parts[1] || '';
+                        var domParts = domain.split('.');
+                        var tld = domParts[domParts.length - 1];
+
+                        if (/\s/.test(v))
+                            return { ok: false, msg: 'Email must not contain spaces.' };
+
+                        if (/\.{2,}/.test(local))
+                            return { ok: false, msg: 'Email local part cannot have consecutive dots.' };
+
+                        if (/^\.|\.$/.test(local))
+                            return { ok: false, msg: 'Email cannot start or end with a dot before @.' };
+
+                        if (/\.{2,}/.test(domain))
+                            return { ok: false, msg: 'Email domain cannot have consecutive dots.' };
+
+                        if (!domain.includes('.'))
+                            return { ok: false, msg: 'Email domain must include a dot (e.g. gmail.com).' };
+
+                        if (!/^[a-zA-Z]{2,}$/.test(tld))
+                            return { ok: false, msg: 'Email TLD must be letters only (e.g. .com, .ph).' };
+
+                        var blacklist = ['mailinator.com', 'guerrillamail.com', 'trashmail.com',
+                            'tempmail.com', '10minutemail.com', 'yopmail.com',
+                            'fakeinbox.com', 'sharklasers.com', 'throwam.com',
+                            'maildrop.cc', 'dispostable.com'];
+                        if (blacklist.indexOf(domain.toLowerCase()) !== -1)
+                            return { ok: false, msg: 'Disposable email addresses are not allowed.' };
+
+                        if (/(.)\1{4,}/.test(local))
+                            return { ok: false, msg: 'Email local part contains too many repeated characters.' };
+
+                        if (local.length < 3)
+                            return { ok: false, msg: 'Email username is too short (min. 3 characters).' };
+
+                        if (/^(.)\1+$/.test(local))
+                            return { ok: false, msg: 'Email username cannot be all the same character.' };
+
+                        if ((v.match(/@/g) || []).length > 1)
+                            return { ok: false, msg: 'Email must contain exactly one @ symbol.' };
+
+                        return { ok: true, msg: '✓ Valid email.' };
                     }
-                });
-            });
-        });
+                },
 
-        /* ── Address select validation ──────────── */
-        var addrFields = [
-            { id: 'region',   fbId: 'region-feedback',   label: 'Region' },
-            { id: 'province', fbId: 'province-feedback',  label: 'Province' },
-            { id: 'city',     fbId: 'city-feedback',      label: 'City / Municipality' },
-            { id: 'barangay', fbId: 'barangay-feedback',  label: 'Barangay' }
-        ];
+                password: {
+                    fbId: 'password-feedback',
+                    check: function (v) {
+                        if (!v) return { ok: false, msg: 'Password is required.' };
 
-        addrFields.forEach(function (f) {
-            var sel = document.getElementById(f.id);
-            if (!sel) return;
-            sel.addEventListener('change', function () {
-                sel.value
-                    ? setValid(sel, f.fbId, '✓ ' + f.label + ' selected.')
-                    : setInvalid(sel, f.fbId, f.label + ' is required.');
-            });
-        });
+                        if (v.length < 8)
+                            return { ok: false, msg: 'Must be at least 8 characters.' };
+                        if (v.length > 128)
+                            return { ok: false, msg: 'Password must not exceed 128 characters.' };
 
-        /* ── Form submit guard ──────────────────── */
-        document.getElementById('teacherRegisterForm').addEventListener('submit', function (e) {
-            var allOk = true;
+                        if (!/[A-Z]/.test(v))
+                            return { ok: false, msg: 'Add at least one uppercase letter (A–Z).' };
+                        if (!/[a-z]/.test(v))
+                            return { ok: false, msg: 'Add at least one lowercase letter (a–z).' };
+                        if (!/[0-9]/.test(v))
+                            return { ok: false, msg: 'Add at least one digit (0–9).' };
+                        if (!/[!@#$%^&*()\-_=+\[\]{};:'",.<>?\/\\|`~]/.test(v))
+                            return { ok: false, msg: 'Add at least one special character (e.g. !@#$).' };
 
+                        if (/^(.)\1+$/.test(v))
+                            return { ok: false, msg: 'Password cannot be all the same character.' };
+
+                        if (/(.)\1{3,}/.test(v))
+                            return { ok: false, msg: 'Password cannot have 4+ identical characters in a row.' };
+
+                        var seqAlpha = 'abcdefghijklmnopqrstuvwxyz';
+                        var seqNum = '0123456789';
+                        var seqQwerty = 'qwertyuiopasdfghjklzxcvbnm';
+                        var lower = v.toLowerCase();
+                        function hasKeyboardRun(str, charset, run) {
+                            for (var i = 0; i <= charset.length - run; i++) {
+                                var fwd = charset.slice(i, i + run);
+                                var bwd = fwd.split('').reverse().join('');
+                                if (str.includes(fwd) || str.includes(bwd)) return true;
+                            }
+                            return false;
+                        }
+                        if (hasKeyboardRun(lower, seqAlpha, 5))
+                            return { ok: false, msg: 'Password contains an alphabetical sequence (e.g. abcde).' };
+                        if (hasKeyboardRun(lower, seqNum, 5))
+                            return { ok: false, msg: 'Password contains a numeric sequence (e.g. 12345).' };
+                        if (hasKeyboardRun(lower, seqQwerty, 5))
+                            return { ok: false, msg: 'Password contains a keyboard walk (e.g. qwerty).' };
+
+                        var commonPwds = [
+                            'password', 'password1', 'password123', '12345678', '123456789',
+                            '1234567890', 'qwerty123', 'qwertyuiop', 'iloveyou', 'admin1234',
+                            'welcome1', 'monkey123', 'dragon123', 'letmein1', 'sunshine1',
+                            'princess1', 'superman1', 'football', 'baseball1', 'shadow123',
+                            'master123', 'abc12345', 'passw0rd', 'trustno1', 'hello123'
+                        ];
+                        if (commonPwds.indexOf(v.toLowerCase()) !== -1)
+                            return { ok: false, msg: 'This password is too common. Please choose a more unique one.' };
+
+                        if (/^\d+$/.test(v))
+                            return { ok: false, msg: 'Password cannot be numbers only.' };
+                        if (/^[a-zA-Z]+$/.test(v))
+                            return { ok: false, msg: 'Password cannot be letters only.' };
+                        if (/\s/.test(v))
+                            return { ok: false, msg: 'Password must not contain spaces.' };
+
+                        return { ok: true, msg: '✓ Strong password!' };
+                    }
+                },
+
+                confirm_password: {
+                    fbId: 'confirm-feedback',
+                    check: function (v) {
+                        var pw = document.getElementById('password').value;
+                        if (!v) return { ok: false, msg: 'Please confirm your password.' };
+                        if (v !== pw) return { ok: false, msg: 'Passwords do not match.' };
+                        return { ok: true, msg: '✓ Passwords match!' };
+                    }
+                }
+            };
+
+            /* ══════════════════════════════════════════
+               ATTACH LISTENERS
+            ══════════════════════════════════════════ */
             Object.keys(rules).forEach(function (name) {
                 var input = document.getElementById(name);
                 if (!input) return;
                 var rule = rules[name];
-                var res  = rule.check(input.value.trim());
-                res.ok ? setValid(input, rule.fbId, res.msg)
-                       : setInvalid(input, rule.fbId, res.msg);
-                if (!res.ok) allOk = false;
+
+                ['input', 'blur'].forEach(function (evt) {
+                    input.addEventListener(evt, function () {
+                        var val = input.value.trim();
+
+                        if (name === 'middlename' && val === '') {
+                            clearState(input, rule.fbId);
+                            return;
+                        }
+                        if (val === '' && evt === 'input') {
+                            clearState(input, rule.fbId);
+                            return;
+                        }
+
+                        var res = rule.check(val);
+                        res.ok ? setValid(input, rule.fbId, res.msg)
+                            : setInvalid(input, rule.fbId, res.msg);
+
+                        if (name === 'password') {
+                            var cfm = document.getElementById('confirm_password');
+                            if (cfm && cfm.value) cfm.dispatchEvent(new Event('input'));
+                        }
+                    });
+                });
             });
+
+            /* ── Address selects ── */
+            var addrFields = [
+                { id: 'region', fbId: 'region-feedback', label: 'Region' },
+                { id: 'province', fbId: 'province-feedback', label: 'Province' },
+                { id: 'city', fbId: 'city-feedback', label: 'City / Municipality' },
+                { id: 'barangay', fbId: 'barangay-feedback', label: 'Barangay' }
+            ];
 
             addrFields.forEach(function (f) {
                 var sel = document.getElementById(f.id);
                 if (!sel) return;
-                if (!sel.value) {
-                    setInvalid(sel, f.fbId, f.label + ' is required.');
-                    allOk = false;
-                }
+                sel.addEventListener('change', function () {
+                    sel.value
+                        ? setValid(sel, f.fbId, '✓ ' + f.label + ' selected.')
+                        : setInvalid(sel, f.fbId, f.label + ' is required.');
+                });
             });
 
-            if (!allOk) e.preventDefault();
-        });
+            /* ══════════════════════════════════════════
+               SUBMIT GUARD
+            ══════════════════════════════════════════ */
+            document.getElementById('teacherRegisterForm').addEventListener('submit', function (e) {
+                var allOk = true;
 
-    })();
+                Object.keys(rules).forEach(function (name) {
+                    var input = document.getElementById(name);
+                    if (!input) return;
+                    var rule = rules[name];
+                    var res = rule.check(input.value.trim());
+                    res.ok ? setValid(input, rule.fbId, res.msg)
+                        : setInvalid(input, rule.fbId, res.msg);
+                    if (!res.ok) allOk = false;
+                });
+
+                addrFields.forEach(function (f) {
+                    var sel = document.getElementById(f.id);
+                    if (!sel) return;
+                    if (!sel.value) {
+                        setInvalid(sel, f.fbId, f.label + ' is required.');
+                        allOk = false;
+                    }
+                });
+
+                if (!allOk) e.preventDefault();
+            });
+
+        })();
     </script>
 
 </body>
+
 </html>

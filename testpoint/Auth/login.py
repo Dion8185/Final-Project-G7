@@ -27,6 +27,10 @@ def validate_name(field_name, value):
             if not value:
                 flash(f'{field_name} is required.', 'danger')
                 return False
+            
+            if re.search(r'(.)\1{3,}', value):
+                flash(f'{field_name} contains too many repeated characters.', 'danger')
+                return False
 
             if not NAME_REGEX.match(value):
                 flash(f'{field_name} contains invalid characters or format.', 'danger')
@@ -144,8 +148,12 @@ def register_student():
         email = request.form.get('email','').strip()
         password = request.form.get('password','').strip()
         confirm_password = request.form.get('confirm_password','').strip()
+        region = request.form.get('region_text','').strip()
+        province = request.form.get('province_text','').strip()
+        city = request.form.get('city_text','').strip()
+        barangay = request.form.get('barangay_text','').strip()
 
-        if not all([firstname, lastname, email, password, confirm_password]):
+        if not all([firstname, lastname, email, password, confirm_password, region, province, city, barangay]):
             flash('Please fill in all required fields.', 'danger')
             return render_template('register.html')
 
@@ -220,10 +228,10 @@ def register_student():
             cursor.execute(query_insert_user, (student_id, email, hashed_password))
 
             query_insert_student = """
-                INSERT INTO students (student_id, email, firstname, middlename, lastname)
-                VALUES (%s, %s, %s, %s, %s);
+                INSERT INTO students (student_id, email, firstname, middlename, lastname, region, province, city, barangay)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
-            cursor.execute(query_insert_student, (student_id, email, firstname, middlename, lastname))
+            cursor.execute(query_insert_student, (student_id, email, firstname, middlename, lastname, region, province, city, barangay))
 
             connection.commit()
             flash('Registration successful!', 'success')
