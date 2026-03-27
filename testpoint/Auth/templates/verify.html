@@ -139,90 +139,99 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        const inputs = document.querySelectorAll('.otp-input');
+   <script>
+    const inputs = document.querySelectorAll('.otp-input');
 
-        // 1. Handle Typing and Auto-focus
-        inputs.forEach((input, index) => {
-            input.addEventListener('input', (e) => {
-                if (e.target.value.length === 1 && index < inputs.length - 1) {
-                    inputs[index + 1].focus();
-                }
-            });
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
-                    inputs[index - 1].focus();
-                }
-            });
-
-            // Handle Paste
-            input.addEventListener('paste', (e) => {
-                const data = e.clipboardData.getData('text').trim();
-                if (data.length === 6 && /^\d+$/.test(data)) {
-                    const digits = data.split('');
-                    inputs.forEach((input, i) => input.value = digits[i]);
-                    inputs[5].focus();
-                }
-                e.preventDefault();
-            });
+    // 1. Handle Typing and Auto-focus
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+            if (e.target.value.length === 1 && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
         });
 
-        // 2. Expiration Timer Logic (5 Minutes)
-        let timeLeft = 300; // 5 minutes in seconds
-        const timerDisplay = document.getElementById('timer-text');
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
 
-        function startTimer() {
-            const countdown = setInterval(() => {
-                if (timeLeft <= 0) {
-                    clearInterval(countdown);
-                    timerDisplay.innerHTML = "Expired";
-                    document.getElementById('otpForm').classList.add('opacity-50'); // Visual hint
-                } else {
-                    let minutes = Math.floor(timeLeft / 60);
-                    let seconds = timeLeft % 60;
-                    seconds = seconds < 10 ? '0' + seconds : seconds;
-                    timerDisplay.innerHTML = `0${minutes}:${seconds}`;
-                }
-                timeLeft -= 1;
-            }, 1000);
+        input.addEventListener('paste', (e) => {
+            const data = e.clipboardData.getData('text').trim();
+            if (data.length === 6 && /^\d+$/.test(data)) {
+                const digits = data.split('');
+                inputs.forEach((input, i) => input.value = digits[i]);
+                inputs[5].focus();
+            }
+            e.preventDefault();
+        });
+    });
+
+    // 2. ACCURATE TIMER LOGIC
+    // Initialize timeLeft with value from backend (defaults to 0 if none)
+    let timeLeft = parseInt("{{ remaining_seconds if remaining_seconds else 0 }}");
+    const timerDisplay = document.getElementById('timer-text');
+    let countdown;
+
+    function updateTimerDisplay() {
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            timerDisplay.innerHTML = "Expired";
+            timerDisplay.classList.replace('text-primary', 'text-danger');
+            document.getElementById('otpForm').style.opacity = "0.6";
+        } else {
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            timerDisplay.innerHTML = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            timeLeft -= 1;
         }
+    }
 
-        // Start timer on page load
-        startTimer();
+    function startTimer() {
+        clearInterval(countdown); // Prevent multiple intervals
+        updateTimerDisplay(); // Run immediately
+        countdown = setInterval(updateTimerDisplay, 1000);
+    }
 
-        // 3. Resend OTP Logic
-        function resendOtp() {
-            const btn = document.getElementById('resendBtn');
-            const msgDiv = document.getElementById('resendMessage');
+    // Start timer on page load
+    startTimer();
+
+    // 3. Resend OTP Logic
+    function resendOtp() {
+        const btn = document.getElementById('resendBtn');
+        const msgDiv = document.getElementById('resendMessage');
+        const otpForm = document.getElementById('otpForm');
+        
+        btn.classList.add('disabled');
+        btn.innerText = "Sending...";
+
+        fetch("{{ url_for('auth.resend_otp') }}", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        })
+        .then(response => response.json())
+        .then(data => {
+            msgDiv.innerHTML = `<span class="text-success">${data.message}</span>`;
             
-            btn.classList.add('disabled');
-            btn.innerText = "Sending...";
-
-            fetch("{{ url_for('auth.resend_otp') }}", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(response => response.json())
-            .then(data => {
-                msgDiv.innerHTML = `<span class="text-success">${data.message}</span>`;
-                
-                // Reset timer for the UI
-                timeLeft = 300; 
-                
-                // Re-enable button after 30 second cooldown
-                setTimeout(() => {
-                    btn.classList.remove('disabled');
-                    btn.innerText = "Resend New Code";
-                    msgDiv.innerHTML = "";
-                }, 30000);
-            })
-            .catch(error => {
-                msgDiv.innerHTML = `<span class="text-danger">Error sending code.</span>`;
+            // RESET TIMER: 10 minutes = 600 seconds
+            timeLeft = 600; 
+            otpForm.style.opacity = "1";
+            startTimer();
+            
+            // Re-enable button after 30 second cooldown
+            setTimeout(() => {
                 btn.classList.remove('disabled');
                 btn.innerText = "Resend New Code";
-            });
-        }
-    </script>
+                msgDiv.innerHTML = "";
+            }, 30000);
+        })
+        .catch(error => {
+            msgDiv.innerHTML = `<span class="text-danger">Error sending code.</span>`;
+            btn.classList.remove('disabled');
+            btn.innerText = "Resend New Code";
+        });
+    }
+</script>
+
 </body>
 </html>
