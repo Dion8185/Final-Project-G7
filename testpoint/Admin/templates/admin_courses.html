@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Admin - System Control</title>
+    <title>Admin - Manage Courses</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
@@ -14,18 +14,18 @@
         .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important; }
         .animate-delay-1 { animation-delay: 0.1s; }
-        .animate-delay-2 { animation-delay: 0.2s; }
     </style>
 </head>
 <body id="page-top">
     <div id="wrapper">
+        <!-- SIDE BAR - FIXED -->
         <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
                 <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
                 <div class="sidebar-brand-text mx-3">System Admin</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">User Management</div>
             <li class="nav-item">
@@ -35,7 +35,8 @@
                     <a class="collapse-inner-item" href="#">Teachers List</a>
                 </div></div>
             </li>
-            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
+            <!-- COURSES ACTIVE -->
+            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
             <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">System</div>
@@ -47,6 +48,7 @@
 
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
+                <!-- TOP BAR - FIXED -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
@@ -57,9 +59,9 @@
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header bg-dark border-dark">System Notifications</h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-dark">
-                                            <i class="fas fa-user-plus text-white"></i></div></div><div><div class="small text-gray-500">October 26</div>New teacher registration pending approval.</div></a>
+                                    <div class="mr-3"><div class="icon-circle bg-dark"><i class="fas fa-user-plus text-white"></i></div></div>
+                                    <div><div class="small text-gray-500">October 26</div>New teacher registration pending approval.</div>
+                                </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">View All Alerts</a>
                             </div>
                         </li>
@@ -69,43 +71,72 @@
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">System Admin</span>
                                 <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left"><i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout</button></form>
-                            </div>
                         </li>
                     </ul>
                 </nav>
 
                 <div class="container-fluid animate__animated animate__fadeInUp">
-                    <h1 class="h3 mb-4 text-gray-800">System Oversight</h1>
-                    <div class="row">
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-primary shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Users</div><div class="h5 mb-0 font-weight-bold text-gray-800">1,240</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-success text-uppercase mb-1">Live Sessions</div><div class="h5 mb-0 font-weight-bold text-gray-800">14</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-info shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-info text-uppercase mb-1">Server Load</div><div class="row no-gutters align-items-center"><div class="col-auto"><div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">24%</div></div><div class="col"><div class="progress progress-sm mr-2"><div class="progress-bar bg-info" style="width: 24%"></div></div></div></div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-warning shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Storage Usage</div><div class="h5 mb-0 font-weight-bold text-gray-800">62 GB</div></div></div></div>
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Manage Courses</h1>
+                        <button class="btn btn-sm btn-dark shadow-sm" data-toggle="modal" data-target="#addCourseModal">
+                            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Course
+                        </button>
                     </div>
 
-                    <div class="row">
-                        <div class="col-lg-7 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-1">
-                                <div class="card-header py-3">Global Course Completion Rate</div>
-                                <div class="card-body">
-                                    <h4 class="small font-weight-bold">Web Development <span class="float-right">80%</span></h4><div class="progress mb-4"><div class="progress-bar bg-danger" style="width: 80%"></div></div>
-                                    <h4 class="small font-weight-bold">Computer Science <span class="float-right">40%</span></h4><div class="progress mb-4"><div class="progress-bar bg-warning" style="width: 40%"></div></div>
-                                    <h4 class="small font-weight-bold">Data Structures <span class="float-right">Complete!</span></h4><div class="progress"><div class="progress-bar bg-success" style="width: 100%"></div></div>
+                    <!-- Filter Card -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <form class="row">
+                                <div class="col-md-9 mb-2">
+                                    <input type="text" class="form-control" placeholder="Search by Course Code or Name...">
                                 </div>
-                            </div>
+                                <div class="col-md-3 mb-2">
+                                    <button class="btn btn-dark btn-block">Search</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="col-lg-5 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-2">
-                                <div class="card-header py-3">System Health Log</div>
-                                <div class="card-body">
-                                    <div class="mb-3 p-2 bg-light border-left-success"><strong>Backup:</strong> Successful <span class="float-right small">3h ago</span></div>
-                                    <div class="mb-3 p-2 bg-light border-left-warning"><strong>Database:</strong> Optimization Recommended <span class="float-right small">5h ago</span></div>
-                                    <div class="p-2 bg-light border-left-info"><strong>Security:</strong> SSL Certificate valid.</div>
-                                </div>
+                    </div>
+
+                    <!-- Courses Table -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Course Name</th>
+                                            <th>Active Teachers</th>
+                                            <th>Enrolled Students</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for course in courses %}
+                                        <tr>
+                                            <td><strong>{{ course.code }}</strong></td>
+                                            <td>{{ course.name }}</td>
+                                            <td>{{ course.teacher_count }}</td>
+                                            <td>{{ course.student_count }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info btn-circle"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-danger btn-circle"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td><strong>CS-101</strong></td>
+                                            <td>Introduction to Computer Science</td>
+                                            <td>4</td>
+                                            <td>120</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info btn-circle"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-danger btn-circle"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -114,6 +145,30 @@
             <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
+
+    <!-- Add Course Modal -->
+    <div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Add New Course</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form>
+                    <div class="modal-body">
+                        <div class="form-group"><label>Course Code</label><input type="text" class="form-control" placeholder="e.g. CS-101" required></div>
+                        <div class="form-group"><label>Course Title</label><input type="text" class="form-control" placeholder="e.g. Data Structures" required></div>
+                        <div class="form-group"><label>Description</label><textarea class="form-control" rows="3"></textarea></div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-dark" type="submit">Save Course</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>

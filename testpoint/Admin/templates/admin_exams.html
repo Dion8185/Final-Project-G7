@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Admin - System Control</title>
+    <title>Admin - Oversee All Exams</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
@@ -12,20 +12,24 @@
     <style>
         .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
         .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important; }
-        .animate-delay-1 { animation-delay: 0.1s; }
-        .animate-delay-2 { animation-delay: 0.2s; }
+        /* Live Pulse Animation */
+        .pulse-live {
+            width: 10px; height: 10px; background: #e74a3b; border-radius: 50%; display: inline-block; margin-right: 5px;
+            box-shadow: 0 0 0 rgba(231, 74, 59, 0.4); animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } }
     </style>
 </head>
 <body id="page-top">
     <div id="wrapper">
+        <!-- SIDE BAR - FIXED -->
         <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
                 <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
                 <div class="sidebar-brand-text mx-3">System Admin</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">User Management</div>
             <li class="nav-item">
@@ -36,7 +40,8 @@
                 </div></div>
             </li>
             <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
+            <!-- OVERSEE EXAMS ACTIVE -->
+            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">System</div>
             <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
@@ -47,6 +52,7 @@
 
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
+                <!-- TOP BAR - FIXED -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
@@ -57,9 +63,9 @@
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header bg-dark border-dark">System Notifications</h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-dark">
-                                            <i class="fas fa-user-plus text-white"></i></div></div><div><div class="small text-gray-500">October 26</div>New teacher registration pending approval.</div></a>
+                                    <div class="mr-3"><div class="icon-circle bg-dark"><i class="fas fa-user-plus text-white"></i></div></div>
+                                    <div><div class="small text-gray-500">October 26</div>New teacher registration pending approval.</div>
+                                </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">View All Alerts</a>
                             </div>
                         </li>
@@ -69,43 +75,69 @@
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">System Admin</span>
                                 <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left"><i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout</button></form>
-                            </div>
                         </li>
                     </ul>
                 </nav>
 
-                <div class="container-fluid animate__animated animate__fadeInUp">
-                    <h1 class="h3 mb-4 text-gray-800">System Oversight</h1>
-                    <div class="row">
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-primary shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Users</div><div class="h5 mb-0 font-weight-bold text-gray-800">1,240</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-success text-uppercase mb-1">Live Sessions</div><div class="h5 mb-0 font-weight-bold text-gray-800">14</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-info shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-info text-uppercase mb-1">Server Load</div><div class="row no-gutters align-items-center"><div class="col-auto"><div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">24%</div></div><div class="col"><div class="progress progress-sm mr-2"><div class="progress-bar bg-info" style="width: 24%"></div></div></div></div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-warning shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Storage Usage</div><div class="h5 mb-0 font-weight-bold text-gray-800">62 GB</div></div></div></div>
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    <h1 class="h3 mb-4 text-gray-800">Global Exam Oversight</h1>
+
+                    <!-- Filters -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <form class="row">
+                                <div class="col-md-4 mb-2">
+                                    <select class="form-control"><option>All Statuses</option><option>Live</option><option>Scheduled</option><option>Completed</option></select>
+                                </div>
+                                <div class="col-md-6 mb-2"><input type="text" class="form-control" placeholder="Search by Teacher or Exam Title..."></div>
+                                <div class="col-md-2 mb-2"><button class="btn btn-dark btn-block">Filter</button></div>
+                            </form>
+                        </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-lg-7 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-1">
-                                <div class="card-header py-3">Global Course Completion Rate</div>
-                                <div class="card-body">
-                                    <h4 class="small font-weight-bold">Web Development <span class="float-right">80%</span></h4><div class="progress mb-4"><div class="progress-bar bg-danger" style="width: 80%"></div></div>
-                                    <h4 class="small font-weight-bold">Computer Science <span class="float-right">40%</span></h4><div class="progress mb-4"><div class="progress-bar bg-warning" style="width: 40%"></div></div>
-                                    <h4 class="small font-weight-bold">Data Structures <span class="float-right">Complete!</span></h4><div class="progress"><div class="progress-bar bg-success" style="width: 100%"></div></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-5 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-2">
-                                <div class="card-header py-3">System Health Log</div>
-                                <div class="card-body">
-                                    <div class="mb-3 p-2 bg-light border-left-success"><strong>Backup:</strong> Successful <span class="float-right small">3h ago</span></div>
-                                    <div class="mb-3 p-2 bg-light border-left-warning"><strong>Database:</strong> Optimization Recommended <span class="float-right small">5h ago</span></div>
-                                    <div class="p-2 bg-light border-left-info"><strong>Security:</strong> SSL Certificate valid.</div>
-                                </div>
+                    <!-- Exam Table -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Exam Title</th>
+                                            <th>Teacher</th>
+                                            <th>Course</th>
+                                            <th>Status</th>
+                                            <th>Violations</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for exam in exams %}
+                                        <tr>
+                                            <td><strong>{{ exam.title }}</strong></td>
+                                            <td>{{ exam.teacher_name }}</td>
+                                            <td>{{ exam.course_code }}</td>
+                                            <td>
+                                                {% if exam.is_live %}
+                                                <span class="text-danger font-weight-bold"><div class="pulse-live"></div> LIVE</span>
+                                                {% else %}
+                                                <span class="badge badge-secondary">Scheduled</span>
+                                                {% endif %}
+                                            </td>
+                                            <td><span class="text-danger font-weight-bold">{{ exam.violation_count }}</span></td>
+                                            <td><button class="btn btn-sm btn-dark">View Details</button></td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td><strong>Midterm: Data Structures</strong></td>
+                                            <td>Prof. Robert Fox</td>
+                                            <td>CS-101</td>
+                                            <td><span class="text-danger font-weight-bold"><div class="pulse-live"></div> LIVE</span></td>
+                                            <td><span class="text-danger font-weight-bold">12</span></td>
+                                            <td><button class="btn btn-sm btn-dark">View Details</button></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
