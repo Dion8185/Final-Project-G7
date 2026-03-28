@@ -134,6 +134,7 @@ def register_student():
         email = request.form.get('email')
         fname = request.form.get('firstname')
         lname = request.form.get('lastname')
+        mname = request.form.get('middlename')
         password = request.form.get('password')
         
         connection = mysql.connector.connect(**db_config)
@@ -162,8 +163,8 @@ def register_student():
             cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, 'student', 0)", 
                            (student_id, email, hashed_pw))
             
-            cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
-                           (student_id, email, fname, lname, request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text')))
+            cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                           (student_id, email, fname, lname, mname, request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text')))
 
             otp = generate_unique_otp()
             expires = datetime.now() + timedelta(minutes=10)
