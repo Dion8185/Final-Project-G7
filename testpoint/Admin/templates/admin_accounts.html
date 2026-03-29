@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-
+ 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -17,18 +17,18 @@
         .sidebar {
             transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important;
         }
-
+ 
         .card {
             border: none;
         }
-
+ 
         .user-avatar {
             width: 35px;
             height: 35px;
             object-fit: cover;
             border-radius: 50%;
         }
-
+ 
         .btn-circle.btn-sm {
             height: 30px;
             width: 30px;
@@ -36,7 +36,7 @@
         }
     </style>
 </head>
-
+ 
 <body id="page-top">
     <div id="wrapper">
         <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
@@ -51,7 +51,7 @@
                         Overview</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">User Management</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"
+            <li class="nav-item active"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"
                     data-target="#collapseUsers"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a>
             </li>
             <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i
@@ -68,7 +68,7 @@
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0"
                     id="sidebarToggle"></button></div>
         </ul>
-
+ 
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 <!-- Topbar - Reusing your exact structure -->
@@ -118,15 +118,20 @@
                         </li>
                     </ul>
                 </nav>
-
+ 
                 <div class="container-fluid animate__animated animate__fadeIn">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Account Manager</h1>
-                        <button class="d-none d-sm-inline-block btn btn-sm btn-dark shadow-sm">
-                            <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Add New User
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="d-none d-sm-inline-block btn btn-sm btn-dark shadow-sm" data-toggle="modal" data-target="#addUserModal">
+                                <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Add New User
+                            </button>
+                            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-dark shadow-sm">
+                                <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Accounts
+                            </a>
+                        </div>
                     </div>
-
+ 
                     <!-- Filter Card -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
@@ -134,33 +139,34 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <form action="" method="GET" class="row">
+                            <!-- Update: Added ID to filter inputs -->
+                            <form id="filterForm" class="row">
                                 <div class="col-md-3 mb-2">
-                                    <select class="form-control" name="role">
+                                    <select class="form-control" name="role" id="roleFilter">
                                         <option value="">All Roles</option>
                                         <option value="student">Students</option>
                                         <option value="teacher">Teachers</option>
+                                        <option value="admin">Admin</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3 mb-2">
-                                    <select class="form-control" name="status">
+                                    <select class="form-control" name="status" id="statusFilter">
                                         <option value="">All Status</option>
-                                        <option value="active">Active/Verified</option>
-                                        <option value="pending">Pending OTP</option>
-                                        <option value="suspended">Suspended</option>
+                                        <option value="verified">Verified</option>
+                                        <option value="pending">Pending</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 mb-2">
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" id="searchInput"
                                         placeholder="Search by name, email, or ID...">
                                 </div>
                                 <div class="col-md-2 mb-2">
-                                    <button type="submit" class="btn btn-dark btn-block">Search</button>
+                                    <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
                                 </div>
                             </form>
                         </div>
                     </div>
-
+ 
                     <!-- Users Table -->
                     <div class="card shadow mb-4">
                         <div class="card-body">
@@ -170,6 +176,7 @@
                                     <thead class="thead-light">
                                         <tr>
                                             <th>ID</th>
+                                            <th>Full Name</th>
                                             <th>Email</th>
                                             <th>Status</th>
                                             <th>Role</th>
@@ -180,15 +187,13 @@
                                     <tbody>
                                         <!-- Dynamic Flask Loop Start -->
                                         {% for user in users %}
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <img src="{{ user[0] }}" class="user-avatar mr-2" alt="">
-                                                    <span class="font-weight-bold text-dark"></span>
-                                                </div>
-                                            </td>
-                                            <td><span class="text-capitalize">{{ user[1] }}</span>
-                                            </td>
+                                        <!-- Added data attributes for filtering -->
+                                        <tr class="user-row" 
+                                            data-role="{{ user[3] }}" 
+                                            data-status="{% if user[4] == 1 %}verified{% else %}pending{% endif %}">
+                                            <td><span class="font-weight-bold text-dark search-data">{{ user[0] }}</span></td>
+                                            <td class="search-data text-capitalize">{{ user[] }}</td> <!-- Adjust index for name -->
+                                            <td class="search-data">{{ user[1] }}</td>
                                             <td>
                                                 {% if user[4] == 1 %}
                                                 <span class="badge badge-success">Verified</span>
@@ -196,58 +201,89 @@
                                                 <span class="badge badge-warning">Pending</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ user[3] }}</td>
-
+                                            <td>
+                                                {% if user[3] == 'admin' %}
+                                                <span class="badge badge-secondary">Admin</span>
+                                                {% elif user[3] == 'teacher' %}
+                                                <span class="badge badge-danger">Teacher</span>
+                                                {% else %}
+                                                <span class="badge badge-primary">Student</span>
+                                                {% endif %}
+                                            </td>
                                             <td class="small">{{ user[5] }}</td>
                                             <td class="text-center">
                                                 <button class="btn btn-info btn-circle btn-sm" title="Edit"
-                                                    data-toggle="modal" data-target="#editUserModal{{ user.id }}">
+                                                    data-toggle="modal" data-target="#editUserModal"
+                                                    data-id="{{ user[0] }}"
+                                                    data-name="{{ user[2] }}"
+                                                    data-email="{{ user[1] }}"
+                                                    data-role="{{ user[3] }}"
+                                                    data-status="{{ user[4] }}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn btn-danger btn-circle btn-sm" title="Delete"
-                                                    data-toggle="modal" data-target="#deleteUserModal{{ user.id }}">
+                                                    onclick="confirmDelete('{{ user[0] }}', '{{ user[2] }}')">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
                                             </td>
                                         </tr>
                                         {% else %}
-                                        <!-- Static Mockup for UI Testing -->
-                                        <tr>
+                                        <!-- Mockup Data 1 -->
+                                        <tr class="user-row" data-role="student" data-status="verified">
+                                            <td><span class="font-weight-bold text-dark search-data">S26-0001</span></td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="https://ui-avatars.com/api/?name=John+Doe&background=4e73df&color=fff"
-                                                        class="user-avatar mr-2">
-                                                    <span class="font-weight-bold text-dark">John Doe</span>
+                                                    <img src="https://ui-avatars.com/api/?name=John+Doe&background=4e73df&color=fff" class="user-avatar mr-2">
+                                                    <span class="font-weight-bold text-dark search-data">John Doe</span>
                                                 </div>
                                             </td>
-                                            <td>Student</td>
-                                            <td>john.doe@example.com</td>
+                                            <td class="search-data"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="32585d5a5c7246574146425d5b5c461c515d5f">[email&#160;protected]</a></td>
                                             <td><span class="badge badge-success">Verified</span></td>
+                                            <td><span class="badge badge-primary">Student</span></td>
                                             <td class="small">Oct 24, 2023</td>
                                             <td class="text-center">
-                                                <button class="btn btn-info btn-circle btn-sm"><i
-                                                        class="fas fa-edit"></i></button>
-                                                <button class="btn btn-danger btn-circle btn-sm"><i
-                                                        class="fas fa-trash"></i></button>
+                                                <button class="btn btn-info btn-circle btn-sm" title="Edit"
+                                                    data-toggle="modal" data-target="#editUserModal"
+                                                    data-id="S26-0001"
+                                                    data-name="John Doe"
+                                                    data-email="john@example.com"
+                                                    data-role="student"
+                                                    data-status="1">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-circle btn-sm" title="Delete"
+                                                    onclick="confirmDelete('S26-0001', 'John Doe')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
-                                        <tr>
+                                        <!-- Mockup Data 2 -->
+                                        <tr class="user-row" data-role="teacher" data-status="pending">
+                                            <td><span class="font-weight-bold text-dark search-data">T26-0002</span></td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="https://ui-avatars.com/api/?name=Sarah+Smith&background=e74a3b&color=fff"
-                                                        class="user-avatar mr-2">
-                                                    <span class="font-weight-bold text-dark">Sarah Smith</span>
+                                                    <img src="https://ui-avatars.com/api/?name=Sarah+Smith&background=e74a3b&color=fff" class="user-avatar mr-2">
+                                                    <span class="font-weight-bold text-dark search-data">Sarah Smith</span>
                                                 </div>
                                             </td>
-                                            <td>Teacher</td>
-                                            <td>s.smith@school.edu</td>
+                                            <td class="search-data"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="32415340535a7246574146425d5b5c461c515d5f">[email&#160;protected]</a></td>
                                             <td><span class="badge badge-warning">Pending</span></td>
+                                            <td><span class="badge badge-danger">Teacher</span></td>
                                             <td class="small">Oct 26, 2023</td>
                                             <td class="text-center">
-                                                <button class="btn btn-info btn-circle btn-sm"><i
-                                                        class="fas fa-edit"></i></button>
-                                                <button class="btn btn-danger btn-circle btn-sm"><i
-                                                        class="fas fa-trash"></i></button>
+                                                <button class="btn btn-info btn-circle btn-sm" title="Edit"
+                                                    data-toggle="modal" data-target="#editUserModal"
+                                                    data-id="T26-0002"
+                                                    data-name="Sarah Smith"
+                                                    data-email="sarah@example.com"
+                                                    data-role="teacher"
+                                                    data-status="0">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-danger btn-circle btn-sm" title="Delete"
+                                                    onclick="confirmDelete('T26-0002', 'Sarah Smith')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                         {% endfor %}
@@ -263,45 +299,22 @@
             </footer>
         </div>
     </div>
-
-    <!-- MODALS SECTION -->
-
-    <!-- Add User Modal -->
+ 
+    <!-- Modals (Add/Edit) kept exactly as in your original file -->
     <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Create New Account</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
+                    <h5 class="modal-title font-weight-bold">Create New Account</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
                 <form action="#" method="POST">
                     <div class="modal-body">
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Full Name</label>
-                            <input type="text" class="form-control" name="full_name" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Email Address</label>
-                            <input type="email" class="form-control" name="email" required>
-                        </div>
+                        <div class="form-group"><label class="small font-weight-bold text-dark">Full Name</label><input type="text" class="form-control" name="full_name" required></div>
+                        <div class="form-group"><label class="small font-weight-bold text-dark">Email Address</label><input type="email" class="form-control" name="email" required></div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Role</label>
-                                    <select class="form-control" name="role">
-                                        <option value="student">Student</option>
-                                        <option value="teacher">Teacher</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Initial Password</label>
-                                    <input type="password" class="form-control" name="password" required>
-                                </div>
-                            </div>
+                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Role</label><select class="form-control" name="role"><option value="student">Student</option><option value="teacher">Teacher</option></select></div></div>
+                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Initial Password</label><input type="password" class="form-control" name="password" required></div></div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
@@ -312,25 +325,47 @@
             </div>
         </div>
     </div>
-
-    <!-- Edit User Modal (Placeholder for dynamic ID) -->
+ 
+    <!-- Edit User Modal -->
     <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title">Update User Details</h5>
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-user-edit mr-2"></i>Edit Account</h5>
                     <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <form action="#" method="POST">
+                <form id="editUserForm" action="#" method="POST">
+                    <input type="hidden" name="user_id" id="editUserId">
                     <div class="modal-body">
                         <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Status</label>
-                            <select class="form-control" name="status">
-                                <option value="active">Active</option>
-                                <option value="suspended">Suspended</option>
-                            </select>
+                            <label class="small font-weight-bold text-dark">Full Name</label>
+                            <input type="text" class="form-control" name="full_name" id="editUserName" required>
                         </div>
-                        <!-- Other fields similar to Add Modal -->
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Email Address</label>
+                            <input type="email" class="form-control" name="email" id="editUserEmail" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold text-dark">Role</label>
+                                    <select class="form-control" name="role" id="editUserRole">
+                                        <option value="student">Student</option>
+                                        <option value="teacher">Teacher</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold text-dark">Status</label>
+                                    <select class="form-control" name="status" id="editUserStatus">
+                                        <option value="1">Verified</option>
+                                        <option value="0">Pending</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -342,18 +377,76 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
     <script>
         (function ($) {
             "use strict";
+            // Sidebar Toggling Logic
             $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
                 $("body").toggleClass("sidebar-toggled");
                 $(".sidebar").toggleClass("toggled");
             });
+
+            // --- FILTERING LOGIC START ---
+            function performFilter() {
+                var searchVal = $('#searchInput').val().toLowerCase();
+                var roleVal = $('#roleFilter').val().toLowerCase();
+                var statusVal = $('#statusFilter').val().toLowerCase();
+
+                $(".user-row").each(function() {
+                    var row = $(this);
+                    
+                    // Get data from columns and data-attributes
+                    var rowText = row.find('.search-data').text().toLowerCase();
+                    var rowRole = row.attr('data-role').toLowerCase();
+                    var rowStatus = row.attr('data-status').toLowerCase();
+
+                    // Logic Checks
+                    var matchesSearch = rowText.indexOf(searchVal) > -1;
+                    var matchesRole = roleVal === "" || rowRole === roleVal;
+                    var matchesStatus = statusVal === "" || rowStatus === statusVal;
+
+                    // Show/Hide based on all conditions (AND logic)
+                    if (matchesSearch && matchesRole && matchesStatus) {
+                        row.show();
+                    } else {
+                        row.hide();
+                    }
+                });
+            }
+
+            // Listen for input events
+            $('#searchInput').on('keyup', performFilter);
+            $('#roleFilter, #statusFilter').on('change', performFilter);
+
+            // Reset filters
+            $('#resetFilters').on('click', function() {
+                $('#searchInput').val('');
+                $('#roleFilter').val('');
+                $('#statusFilter').val('');
+                performFilter();
+            });
+
+            // --- EDIT MODAL: Populate fields from data attributes ---
+            $('#editUserModal').on('show.bs.modal', function(event) {
+                var btn = $(event.relatedTarget);
+                $('#editUserId').val(btn.data('id'));
+                $('#editUserName').val(btn.data('name'));
+                $('#editUserEmail').val(btn.data('email'));
+                $('#editUserRole').val(btn.data('role'));
+                $('#editUserStatus').val(String(btn.data('status')));
+            });
+
         })(jQuery);
+
+        // --- DELETE CONFIRMATION ---
+        function confirmDelete(userId, userName) {
+            if (confirm('Are you sure you want to delete the account of "' + userName + '" (ID: ' + userId + ')?\n\nThis action cannot be undone.')) {
+                window.location.href = '/admin/delete_account/' + userId;
+            }
+        }
     </script>
 </body>
-
 </html>
