@@ -20,16 +20,17 @@
 </head>
 <body id="page-top">
     <div id="wrapper">
+        <!-- SIDE BAR -->
         <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
                 <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
                 <div class="sidebar-brand-text mx-3">Teacher Panel</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Exam Control</div>
-            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
+            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
                 <div id="collapseQuestions" class="collapse"><div class="bg-white py-2 collapse-inner rounded">
@@ -45,11 +46,14 @@
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
 
+        <!-- TOP BAR -->
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
+                        
+                        <!-- NOTIFICATION DROP DOWN -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
                                 <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
@@ -60,6 +64,8 @@
                                 <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
                             </div>
                         </li>
+                        
+                        <!-- PROFILE DROP DOWN -->
                         <div class="topbar-divider d-none d-sm-block"></div>
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
@@ -75,42 +81,113 @@
                     </ul>
                 </nav>
 
+                <!-- MAIN PAGE CONTENT -->
                 <div class="container-fluid animate__animated animate__fadeInUp">
-                    <h1 class="h3 mb-4 text-gray-800">Exam Overview</h1>
-                    <div class="row">
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-danger shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Active Examinees</div><div class="h5 mb-0 font-weight-bold text-gray-800">42</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-warning shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Essays</div><div class="h5 mb-0 font-weight-bold text-gray-800">12</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-success text-uppercase mb-1">Class Avg</div><div class="h5 mb-0 font-weight-bold text-gray-800">84%</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-dark shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Question Count</div><div class="h5 mb-0 font-weight-bold text-gray-800">512</div></div></div></div>
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">Exam Management</h1>
+                        <button class="btn btn-sm btn-danger shadow-sm" data-toggle="modal" data-target="#createExamModal">
+                            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i>Create New Exam
+                        </button>
                     </div>
 
-                    <div class="row">
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-1">
-                                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-danger">Question Bank Distribution</h6></div>
-                                <div class="card-body">
-                                    <h4 class="small font-weight-bold">Multiple Choice <span class="float-right">60%</span></h4><div class="progress mb-4"><div class="progress-bar bg-danger" style="width: 60%"></div></div>
-                                    <h4 class="small font-weight-bold">True/False <span class="float-right">30%</span></h4><div class="progress mb-4"><div class="progress-bar bg-warning" style="width: 30%"></div></div>
-                                    <h4 class="small font-weight-bold">Identification <span class="float-right">10%</span></h4><div class="progress"><div class="progress-bar bg-info" style="width: 10%"></div></div>
-                                </div>
-                            </div>
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 bg-white">
+                            <h6 class="m-0 font-weight-bold text-danger">My Created Exams</h6>
                         </div>
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-2">
-                                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-danger">Item Analysis (Risk Questions)</h6></div>
-                                <div class="card-body text-center">
-                                    <p class="small">The following questions have a >50% failure rate:</p>
-                                    <div class="btn btn-outline-danger btn-sm m-1">Q #14</div><div class="btn btn-outline-danger btn-sm m-1">Q #22</div><div class="btn btn-outline-danger btn-sm m-1">Q #89</div>
-                                    <hr><a href="#" class="btn btn-danger btn-sm">Optimize Questions</a>
-                                </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Exam Title</th>
+                                            <th>Subject</th>
+                                            <th>Time Limit</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for exam in exams %}
+                                        <tr>
+                                            <td class="font-weight-bold text-dark">{{ exam.title }}</td>
+                                            <td>{{ exam.subject }}</td>
+                                            <td>{{ exam.duration }} mins</td>
+                                            <td><span class="badge badge-success">Active</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-circle btn-info shadow-sm" title="Edit"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-circle btn-danger shadow-sm" title="Delete"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr>
+                                            <td class="font-weight-bold text-dark">Midterm: Data Structures</td>
+                                            <td>Computer Science</td>
+                                            <td>60 mins</td>
+                                            <td><span class="badge badge-success">Active</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-circle btn-info shadow-sm"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-circle btn-danger shadow-sm"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- FOOTER -->
             <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
+
+    <!-- CREATE EXAM MODAL -->
+    <div class="modal fade" id="createExamModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold">New Exam Configuration</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form action="#" method="POST">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Exam Title</label>
+                            <input type="text" class="form-control" placeholder="e.g. Unit 1 Quiz" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Subject/Course</label>
+                            <select class="form-control">
+                                <option>Computer Science</option>
+                                <option>Web Development</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold text-dark">Duration (Mins)</label>
+                                    <input type="number" class="form-control" value="60">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold text-dark">Passing Score (%)</label>
+                                    <input type="number" class="form-control" value="75">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-danger shadow-sm" type="submit">Initialize Exam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>

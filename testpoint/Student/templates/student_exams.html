@@ -20,25 +20,31 @@
 </head>
 <body id="page-top">
     <div id="wrapper">
+
+        <!-- Side Bar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
                 <div class="sidebar-brand-icon rotate-n-15"><i class="fas fa-user-graduate"></i></div>
                 <div class="sidebar-brand-text mx-3">Student Portal</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>Exam Dashboard</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-pen-alt"></i><span>Available Exams</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-tachometer-alt"></i><span>Exam Dashboard</span></a></li>
+            <!-- SET TO ACTIVE -->
+            <li class="nav-item active"><a class="nav-link" href="#"><i class="fas fa-fw fa-pen-alt"></i><span>Available Exams</span></a></li>
             <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-poll-h"></i><span>Test Results</span></a></li>
             <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-fw fa-award"></i><span>Certificates</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
 
+        <!-- Top Bar -->
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
+                        
+                        <!-- NOTIFICATION DROP DOWN -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
                                 <i class="fas fa-bell fa-fw text-gray-600"></i><span class="badge badge-danger badge-counter">1</span>
@@ -48,6 +54,8 @@
                                 <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Your "Midterm" grade was posted!</div></a>
                             </div>
                         </li>
+                        
+                        <!-- PROFILE DROP DOWN -->                        
                         <div class="topbar-divider d-none d-sm-block"></div>
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
@@ -63,44 +71,61 @@
                     </ul>
                 </nav>
 
+                <!-- Start of Page Content -->
                 <div class="container-fluid animate__animated animate__fadeInUp">
-                    <h1 class="h3 mb-4 text-gray-800">Welcome, Alice!</h1>
+                    <h1 class="h3 mb-4 text-gray-800">Available Exams</h1>
                     <div class="row">
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-primary shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Exams</div><div class="h5 mb-0 font-weight-bold text-gray-800">22</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-success text-uppercase mb-1">Weighted GPA</div><div class="h5 mb-0 font-weight-bold text-gray-800">3.85</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-info shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-info text-uppercase mb-1">Class Rank</div><div class="h5 mb-0 font-weight-bold text-gray-800">#4 / 45</div></div></div></div>
-                        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-warning shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Certificates</div><div class="h5 mb-0 font-weight-bold text-gray-800">5</div></div></div></div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-1">
-                                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Course Progress</h6></div>
+                        <!-- Exam Card Mockup -->
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
                                 <div class="card-body">
-                                    <h4 class="small font-weight-bold">Algorithms <span class="float-right">85%</span></h4><div class="progress mb-4"><div class="progress-bar bg-primary" style="width: 85%"></div></div>
-                                    <h4 class="small font-weight-bold">Web Development <span class="float-right">100%</span></h4><div class="progress mb-4"><div class="progress-bar bg-success" style="width: 100%"></div></div>
-                                    <h4 class="small font-weight-bold">Networking <span class="float-right">Pending Finals</span></h4><div class="progress"><div class="progress-bar bg-warning" style="width: 20%"></div></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-2">
-                                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Upcoming Exam Timeline</h6></div>
-                                <div class="card-body">
-                                    <ul class="timeline">
-                                        <li class="timeline-item"><strong>Algorithms Midterm</strong><br><small class="text-muted">Today at 2:00 PM</small></li>
-                                        <li class="timeline-item"><strong>Networking Quiz 2</strong><br><small class="text-muted">Tomorrow</small></li>
-                                        <li class="timeline-item"><strong>English Proficiency</strong><br><small class="text-muted">Next Monday</small></li>
-                                    </ul>
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Computer Science</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">Data Structures Midterm</div>
+                                            <div class="mt-2 small text-gray-600"><i class="fas fa-clock mr-1"></i> 60 Minutes</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-edit fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary btn-block btn-sm mt-3 shadow-sm" data-toggle="modal" data-target="#startExamModal">Take Exam</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!-- End of Page Content -->
+
             </div>
             <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
+
+    <!-- Start Exam Modal -->
+    <div class="modal fade" id="startExamModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold">Exam Instructions</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-dark">Please read the following carefully:</p>
+                    <ul class="small text-muted">
+                        <li>Once started, the timer cannot be paused.</li>
+                        <li>Switching tabs or minimizing the browser will be logged as a violation.</li>
+                        <li>Ensure you have a stable internet connection.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <a href="#" class="btn btn-primary">Start Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
