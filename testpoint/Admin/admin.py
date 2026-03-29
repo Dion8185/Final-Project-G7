@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import mysql.connector
 from testpoint import db_config
 from testpoint.Auth.login import admin_logged_in
 
@@ -19,7 +20,15 @@ def admin_dashboard():
 def manage_accounts():
     
     if admin_logged_in():
-        return render_template('admin_accounts.html')
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("SELECT * FROM users WHERE is_verified = 1;")
+        users = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+
+        return render_template('admin_accounts.html', users=users)
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
@@ -61,4 +70,3 @@ def settings():
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
-    

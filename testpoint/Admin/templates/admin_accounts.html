@@ -38,14 +38,16 @@
 </head>
 
 <body id="page-top">
-   <div id="wrapper">
+    <div id="wrapper">
         <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center"
+                href="{{url_for('admin.admin_dashboard')}}">
                 <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
                 <div class="sidebar-brand-text mx-3">System Admin</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i
+                        class="fas fa-fw fa-tachometer-alt"></i><span>System
                         Overview</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">User Management</div>
@@ -167,10 +169,10 @@
                                     cellspacing="0">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th>User</th>
-                                            <th>Role</th>
+                                            <th>ID</th>
                                             <th>Email</th>
                                             <th>Status</th>
+                                            <th>Role</th>
                                             <th>Joined Date</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
@@ -181,22 +183,22 @@
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="{{ user.avatar }}" class="user-avatar mr-2" alt="">
-                                                    <span class="font-weight-bold text-dark">{{ user.name }}</span>
+                                                    <img src="{{ user[0] }}" class="user-avatar mr-2" alt="">
+                                                    <span class="font-weight-bold text-dark"></span>
                                                 </div>
                                             </td>
-                                            <td><span class="text-capitalize">{{ user.role }}</span></td>
-                                            <td>{{ user.email }}</td>
+                                            <td><span class="text-capitalize">{{ user[1] }}</span>
+                                            </td>
                                             <td>
-                                                {% if user.status == 'active' %}
+                                                {% if user[4] == 1 %}
                                                 <span class="badge badge-success">Verified</span>
-                                                {% elif user.status == 'suspended' %}
-                                                <span class="badge badge-danger">Suspended</span>
                                                 {% else %}
                                                 <span class="badge badge-warning">Pending</span>
                                                 {% endif %}
                                             </td>
-                                            <td class="small">{{ user.created_at }}</td>
+                                            <td>{{ user[3] }}</td>
+
+                                            <td class="small">{{ user[5] }}</td>
                                             <td class="text-center">
                                                 <button class="btn btn-info btn-circle btn-sm" title="Edit"
                                                     data-toggle="modal" data-target="#editUserModal{{ user.id }}">
