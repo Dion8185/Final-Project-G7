@@ -22,11 +22,28 @@ def manage_accounts():
     if admin_logged_in():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM users WHERE is_verified = 1;")
+        cursor.execute(""" SELECT 
+                            u.user_id,
+                            -- Choose name from students or teachers
+                            COALESCE(s.firstname, t.firstname) AS firstname,
+                            COALESCE(s.middlename, t.middlename) AS middlename,
+                            COALESCE(s.lastname, t.lastname) AS lastname,
+                            u.email,
+                            u.role,
+                            u.is_verified,
+                            u.created_at
+                            FROM users u
+                            LEFT JOIN students s
+                                ON u.user_id = s.student_id
+                            LEFT JOIN teachers t
+                                ON u.user_id = t.teacher_id
+                            WHERE u.is_active = 1;
+        """)
         users = cursor.fetchall()
-
         cursor.close()
         connection.close()
+        
+
 
         return render_template('admin_accounts.html', users=users)
     
@@ -66,6 +83,38 @@ def user_logs():
 def settings():
     if admin_logged_in():
         return render_template('admin_settings.html')
+    
+    else:
+        flash('Please log in as admin to access the dashboard.', 'danger')
+        return redirect(url_for('auth.login'))
+    
+@admin.route('/trashed_accounts')
+def trashed_accounts():
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute(""" SELECT 
+                            u.user_id,
+                            -- Choose name from students or teachers
+                            COALESCE(s.firstname, t.firstname) AS firstname,
+                            COALESCE(s.middlename, t.middlename) AS middlename,
+                            COALESCE(s.lastname, t.lastname) AS lastname,
+                            u.email,
+                            u.role,
+                            u.is_verified,
+                            u.created_at
+                            FROM users u
+                            LEFT JOIN students s
+                                ON u.user_id = s.student_id
+                            LEFT JOIN teachers t
+                                ON u.user_id = t.teacher_id
+                            WHERE u.is_active = NULL OR u.is_active = 0;
+        """)
+        trashed_users = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        
+        return render_template('admin_trashed.html', trashed_users=trashed_users)
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
