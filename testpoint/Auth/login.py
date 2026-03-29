@@ -54,6 +54,7 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
         msg = Message(subject='Account Verification Code', sender='verify@gmail.com', recipients=[recipient_email])
         msg.html = f"<h3>Hello {recipient_name},</h3><p>Your 6-digit verification code is: <b>{otp_code}</b></p>"
         mail.send(msg)
+        print("📧 Generated OTP for account: " + otp_code)
     except Exception as e:
         print(f"Error sending email: {e}")
 
