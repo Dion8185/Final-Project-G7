@@ -4,7 +4,7 @@ from flask_mail import Mail
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': 'AbaduGaben69',
+    'password': 'dion8185',
     'database': 'test_point',
     'auth_plugin': 'mysql_native_password'
 }
@@ -29,7 +29,7 @@ def create_app():
     from testpoint.Teacher.teacher import teacher
     
     app.register_blueprint(auth)
-    app.register_blueprint(admin)
+    app.register_blueprint(admin, url_prefix='/admin')
     app.register_blueprint(teacher)
     app.register_blueprint(student)
     

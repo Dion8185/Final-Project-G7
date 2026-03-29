@@ -113,6 +113,7 @@
                             {% endif %}
                             {% endwith %}
 
+                            <!-- ── Updated Form for register_teacher.html ── -->
                             <form id="teacherRegisterForm" class="user" method="POST"
                                 action="{{ url_for('auth.register_teacher') }}" novalidate>
 
@@ -122,17 +123,20 @@
                                 <div class="form-group row">
                                     <div class="col-sm-4 mb-3 mb-sm-0">
                                         <input type="text" class="form-control form-control-user" id="firstname"
-                                            name="firstname" placeholder="First Name" required>
+                                            name="firstname" placeholder="First Name"
+                                            value="{{ request.form.get('firstname', '') }}" required>
                                         <span class="field-feedback" id="firstname-feedback"></span>
                                     </div>
                                     <div class="col-sm-4 mb-3 mb-sm-0">
                                         <input type="text" class="form-control form-control-user" id="middlename"
-                                            name="middlename" placeholder="Middle Name (Optional)">
+                                            name="middlename" placeholder="Middle Name (Optional)"
+                                            value="{{ request.form.get('middlename', '') }}">
                                         <span class="field-feedback" id="middlename-feedback"></span>
                                     </div>
                                     <div class="col-sm-4">
                                         <input type="text" class="form-control form-control-user" id="lastname"
-                                            name="lastname" placeholder="Last Name" required>
+                                            name="lastname" placeholder="Last Name"
+                                            value="{{ request.form.get('lastname', '') }}" required>
                                         <span class="field-feedback" id="lastname-feedback"></span>
                                     </div>
                                 </div>
@@ -140,11 +144,12 @@
                                 <!-- ── Email ── -->
                                 <div class="form-group">
                                     <input type="email" class="form-control form-control-user" id="email" name="email"
-                                        placeholder="Professional Email Address" required>
+                                        placeholder="Professional Email Address"
+                                        value="{{ request.form.get('email', '') }}" required>
                                     <span class="field-feedback" id="email-feedback"></span>
                                 </div>
 
-                                <!-- ── Password ── -->
+                                <!-- ── Password (Empty for security) ── -->
                                 <div class="form-group row">
                                     <div class="col-sm-6 mb-3 mb-sm-0">
                                         <input type="password" class="form-control form-control-user" id="password"
@@ -174,7 +179,9 @@
                                             required>
                                             <option value="">— Region —</option>
                                         </select>
-                                        <input type="hidden" name="region_text" id="region-text">
+                                        <!-- Hidden text fields allow the JS to re-select these on page load -->
+                                        <input type="hidden" name="region_text" id="region-text"
+                                            value="{{ request.form.get('region_text', '') }}">
                                         <span class="field-feedback" id="region-feedback"></span>
                                     </div>
                                     <div class="col-sm-6">
@@ -182,7 +189,8 @@
                                             required>
                                             <option value="">— Province —</option>
                                         </select>
-                                        <input type="hidden" name="province_text" id="province-text">
+                                        <input type="hidden" name="province_text" id="province-text"
+                                            value="{{ request.form.get('province_text', '') }}">
                                         <span class="field-feedback" id="province-feedback"></span>
                                     </div>
                                 </div>
@@ -192,7 +200,8 @@
                                         <select name="city" class="form-control form-control-user" id="city" required>
                                             <option value="">— City / Municipality —</option>
                                         </select>
-                                        <input type="hidden" name="city_text" id="city-text">
+                                        <input type="hidden" name="city_text" id="city-text"
+                                            value="{{ request.form.get('city_text', '') }}">
                                         <span class="field-feedback" id="city-feedback"></span>
                                     </div>
                                     <div class="col-sm-6">
@@ -200,7 +209,8 @@
                                             required>
                                             <option value="">— Barangay —</option>
                                         </select>
-                                        <input type="hidden" name="barangay_text" id="barangay-text">
+                                        <input type="hidden" name="barangay_text" id="barangay-text"
+                                            value="{{ request.form.get('barangay_text', '') }}">
                                         <span class="field-feedback" id="barangay-feedback"></span>
                                     </div>
                                 </div>
@@ -209,8 +219,50 @@
                                 <button type="submit" class="btn btn-danger btn-user btn-block">
                                     Register Account
                                 </button>
-
                             </form>
+
+                            <!-- ── Added Script to handle the "re-validation" on page load ── -->
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    // This triggers your JS validation rules immediately for fields filled by Jinja
+                                    const fieldsToValidate = ['firstname', 'middlename', 'lastname', 'email'];
+                                    fieldsToValidate.forEach(id => {
+                                        const el = document.getElementById(id);
+                                        if (el && el.value.trim() !== "") {
+                                            // Trigger 'input' event to fire the existing validation logic
+                                            el.dispatchEvent(new Event('input'));
+                                        }
+                                    });
+
+                                    // The Address Selector logic uses the values in the hidden inputs
+                                    // to automatically re-populate the selects.
+                                    const rText = document.getElementById('region-text').value;
+                                    const pText = document.getElementById('province-text').value;
+                                    const cText = document.getElementById('city-text').value;
+                                    const bText = document.getElementById('barangay-text').value;
+
+                                    if (rText) {
+                                        setTimeout(() => {
+                                            $("#region option").filter(function () { return $(this).text() === rText; }).prop('selected', true).trigger('change');
+                                            if (pText) {
+                                                setTimeout(() => {
+                                                    $("#province option").filter(function () { return $(this).text() === pText; }).prop('selected', true).trigger('change');
+                                                    if (cText) {
+                                                        setTimeout(() => {
+                                                            $("#city option").filter(function () { return $(this).text() === cText; }).prop('selected', true).trigger('change');
+                                                            if (bText) {
+                                                                setTimeout(() => {
+                                                                    $("#barangay option").filter(function () { return $(this).text() === bText; }).prop('selected', true).trigger('change');
+                                                                }, 300);
+                                                            }
+                                                        }, 300);
+                                                    }
+                                                }, 300);
+                                            }
+                                        }, 500); // Small delay to let the ph-address-selector.js load regions
+                                    }
+                                });
+                            </script>
                             <hr>
                             <div class="text-center">
                                 <a class="small" href="{{ url_for('auth.login') }}">Already have an account? Login!</a>

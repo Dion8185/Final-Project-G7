@@ -224,7 +224,7 @@ def register_teacher():
             cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, 'teacher', 0)", 
                            (teacher_id, email, hashed_pw))
             
-            cursor.execute("INSERT INTO teacher (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            cursor.execute("INSERT INTO teachers (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                            (teacher_id, email, fname, lname, mname, request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text')))
 
             otp = generate_unique_otp()
