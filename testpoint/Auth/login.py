@@ -189,6 +189,66 @@ def register_student():
             
     return render_template('register.html')
 
+@auth.route('/register/teacher', methods=['GET', 'POST'])
+def register_teacher():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        fname = request.form.get('firstname')
+        lname = request.form.get('lastname')
+        mname = request.form.get('middlename')
+        password = request.form.get('password')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+        existing_user = cursor.fetchone()
+        
+        if existing_user:
+           
+            if existing_user['is_verified'] == 0:
+                session['pending_user_id'] = existing_user['user_id']
+                session['email'] = email
+                session['firstname'] = fname
+                flash("This email is already registered but unverified. Redirecting to verification.", "info")
+                return redirect(url_for('auth.verify_register'))
+            else:
+                flash("Email already in use. Please log in.", "danger")
+                return render_template('register_teacher.html')
+
+
+        hashed_pw = generate_password_hash(password)
+        teacher_id = generate_id('T')
+
+        try:
+            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, 'teacher', 0)", 
+                           (teacher_id, email, hashed_pw))
+            
+            cursor.execute("INSERT INTO teacher (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                           (teacher_id, email, fname, lname, mname, request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text')))
+
+            otp = generate_unique_otp()
+            expires = datetime.now() + timedelta(minutes=10)
+            cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at) VALUES (%s, %s, %s)", (teacher_id, otp, expires))
+            
+            connection.commit()
+            send_otp_email(email, fname, otp)
+            
+            session['pending_user_id'] = teacher_id
+            session['email'] = email
+            session['firstname'] = fname
+            
+            return redirect(url_for('auth.verify_register'))
+        
+        except Exception as e:
+            connection.rollback()
+            flash(f"Error: {str(e)}", "danger")
+        finally:
+            cursor.close()
+            connection.close()
+            
+    return render_template('register_teacher.html')
+
 @auth.route('/verify_register', methods=['GET', 'POST'])
 def verify_register():
     user_id = session.get('pending_user_id')
