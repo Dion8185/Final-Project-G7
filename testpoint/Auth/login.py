@@ -51,8 +51,64 @@ def generate_unique_otp():
 
 def send_otp_email(recipient_email, recipient_name, otp_code):
     try:
-        msg = Message(subject='Account Verification Code', sender='verify@gmail.com', recipients=[recipient_email])
-        msg.html = f"<h3>Hello {recipient_name},</h3><p>Your 6-digit verification code is: <b>{otp_code}</b></p>"
+        msg = Message(subject='Test Point - Account Verification Code', sender='verify@gmail.com', recipients=[recipient_email])
+        msg.html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verification Code</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Georgia',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="min-height:100vh;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;background-color:#16161e;border:1px solid #2a2a38;border-radius:16px;overflow:hidden;">
+        <tr><td style="height:4px;background:linear-gradient(90deg,#c9a96e 0%,#e8c98a 50%,#c9a96e 100%);"></td></tr>
+        <tr>
+          <td align="center" style="padding:40px 48px 32px;">
+            <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#c9a96e,#8a6535);margin:0 auto 16px;text-align:center;line-height:52px;font-size:22px;">✦</div>
+            <span style="font-family:'Georgia',serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#c9a96e;">Verification Required</span>
+          </td>
+        </tr>
+        <tr><td style="padding:0 48px;"><div style="height:1px;background:linear-gradient(90deg,transparent,#2a2a38,transparent);"></div></td></tr>
+        <tr>
+          <td style="padding:40px 48px 32px;">
+            <p style="margin:0 0 8px;font-size:22px;color:#f0ede8;font-weight:normal;line-height:1.3;">
+              Hello, <span style="color:#c9a96e;">{recipient_name}</span>
+            </p>
+            <p style="margin:0 0 32px;font-size:15px;color:#7a7a8c;line-height:1.7;">
+              Use the one-time code below to complete your verification. This code is valid for
+              <strong style="color:#a0a0b0;">10 minutes</strong> and should not be shared with anyone.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="padding:32px 0;background-color:#0f0f13;border-radius:12px;border:1px solid #2a2a38;">
+                  <p style="margin:0 0 10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a5a6e;">Your verification code</p>
+                  <p style="margin:0;font-family:'Courier New',monospace;font-size:42px;font-weight:700;letter-spacing:14px;color:#c9a96e;text-indent:14px;">{otp_code}</p>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:28px 0 0;font-size:13px;color:#5a5a6e;line-height:1.7;">
+              If you did not request this code, you can safely disregard this email.
+            </p>
+          </td>
+        </tr>
+        <tr><td style="padding:0 48px;"><div style="height:1px;background:linear-gradient(90deg,transparent,#2a2a38,transparent);"></div></td></tr>
+        <tr>
+          <td align="center" style="padding:28px 48px 40px;">
+            <p style="margin:0 0 6px;font-size:12px;color:#3a3a4a;">Need help? <a href="#" style="color:#c9a96e;text-decoration:none;">Contact Support</a></p>
+            <p style="margin:0;font-size:11px;color:#2e2e3a;letter-spacing:1px;">© 2026 · All rights reserved</p>
+          </td>
+        </tr>
+        <tr><td style="height:2px;background:linear-gradient(90deg,transparent,#2a2a38,transparent);"></td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+"""
+    
         mail.send(msg)
         print("📧 Generated OTP for account: " + otp_code)
     except Exception as e:
