@@ -180,6 +180,7 @@ def add_user():
         province = request.form.get('province_text')
         city = request.form.get('city_text')
         barangay = request.form.get('barangay_text')
+    
 
         role_prefixes = {
             'admin': 'A',
@@ -193,8 +194,9 @@ def add_user():
 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
-
+        
         try:
+            
             cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
                 flash('User with this email already exists.', 'danger')
@@ -318,28 +320,141 @@ def empty_trash():
 #! MANAGE COURSES
 @admin.route('/manage_courses')
 def manage_courses():
-    
     if admin_logged_in():
-        return render_template('admin_courses.html')
-    
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True) # Use dictionary=True to use course['column_name'] in HTML
+        
+        cursor.execute("SELECT course_id, course_code, course_name, description FROM courses")
+        courses = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        return render_template('admin_courses.html', courses=courses)
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
-    
+
+@admin.route('/add_course', methods=['POST'])
+def add_course():
+    if admin_logged_in():
+        course_code = request.form.get('course_code')
+        course_name = request.form.get('course_name')
+        description = request.form.get('description')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("INSERT INTO courses (course_code, course_name, description) VALUES (%s, %s, %s)", 
+                           (course_code, course_name, description))
+            connection.commit()
+            flash(f'Course {course_code} added successfully!', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.manage_courses'))
+    return redirect(url_for('auth.login'))
+
+@admin.route('/update_course/<int:course_id>', methods=['POST'])
+def update_course(course_id):
+    if admin_logged_in():
+        course_code = request.form.get('course_code')
+        course_name = request.form.get('course_name')
+        description = request.form.get('description')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("""
+                UPDATE courses 
+                SET course_code = %s, course_name = %s, description = %s 
+                WHERE course_id = %s
+            """, (course_code, course_name, description, course_id))
+            connection.commit()
+            flash('Course updated successfully.', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.manage_courses'))
+    return redirect(url_for('auth.login'))
+
+@admin.route('/delete_course/<int:course_id>', methods=['POST'])
+def delete_course(course_id):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("DELETE FROM courses WHERE course_id = %s", (course_id,))
+            connection.commit()
+            flash('Course deleted successfully.', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Cannot delete course: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.manage_courses'))
+    return redirect(url_for('auth.login'))
+
+
+#! MANAGE EXAMS
 @admin.route('/oversee_exams')
 def oversee_exams():
     if admin_logged_in():
-        return render_template('admin_exams.html')
-    
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        # Fetch exams joined with course names for the table
+        cursor.execute("""
+            SELECT e.exam_id, e.title, c.course_name, e.duration_minutes, e.pass_percentage, e.is_active 
+            FROM exams e 
+            JOIN courses c ON e.course_id = c.course_id
+        """)
+        exams = cursor.fetchall()
+        
+        # Fetch courses to populate the "Select Course" dropdown in the Add Exam modal
+        cursor.execute("SELECT course_id, course_name FROM courses")
+        courses = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        return render_template('admin_exams.html', exams=exams, courses=courses)
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
+
+@admin.route('/add_exam', methods=['POST'])
+def add_exam():
+    if admin_logged_in():
+        course_id = request.form.get('course_id')
+        title = request.form.get('title')
+        duration = request.form.get('duration')
+        pass_percent = request.form.get('pass_percentage')
+        created_by = session.get('user_id') 
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("""
+                INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, created_by) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (course_id, title, duration, pass_percent, created_by))
+            connection.commit()
+            flash('Exam created successfully!', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.oversee_exams'))
+    return redirect(url_for('auth.login'))
     
 @admin.route('/user_logs')
 def user_logs():
     if admin_logged_in():
         return render_template('admin_logs.html')
-    
+        
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))

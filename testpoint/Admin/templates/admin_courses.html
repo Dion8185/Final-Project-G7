@@ -6,105 +6,106 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Admin - Manage Courses</title>
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
     <style>
-        .sidebar {
-            transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important;
-        }
+        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
+        .card { border: none; }
+        .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
 
-        .card {
-            transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
-            border: none;
+        /* ── VALIDATION STYLES ── */
+        .form-control.is-valid, .form-control.is-valid:focus {
+            border-color: #28a745 !important;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, .25) !important;
+            background-image: none !important;
         }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important;
+        .form-control.is-invalid, .form-control.is-invalid:focus {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, .25) !important;
+            background-image: none !important;
         }
+        .field-feedback {
+            font-size: 0.70rem;
+            margin-top: 0.2rem;
+            display: block;
+            min-height: 1rem;
+            padding-left: 5px;
+        }
+        .field-feedback.valid-msg { color: #28a745; }
+        .field-feedback.invalid-msg { color: #dc3545; }
 
-        .animate-delay-1 {
-            animation-delay: 0.1s;
+        /* ── SECTION LABEL ── */
+        .section-header {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #4e73df;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 1rem;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e3e6f0;
         }
     </style>
 </head>
 
 <body id="page-top">
-   <div id="wrapper">
+    <div id="wrapper">
+        <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
                 <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
                 <div class="sidebar-brand-text mx-3">System Admin</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System
-                        Overview</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">User Management</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"
-                    data-target="#collapseUsers"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a>
-            </li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i
-                        class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.oversee_exams')}}"><i
-                        class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a></li>
+            <li class="nav-item active"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.oversee_exams')}}"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">System</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.user_logs')}}"><i
-                        class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.settings')}}"><i
-                        class="fas fa-fw fa-cogs"></i><span>System Settings</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.user_logs')}}"><i class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.settings')}}"><i class="fas fa-fw fa-cogs"></i><span>System Settings</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0"
-                    id="sidebarToggle"></button></div>
+            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
-        
+
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                <!-- TOP BAR - FIXED -->
+                <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i
-                            class="fa fa-bars"></i></button>
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown">
-                                <i class="fas fa-bell fa-fw text-gray-600"></i><span
-                                    class="badge badge-danger badge-counter">3+</span>
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
+                                <i class="fas fa-bell fa-fw text-gray-600"></i><span class="badge badge-danger badge-counter">3+</span>
                             </a>
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header bg-dark border-dark">System Notifications</h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="mr-3">
-                                        <div class="icon-circle bg-dark"><i class="fas fa-user-plus text-white"></i>
-                                        </div>
+                                        <div class="icon-circle bg-dark"><i class="fas fa-user-plus text-white"></i></div>
                                     </div>
-                                    <div>
-                                        <div class="small text-gray-500">October 26</div>New teacher registration
-                                        pending approval.
-                                    </div>
+                                    <div><div class="small text-gray-500">October 26</div>New course created.</div>
                                 </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View All Alerts</a>
                             </div>
                         </li>
                         <div class="topbar-divider d-none d-sm-block"></div>
                         <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                data-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">System Admin</span>
-                                <img class="img-profile rounded-circle"
-                                    src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
+                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
                             </a>
                         </li>
                     </ul>
                 </nav>
 
-                <div class="container-fluid animate__animated animate__fadeInUp">
+                <div class="container-fluid animate__animated animate__fadeIn">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Manage Courses</h1>
                         <button class="btn btn-sm btn-dark shadow-sm" data-toggle="modal" data-target="#addCourseModal">
@@ -112,16 +113,29 @@
                         </button>
                     </div>
 
-                    <!-- Filter Card -->
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Search Card -->
                     <div class="card shadow mb-4">
                         <div class="card-body">
-                            <form class="row">
-                                <div class="col-md-9 mb-2">
-                                    <input type="text" class="form-control"
-                                        placeholder="Search by Course Code or Name...">
+                            <form id="filterForm" class="row">
+                                <div class="col-md-10 mb-2">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Search by course code or name...">
                                 </div>
-                                <div class="col-md-3 mb-2">
-                                    <button class="btn btn-dark btn-block">Search</button>
+                                <div class="col-md-2 mb-2">
+                                    <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
                                 </div>
                             </form>
                         </div>
@@ -131,43 +145,33 @@
                     <div class="card shadow mb-4">
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover">
+                                <table class="table table-hover align-middle" id="courseTable" width="100%">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th>Code</th>
-                                            <th>Course Name</th>
-                                            <th>Active Teachers</th>
-                                            <th>Enrolled Students</th>
-                                            <th>Actions</th>
+                                            <th>Course Code</th>
+                                            <th>Course Title</th>
+                                            <th>Description</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for course in courses %}
-                                        <tr>
-                                            <td><strong>{{ course.code }}</strong></td>
-                                            <td>{{ course.name }}</td>
-                                            <td>{{ course.teacher_count }}</td>
-                                            <td>{{ course.student_count }}</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-info btn-circle"><i
-                                                        class="fas fa-edit"></i></button>
-                                                <button class="btn btn-sm btn-danger btn-circle"><i
-                                                        class="fas fa-trash"></i></button>
+                                        <tr class="course-row">
+                                            <td><span class="font-weight-bold text-dark search-data">{{ course.course_code }}</span></td>
+                                            <td class="search-data">{{ course.course_name }}</td>
+                                            <td class="small">{{ course.description[:60] }}...</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-info btn-circle btn-sm" title="Edit" data-toggle="modal" data-target="#editCourseModal{{ course.course_id }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete" data-toggle="modal" data-target="#deleteCourseModal" 
+                                                    data-id="{{ course.course_id }}" data-name="{{ course.course_code }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             </td>
                                         </tr>
                                         {% else %}
-                                        <tr>
-                                            <td><strong>CS-101</strong></td>
-                                            <td>Introduction to Computer Science</td>
-                                            <td>4</td>
-                                            <td>120</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-info btn-circle"><i
-                                                        class="fas fa-edit"></i></button>
-                                                <button class="btn btn-sm btn-danger btn-circle"><i
-                                                        class="fas fa-trash"></i></button>
-                                            </td>
-                                        </tr>
+                                        <tr><td colspan="4" class="text-center text-gray-500 py-4">No courses available.</td></tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
@@ -182,22 +186,34 @@
         </div>
     </div>
 
+    <!-- ── MODALS SECTION ── -->
+
     <!-- Add Course Modal -->
-    <div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog">
+    <div class="modal fade validate-modal" id="addCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog" role="document">
-            <div class="modal-content border-0">
+            <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title">Add New Course</h5>
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-university mr-2"></i>Create New Course</h5>
                     <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <form>
+                <form action="{{ url_for('admin.add_course') }}" method="POST" novalidate>
                     <div class="modal-body">
-                        <div class="form-group"><label>Course Code</label><input type="text" class="form-control"
-                                placeholder="e.g. CS-101" required></div>
-                        <div class="form-group"><label>Course Title</label><input type="text" class="form-control"
-                                placeholder="e.g. Data Structures" required></div>
-                        <div class="form-group"><label>Description</label><textarea class="form-control"
-                                rows="3"></textarea></div>
+                        <div class="section-header">Course Identification</div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Course Code</label>
+                            <input type="text" class="form-control" name="course_code" placeholder="e.g. CS-101" required>
+                            <span class="field-feedback"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Course Title</label>
+                            <input type="text" class="form-control" name="course_name" placeholder="e.g. Data Structures" required>
+                            <span class="field-feedback"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Description</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                            <span class="field-feedback"></span>
+                        </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -208,10 +224,132 @@
         </div>
     </div>
 
+    {% for course in courses %}
+    <!-- Edit Course Modal -->
+    <div class="modal fade validate-modal" id="editCourseModal{{ course.course_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Edit Course: {{ course.course_code }}</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form action="{{ url_for('admin.update_course', course_id=course.course_id) }}" method="POST" novalidate>
+                    <div class="modal-body">
+                        <input type="hidden" name="course_id" value="{{ course.course_id }}">
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Course Code</label>
+                            <input type="text" class="form-control" name="course_code" value="{{ course.course_code }}" required>
+                            <span class="field-feedback"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Course Title</label>
+                            <input type="text" class="form-control" name="course_name" value="{{ course.course_name }}" required>
+                            <span class="field-feedback"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Description</label>
+                            <textarea class="form-control" name="description" rows="3">{{ course.description }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-info" type="submit">Update Course</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-trash-alt mr-2"></i>Delete Course</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form id="deleteCourseForm" method="POST" action="">
+                    <div class="modal-body text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <p class="text-dark font-weight-bold">Are you sure you want to delete course <span id="deleteCourseCode"></span>?</p>
+                        <p class="small text-muted">This will also delete all exams linked to this course.</p>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-danger px-4" type="submit">Yes, Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> (function ($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
-</body>
+    
+    <script>
+        (function ($) {
+            "use strict";
 
+            $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
+                $("body").toggleClass("sidebar-toggled");
+                $(".sidebar").toggleClass("toggled");
+            });
+
+            // Search/Filter Logic
+            $('#searchInput').on('keyup', function() {
+                var value = $(this).val().toLowerCase();
+                $(".course-row").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+
+            $('#resetFilters').on('click', function () {
+                $('#searchInput').val('');
+                $(".course-row").show();
+            });
+
+            // Delete Modal Setup
+            $('#deleteCourseModal').on('show.bs.modal', function (event) {
+                var btn = $(event.relatedTarget);
+                var id = btn.data('id');
+                $('#deleteCourseCode').text(btn.data('name'));
+                var actionUrl = "{{ url_for('admin.delete_course', course_id='0') }}".replace('0', id);
+                $('#deleteCourseForm').attr('action', actionUrl);
+            });
+
+            /* ── VALIDATION LOGIC ── */
+            function setValid(el) {
+                $(el).removeClass('is-invalid').addClass('is-valid');
+                $(el).siblings('.field-feedback').text('✓ OK').removeClass('invalid-msg').addClass('valid-msg');
+            }
+            function setInvalid(el, msg) {
+                $(el).removeClass('is-valid').addClass('is-invalid');
+                $(el).siblings('.field-feedback').text(msg).removeClass('valid-msg').addClass('invalid-msg');
+            }
+
+            $(document).on('input blur', '.validate-modal input[required]', function() {
+                const input = $(this);
+                const val = input.val().trim();
+                if (val.length < 2) {
+                    setInvalid(input, 'Required (min 2 chars)');
+                } else {
+                    setValid(input);
+                }
+            });
+
+            $(document).on('submit', '.validate-modal form', function(e) {
+                const form = $(this);
+                form.find('input[required]').trigger('blur');
+                if (form.find('.is-invalid').length > 0) {
+                    e.preventDefault();
+                    alert("Please fill in all required fields correctly.");
+                }
+            });
+
+        })(jQuery);
+    </script>
+</body>
 </html>

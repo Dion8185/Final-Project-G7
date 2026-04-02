@@ -15,3 +15,4 @@ def teacher_dashboard():
     else:
         flash('Please log in as teacher to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
+

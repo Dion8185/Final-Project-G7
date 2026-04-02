@@ -371,9 +371,9 @@ def resend_otp():
         
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
-        # Invalidate old codes
+        
         cursor.execute("UPDATE otp_table SET is_used = 1 WHERE user_id = %s", (user_id,))
-        # Insert new code
+        
         cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at) VALUES (%s, %s, %s)", (user_id, otp, expires))
         connection.commit()
         cursor.close()
@@ -384,6 +384,6 @@ def resend_otp():
     return jsonify({"message": "Session expired."}), 400
 
 @auth.route('/logout', methods=['POST'])
-def logout():
+def logout(): 
     session.clear()
     return redirect(url_for('auth.login'))
