@@ -468,3 +468,61 @@ def settings():
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
     
+#! PROFILE
+
+@admin.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if not admin_logged_in():
+        flash('Please log in as admin to access the profile.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    user_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        firstname = request.form.get('firstname')
+        middlename = request.form.get('middlename')
+        lastname = request.form.get('lastname')
+        new_password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+
+        try:
+            # Update Admin Table (Name/Profile)
+            cursor.execute("""
+                UPDATE admins 
+                SET firstname = %s, middlename = %s, lastname = %s 
+                WHERE admin_id = %s
+            """, (firstname, middlename, lastname, user_id))
+
+            # Update Password if provided
+            if new_password:
+                if new_password == confirm_password:
+                    hashed_pw = generate_password_hash(new_password)
+                    cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (hashed_pw, user_id))
+                else:
+                    flash('Passwords do not match.', 'warning')
+                    return redirect(url_for('admin.profile'))
+
+            connection.commit()
+            flash('Profile updated successfully.', 'success')
+        except mysql.connector.Error as err:
+            connection.rollback()
+            flash(f'Error: {err}', 'danger')
+        
+        return redirect(url_for('admin.profile'))
+
+    # GET: Fetch Admin Data
+    cursor.execute("""
+        SELECT u.user_id, u.email, u.role, u.created_at, 
+               a.firstname, a.middlename, a.lastname, 
+               a.region, a.province, a.city, a.barangay
+        FROM users u
+        JOIN admins a ON u.user_id = a.admin_id
+        WHERE u.user_id = %s
+    """, (user_id,))
+    user_data = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+    return render_template('admin_profile.html', user=user_data)
