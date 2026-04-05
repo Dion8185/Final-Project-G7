@@ -161,6 +161,7 @@ def login():
         # 2. PROCEED WITH NORMAL LOGIN FOR VERIFIED USERS
         if user['role'] == 'admin' and (user['password'] == password_input or check_password_hash(user['password'], password_input)):
             session['admin_logged_in'] = True
+            session['user_id'] = user['user_id']
             cursor.close()
             connection.close()
             return redirect(url_for('admin.admin_dashboard'))
@@ -173,12 +174,14 @@ def login():
 
         elif user['role'] == 'student':
             session['user_logged_in'] = True
+            session['user_id'] = user['user_id']
             cursor.close()
             connection.close()
             return redirect(url_for('student.student_dashboard'))
 
         elif user['role'] == 'teacher':
             session['teacher_logged_in'] = True
+            session['user_id'] = user['user_id']
             cursor.close()
             connection.close()
             return redirect(url_for('teacher.teacher_dashboard'))
