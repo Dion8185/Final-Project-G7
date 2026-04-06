@@ -10,10 +10,12 @@ from flask_mail import Message
 auth = Blueprint('auth', __name__, template_folder='templates', static_folder='static', 
                  static_url_path='/auth/static')
 
-# --- HELPERS ---
-def user_logged_in(): return session.get('user_logged_in', False)
-def admin_logged_in(): return session.get('admin_logged_in', False)
-def teacher_logged_in(): return session.get('teacher_logged_in', False)
+def user_logged_in(): 
+    return session.get('user_logged_in', False)
+def admin_logged_in(): 
+    return session.get('admin_logged_in', False)
+def teacher_logged_in(): 
+    return session.get('teacher_logged_in', False)
 
 NAME_REGEX = re.compile(r"^[A-Za-zñÑ]+([ '-][A-Za-zñÑ]+)*$") 
 EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
@@ -30,8 +32,6 @@ def validate_email(email):
         flash('Invalid email address.', 'danger')
         return False
     return True
-
-# --- ID & OTP GENERATION ---
 
 def generate_id(role_prefix):
     connection = mysql.connector.connect(**db_config)
@@ -114,8 +114,6 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
     except Exception as e:
         print(f"Error sending email: {e}")
 
-# --- ROUTES ---
-
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if user_logged_in():
@@ -141,14 +139,11 @@ def login():
             connection.close()
             flash('Invalid email or password!', 'danger')
             return render_template('login.html')
-        
-        # 1. CHECK IF UNVERIFIED: Redirect to OTP screen even if they just try to log in
+    
         if user['is_verified'] == 0:
-            # Fetch name for the session/email
             cursor.execute("SELECT firstname FROM students WHERE email = %s", (email_input,))
             student_data = cursor.fetchone()
             fname = student_data['firstname'] if student_data else "User"
-            
             session['pending_user_id'] = user['user_id']
             session['email'] = user['email']
             session['firstname'] = fname
@@ -158,7 +153,6 @@ def login():
             flash('Your account is not verified yet. Please verify your email.', 'warning')
             return redirect(url_for('auth.verify_register'))
 
-        # 2. PROCEED WITH NORMAL LOGIN FOR VERIFIED USERS
         if user['role'] == 'admin' and (user['password'] == password_input or check_password_hash(user['password'], password_input)):
             session['admin_logged_in'] = True
             session['user_id'] = user['user_id']
@@ -204,7 +198,6 @@ def register_student():
         existing_user = cursor.fetchone()
         
         if existing_user:
-            # If exists but not verified, redirect to verification instead of error
             if existing_user['is_verified'] == 0:
                 session['pending_user_id'] = existing_user['user_id']
                 session['email'] = email
@@ -215,7 +208,6 @@ def register_student():
                 flash("Email already in use. Please log in.", "danger")
                 return render_template('register.html')
 
-        # 2. PROCEED WITH NEW REGISTRATION
         hashed_pw = generate_password_hash(password)
         student_id = generate_id('S')
 
