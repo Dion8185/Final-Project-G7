@@ -132,6 +132,7 @@ def login():
 
         query_fetch_user = "SELECT * FROM users WHERE email = %s;"
         cursor.execute(query_fetch_user, (email_input,))
+        
         user = cursor.fetchone()
 
         if not user:
@@ -154,8 +155,14 @@ def login():
             return redirect(url_for('auth.verify_register'))
 
         if user['role'] == 'admin' and (user['password'] == password_input or check_password_hash(user['password'], password_input)):
+            query_fetch_admin = "SELECT firstname FROM admins WHERE email = %s;"
+            cursor.execute(query_fetch_admin, (email_input,))
+            admin_data = cursor.fetchone()
+
             session['admin_logged_in'] = True
             session['user_id'] = user['user_id']
+            session['email'] = user['email']
+            session['firstname'] = admin_data['firstname']
             cursor.close()
             connection.close()
             return redirect(url_for('admin.admin_dashboard'))
@@ -167,6 +174,10 @@ def login():
             return render_template('login.html')
 
         elif user['role'] == 'student':
+            query_fetch_student = "SELECT firstname FROM students WHERE email = %s;"
+            cursor.execute(query_fetch_student, (email_input,))
+            student_data = cursor.fetchone()
+            
             session['user_logged_in'] = True
             session['user_id'] = user['user_id']
             cursor.close()
@@ -174,6 +185,9 @@ def login():
             return redirect(url_for('student.student_dashboard'))
 
         elif user['role'] == 'teacher':
+            query_fetcch_teacher = "SELECT firstname FROM teachers WHERE email = %s;"
+            cursor.execute(query_fetcch_teacher, (email_input,))
+            teacher_data = cursor.fetchone()
             session['teacher_logged_in'] = True
             session['user_id'] = user['user_id']
             cursor.close()

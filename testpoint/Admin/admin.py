@@ -11,7 +11,11 @@ admin = Blueprint('admin', __name__, template_folder='templates', static_folder=
 def admin_dashboard():
     
     if admin_logged_in():
-        return render_template('admin_dashboard.html')
+        user_id = session.get('user_id')
+        email = session.get('email')
+        role = session.get('role')
+        firstname = session.get('firstname')   
+        return render_template('admin_dashboard.html', user_id=user_id, email=email, role=role, firstname=firstname )
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
