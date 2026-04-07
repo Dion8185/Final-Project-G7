@@ -1,31 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Teacher Dashboard - TestPoint</title>
+    <title>Teacher - My Classes</title>
     
-    <!-- Custom fonts and styles -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
     <style>
-        /* Teacher Red Theme */
         .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
         .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
         .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(231, 74, 59, 0.2) !important; }
-        
-        /* Cheating Alert Pulse Animation */
         .badge-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 
-            0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.7); } 
-            70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 
-            100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } 
-        }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } }
     </style>
 </head>
 
@@ -39,7 +32,7 @@
             </a>
             
             <hr class="sidebar-divider my-0">
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span>
                 </a>
@@ -47,9 +40,7 @@
             
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Classroom</div>
-            
-            <!-- CONNECTED: Link to My Classes / Enrollment Logic -->
-            <li class="nav-item">
+            <li class="nav-item active">
                 <a class="nav-link" href="{{ url_for('teacher.my_students') }}">
                     <i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span>
                 </a>
@@ -89,7 +80,7 @@
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
-                        <!-- Cheating Alerts Dropdown -->
+                        <!-- Notification Dropdown -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
                                 <i class="fas fa-exclamation-triangle fa-fw text-danger"></i>
@@ -98,27 +89,21 @@
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div>
+                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching.</div>
                                 </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
                             </div>
                         </li>
-
+                        <!-- Profile Dropdown -->
                         <div class="topbar-divider d-none d-sm-block"></div>
-
-                        <!-- User Info Dropdown -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                                <!-- DYNAMIC DATA: Teacher Name from Session -->
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    Prof. {{ session['firstname'] }} {{ session['lastname'] }}
-                                </span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }} {{ session['lastname'] }}</span>
                                 <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
                                 <div class="dropdown-divider"></div>
-                                <!-- CONNECTED: Logout Route -->
                                 <form action="{{ url_for('auth.logout') }}" method="POST">
                                     <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left">
                                         <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
@@ -129,9 +114,10 @@
                     </ul>
                 </nav>
 
-                <div class="container-fluid animate__animated animate__fadeInUp">
-                    
-                    <!-- Flash Messages for Notifications -->
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    <h1 class="h3 mb-4 text-gray-800">My Assigned Courses</h1>
+
+                    <!-- Flash Messages -->
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}
@@ -145,72 +131,38 @@
                         {% endif %}
                     {% endwith %}
 
-                    <h1 class="h3 mb-4 text-gray-800">Exam Overview</h1>
-                    
-                    <!-- Stats Cards -->
                     <div class="row">
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-danger shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Active Examinees</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">42</div>
+                        {% for course in courses %}
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card shadow h-100 border-left-danger">
+                                <div class="card-header bg-white py-3">
+                                    <h6 class="m-0 font-weight-bold text-danger">{{ course.course_code }}</h6>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
                                 <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Essays</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Class Avg</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">84%</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-dark shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Question Count</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">512</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Distribution Charts / Analysis Placeholder -->
-                    <div class="row">
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow mb-4">
-                                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-danger">Question Bank Distribution</h6></div>
-                                <div class="card-body">
-                                    <h4 class="small font-weight-bold">Multiple Choice <span class="float-right">60%</span></h4>
-                                    <div class="progress mb-4"><div class="progress-bar bg-danger" style="width: 60%"></div></div>
-                                    <h4 class="small font-weight-bold">True/False <span class="float-right">30%</span></h4>
-                                    <div class="progress mb-4"><div class="progress-bar bg-warning" style="width: 30%"></div></div>
-                                    <h4 class="small font-weight-bold">Identification <span class="float-right">10%</span></h4>
-                                    <div class="progress"><div class="progress-bar bg-info" style="width: 10%"></div></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6 mb-4">
-                            <div class="card shadow mb-4">
-                                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-danger">Item Analysis (Risk Questions)</h6></div>
-                                <div class="card-body text-center">
-                                    <p class="small text-muted">The following questions have a >50% failure rate across all classes:</p>
-                                    <div class="btn btn-outline-danger btn-sm m-1">Q #14</div>
-                                    <div class="btn btn-outline-danger btn-sm m-1">Q #22</div>
-                                    <div class="btn btn-outline-danger btn-sm m-1">Q #89</div>
+                                    <h5 class="font-weight-bold text-dark">{{ course.course_name }}</h5>
+                                    <p class="text-muted small">
+                                        {{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}
+                                    </p>
                                     <hr>
-                                    <a href="#" class="btn btn-danger btn-sm shadow-sm">Review Problematic Questions</a>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="{{ url_for('teacher.manage_enrollees', course_id=course.course_id) }}" class="btn btn-danger btn-sm shadow-sm">
+                                            <i class="fas fa-users mr-1"></i> Manage Students
+                                        </a>
+                                        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-file-alt mr-1"></i> Exams
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        {% else %}
+                        <div class="col-12">
+                            <div class="card shadow p-5 text-center">
+                                <i class="fas fa-folder-open fa-3x text-gray-300 mb-3"></i>
+                                <h4 class="text-gray-500">No courses assigned to you.</h4>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -220,19 +172,17 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> 
-        (function($) { 
-            "use strict"; 
-            // SB Admin 2 Sidebar toggle logic
-            $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { 
-                $("body").toggleClass("sidebar-toggled"); 
-                $(".sidebar").toggleClass("toggled"); 
-            }); 
-        })(jQuery); 
+    <script>
+        (function ($) {
+            "use strict";
+            $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
+                $("body").toggleClass("sidebar-toggled");
+                $(".sidebar").toggleClass("toggled");
+            });
+        })(jQuery);
     </script>
 </body>
 </html>

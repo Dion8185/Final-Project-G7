@@ -7,6 +7,7 @@ import mysql.connector
 from datetime import datetime, timedelta
 from flask_mail import Message
 
+
 auth = Blueprint('auth', __name__, template_folder='templates', static_folder='static', 
                  static_url_path='/auth/static')
 
@@ -114,6 +115,7 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
     except Exception as e:
         print(f"Error sending email: {e}")
 
+
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if user_logged_in():
@@ -198,6 +200,15 @@ def login():
 
 @auth.route('/register/student', methods=['GET', 'POST'])
 def register_student():
+    if user_logged_in():
+        return redirect(url_for('student.student_dashboard'))
+    
+    if admin_logged_in():
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    if teacher_logged_in():
+        return redirect(url_for('teacher.teacher_dashboard'))
+    
     if request.method == 'POST':
         email = request.form.get('email')
         fname = request.form.get('firstname')
@@ -256,6 +267,15 @@ def register_student():
 
 @auth.route('/register/teacher', methods=['GET', 'POST'])
 def register_teacher():
+    if user_logged_in():
+        return redirect(url_for('student.student_dashboard'))
+    
+    if admin_logged_in():
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    if teacher_logged_in():
+        return redirect(url_for('teacher.teacher_dashboard'))
+    
     if request.method == 'POST':
         email = request.form.get('email')
         fname = request.form.get('firstname')
@@ -316,11 +336,13 @@ def register_teacher():
 
 @auth.route('/verify_register', methods=['GET', 'POST'])
 def verify_register():
+    
     user_id = session.get('pending_user_id')
     if not user_id:
         flash("No pending registration found. Please register or log in.", "warning")
         return redirect(url_for('auth.login'))
 
+    ConnectionAbortedError 
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
 

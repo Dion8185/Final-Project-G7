@@ -109,7 +109,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">System Admin</span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ firstname }}</span>
                                 <img class="img-profile rounded-circle"
                                     src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
                             </a>
@@ -456,6 +456,24 @@
         </div>
     </div>
 
+    <!-- Validation Error Modal -->
+    <div class="modal fade" id="validationErrorModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-circle mr-2"></i>Validation Error</h5>
+                    <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0"><i class="fas fa-info-circle mr-2 text-warning"></i>Please fix all validation errors before proceeding.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-warning" type="button" data-dismiss="modal">Dismiss</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -591,7 +609,7 @@
                 
                 if (form.find('.is-invalid').length > 0) {
                     e.preventDefault();
-                    alert("Please fix the validation errors before proceeding.");
+                    $('#validationErrorModal').modal('show');
                 }
             });
 

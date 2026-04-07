@@ -15,8 +15,16 @@ def admin_dashboard():
         user_id = session.get('user_id')
         email = session.get('email')
         role = session.get('role')
-        firstname = session.get('firstname')   
-        return render_template('admin_dashboard.html', user_id=user_id, email=email, role=role, firstname=firstname )
+        firstname = session.get('firstname') 
+        
+        # COUNT TOTAL USERS
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = cursor.fetchone()[0]
+        cursor.close()
+        connection.close()
+        return render_template('admin_dashboard.html', user_id=user_id, email=email, role=role, firstname=firstname, total_users=total_users )
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
@@ -28,6 +36,7 @@ def admin_dashboard():
 def manage_accounts():
     
     if admin_logged_in():
+        firstname = session.get('firstname') 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         cursor.execute(""" SELECT 
@@ -53,7 +62,7 @@ def manage_accounts():
         cursor.close()
         connection.close()
     
-        return render_template('admin_accounts.html', users=users)
+        return render_template('admin_accounts.html', users=users, firstname=firstname)
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
@@ -62,6 +71,7 @@ def manage_accounts():
 @admin.route('/trashed_accounts')
 def trashed_accounts():
     if admin_logged_in():
+        firstname = session.get('firstname') 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         cursor.execute(""" SELECT 
@@ -85,7 +95,7 @@ def trashed_accounts():
         cursor.close()
         connection.close()
         
-        return render_template('admin_trashed.html', trashed_users=trashed_users)
+        return render_template('admin_trashed.html', trashed_users=trashed_users, firstname=firstname)
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
@@ -323,24 +333,28 @@ def empty_trash():
 @admin.route('/manage_courses')
 def manage_courses():
     if admin_logged_in():
+        firstname = session.get('firstname') 
         connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True) # Use dictionary=True to use course['column_name'] in HTML
+        cursor = connection.cursor(dictionary=True)
         
-        cursor.execute("SELECT course_id, course_code, course_name, description FROM courses")
+        # JOIN to get the teacher's name assigned to the course
+        cursor.execute("""
+            SELECT c.*, t.firstname AS teacher_fname, t.lastname AS teacher_lname,
+            (SELECT COUNT(*) FROM enrollments WHERE course_id = c.course_id) AS student_count
+            FROM courses c
+            LEFT JOIN teachers t ON c.teacher_id = t.teacher_id
+            ORDER BY c.course_code ASC
+        """)
         courses = cursor.fetchall()
         
-        #count enrolled students for each course
-        for course in courses:
-            cursor.execute("SELECT COUNT(*) AS student_count FROM enrollments WHERE course_id = %s", (course['course_id'],))
-            course['student_count'] = cursor.fetchone()['student_count']
-            student_count = course['student_count']
-            
+        # Fetch list of all teachers for the dropdown in Modals
+        cursor.execute("SELECT teacher_id, firstname, lastname FROM teachers")
+        teachers = cursor.fetchall()
+        
         cursor.close()
         connection.close()
-        return render_template('admin_courses.html', courses=courses, student_count=student_count)
-    else:
-        flash('Please log in as admin to access the dashboard.', 'danger')
-        return redirect(url_for('auth.login'))
+        return render_template('admin_courses.html', courses=courses, teachers=teachers, firstname=firstname)
+    return redirect(url_for('auth.login'))
 
 @admin.route('/add_course', methods=['POST'])
 def add_course():
@@ -348,12 +362,15 @@ def add_course():
         course_code = request.form.get('course_code')
         course_name = request.form.get('course_name')
         description = request.form.get('description')
+        teacher_id = request.form.get('teacher_id') # Get assigned teacher
         
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         try:
-            cursor.execute("INSERT INTO courses (course_code, course_name, description) VALUES (%s, %s, %s)", 
-                           (course_code, course_name, description))
+            # Set to NULL if no teacher selected
+            t_id = teacher_id if teacher_id != "" else None
+            cursor.execute("INSERT INTO courses (course_code, course_name, description, teacher_id) VALUES (%s, %s, %s, %s)", 
+                           (course_code, course_name, description, t_id))
             connection.commit()
             flash(f'Course {course_code} added successfully!', 'success')
         except mysql.connector.Error as err:
@@ -370,15 +387,17 @@ def update_course(course_id):
         course_code = request.form.get('course_code')
         course_name = request.form.get('course_name')
         description = request.form.get('description')
+        teacher_id = request.form.get('teacher_id')
         
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         try:
+            t_id = teacher_id if teacher_id != "" else None
             cursor.execute("""
                 UPDATE courses 
-                SET course_code = %s, course_name = %s, description = %s 
+                SET course_code = %s, course_name = %s, description = %s, teacher_id = %s 
                 WHERE course_id = %s
-            """, (course_code, course_name, description, course_id))
+            """, (course_code, course_name, description, t_id, course_id))
             connection.commit()
             flash('Course updated successfully.', 'success')
         except mysql.connector.Error as err:
@@ -397,9 +416,9 @@ def delete_course(course_id):
         try:
             cursor.execute("DELETE FROM courses WHERE course_id = %s", (course_id,))
             connection.commit()
-            flash('Course deleted successfully.', 'success')
+            flash('Course deleted.', 'success')
         except mysql.connector.Error as err:
-            flash(f'Cannot delete course: {err}', 'danger')
+            flash(f'Cannot delete: {err}', 'danger')
         finally:
             cursor.close()
             connection.close()
@@ -412,6 +431,7 @@ def delete_course(course_id):
 @admin.route('/oversee_exams')
 def oversee_exams():
     if admin_logged_in():
+        firstname = session.get('firstname')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         # Fetch exams joined with course names for the table
@@ -428,7 +448,7 @@ def oversee_exams():
         
         cursor.close()
         connection.close()
-        return render_template('admin_exams.html', exams=exams, courses=courses)
+        return render_template('admin_exams.html', exams=exams, courses=courses, firstname=firstname)
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
@@ -473,7 +493,8 @@ def user_logs():
 @admin.route('/settings')
 def settings():
     if admin_logged_in():
-        return render_template('admin_settings.html')
+        firstname = session.get('firstname')
+        return render_template('admin_settings.html', firstname=firstname)
     
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
@@ -596,3 +617,4 @@ def unenroll_student(enrollment_id, course_id):
         flash('Student removed from course.', 'success')
         return redirect(url_for('admin.manage_enrollments', course_id=course_id))
     return redirect(url_for('auth.login'))
+
