@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 import mysql.connector
 from testpoint import db_config
 from testpoint.Auth.login import admin_logged_in
+from werkzeug.security import generate_password_hash
 
 admin = Blueprint('admin', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/admin/static')
@@ -90,8 +91,6 @@ def trashed_accounts():
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
 
-from werkzeug.security import generate_password_hash # Ensure you have this import
-
 @admin.route('/update_account/<string:user_id>', methods=['POST'])
 def update_account(user_id):
     if admin_logged_in():
@@ -102,7 +101,6 @@ def update_account(user_id):
         is_verified = request.form.get('status')
         role = request.form.get('role')
         
-        # Password Logic
         new_password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
@@ -331,9 +329,15 @@ def manage_courses():
         cursor.execute("SELECT course_id, course_code, course_name, description FROM courses")
         courses = cursor.fetchall()
         
+        #count enrolled students for each course
+        for course in courses:
+            cursor.execute("SELECT COUNT(*) AS student_count FROM enrollments WHERE course_id = %s", (course['course_id'],))
+            course['student_count'] = cursor.fetchone()['student_count']
+            student_count = course['student_count']
+            
         cursor.close()
         connection.close()
-        return render_template('admin_courses.html', courses=courses)
+        return render_template('admin_courses.html', courses=courses, student_count=student_count)
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
@@ -404,6 +408,7 @@ def delete_course(course_id):
 
 
 #! MANAGE EXAMS
+
 @admin.route('/oversee_exams')
 def oversee_exams():
     if admin_logged_in():
@@ -428,31 +433,33 @@ def oversee_exams():
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
 
-@admin.route('/add_exam', methods=['POST'])
-def add_exam():
-    if admin_logged_in():
-        course_id = request.form.get('course_id')
-        title = request.form.get('title')
-        duration = request.form.get('duration')
-        pass_percent = request.form.get('pass_percentage')
-        created_by = session.get('user_id') 
+# @admin.route('/add_exam', methods=['POST'])
+# def add_exam():
+#     if admin_logged_in():
+#         course_id = request.form.get('course_id')
+#         title = request.form.get('title')
+#         duration = request.form.get('duration')
+#         pass_percent = request.form.get('pass_percentage')
+#         created_by = session.get('user_id') 
 
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-        try:
-            cursor.execute("""
-                INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, created_by) 
-                VALUES (%s, %s, %s, %s, %s)
-            """, (course_id, title, duration, pass_percent, created_by))
-            connection.commit()
-            flash('Exam created successfully!', 'success')
-        except mysql.connector.Error as err:
-            flash(f'Error: {err}', 'danger')
-        finally:
-            cursor.close()
-            connection.close()
-        return redirect(url_for('admin.oversee_exams'))
-    return redirect(url_for('auth.login'))
+#         connection = mysql.connector.connect(**db_config)
+#         cursor = connection.cursor()
+#         try:
+#             cursor.execute("""
+#                 INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, created_by) 
+#                 VALUES (%s, %s, %s, %s, %s)
+#             """, (course_id, title, duration, pass_percent, created_by))
+#             connection.commit()
+#             flash('Exam created successfully!', 'success')
+#         except mysql.connector.Error as err:
+#             flash(f'Error: {err}', 'danger')
+#         finally:
+#             cursor.close()
+#             connection.close()
+#         return redirect(url_for('admin.oversee_exams'))
+#     return redirect(url_for('auth.login'))
+
+
     
 @admin.route('/user_logs')
 def user_logs():
@@ -530,3 +537,62 @@ def profile():
     cursor.close()
     connection.close()
     return render_template('admin_profile.html', user=user_data)
+
+#! ENROLLMENT MANAGEMENT (ADMIN)
+@admin.route('/manage_enrollments/<int:course_id>')
+def manage_enrollments(course_id):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("SELECT * FROM courses WHERE course_id = %s", (course_id,))
+        course = cursor.fetchone()
+        
+        cursor.execute("""
+            SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id 
+            FROM students s
+            JOIN enrollments e ON s.student_id = e.student_id
+            WHERE e.course_id = %s
+        """, (course_id,))
+        enrollees = cursor.fetchall()
+        
+        cursor.execute("SELECT student_id, firstname, lastname FROM students")
+        all_students = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        return render_template('admin_enrollees.html', course=course, enrollees=enrollees, all_students=all_students)
+    return redirect(url_for('auth.login'))
+
+@admin.route('/enroll_student', methods=['POST'])
+def enroll_student():
+    if admin_logged_in():
+        student_id = request.form.get('student_id')
+        course_id = request.form.get('course_id')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("INSERT INTO enrollments (student_id, course_id) VALUES (%s, %s)", (student_id, course_id))
+            connection.commit()
+            flash('Student enrolled successfully!', 'success')
+        except mysql.connector.Error:
+            flash('Student is already enrolled in this course.', 'warning')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.manage_enrollments', course_id=course_id))
+    return redirect(url_for('auth.login'))
+
+@admin.route('/unenroll_student/<int:enrollment_id>/<int:course_id>', methods=['POST'])
+def unenroll_student(enrollment_id, course_id):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM enrollments WHERE enrollment_id = %s", (enrollment_id,))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Student removed from course.', 'success')
+        return redirect(url_for('admin.manage_enrollments', course_id=course_id))
+    return redirect(url_for('auth.login'))

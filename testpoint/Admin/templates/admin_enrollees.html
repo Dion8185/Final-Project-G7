@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Admin - Manage Enrollees</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <style>
+        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
+        .card { border: none; }
+        .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
+    </style>
+</head>
+
+<body id="page-top">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
+                <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
+                <div class="sidebar-brand-text mx-3">System Admin</div>
+            </a>
+            <hr class="sidebar-divider my-0">
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
+            <hr class="sidebar-divider">
+            <div class="sidebar-heading">User Management</div>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a></li>
+            <li class="nav-item active"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.oversee_exams')}}"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
+            <hr class="sidebar-divider d-none d-md-block">
+            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
+            <div class="sidebar-heading">System</div>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.user_logs')}}"><i
+                        class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.settings')}}"><i
+                        class="fas fa-fw fa-cogs"></i><span>System Settings</span></a></li>
+            <hr class="sidebar-divider d-none d-md-block">
+            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0"
+                    id="sidebarToggle"></button></div>
+        </ul>
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <span class="nav-link text-gray-600 small">Course: {{ course.course_code }}</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    <!-- HEADER WITH BACK BUTTON -->
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-secondary shadow-sm mb-2">
+                                <i class="fas fa-arrow-left fa-sm"></i> Back to Course List
+                            </a>
+                            <h1 class="h3 mb-0 text-gray-800">Enrollees: <span class="text-primary">{{ course.course_name }}</span></h1>
+                        </div>
+                        <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#enrollModal">
+                            <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Enroll Student
+                        </button>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Table Card -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="enrollTable" width="100%">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Student ID</th>
+                                            <th>Full Name</th>
+                                            <th>Email Address</th>
+                                            <th>Enrolled At</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for enrollee in enrollees %}
+                                        <tr>
+                                            <td><span class="font-weight-bold">{{ enrollee.student_id }}</span></td>
+                                            <td>{{ enrollee.firstname }} {{ enrollee.lastname }}</td>
+                                            <td>{{ enrollee.email }}</td>
+                                            <td class="small">{{ enrollee.enrolled_at }}</td>
+                                            <td class="text-center">
+                                                <form action="{{ url_for('admin.unenroll_student', enrollment_id=enrollee.enrollment_id, course_id=course.course_id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Remove student from course?')">
+                                                        <i class="fas fa-user-minus mr-1"></i> Unenroll
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% else %}
+                                        <tr><td colspan="5" class="text-center py-4">No students enrolled yet.</td></tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Enroll Student Modal -->
+    <div class="modal fade" id="enrollModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i>Enroll Student</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form action="{{ url_for('admin.enroll_student') }}" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="course_id" value="{{ course.course_id }}">
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Select Student</label>
+                            <select name="student_id" class="form-control" required>
+                                <option value="">-- Select student to add --</option>
+                                {% for s in all_students %}
+                                <option value="{{ s.student_id }}">{{ s.firstname }} {{ s.lastname }} ({{ s.student_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary" type="submit">Complete Enrollment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function ($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery);
+    </script>
+</body>
+</html>
