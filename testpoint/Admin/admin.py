@@ -570,7 +570,7 @@ def manage_enrollments(course_id):
         course = cursor.fetchone()
         
         cursor.execute("""
-            SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id 
+            SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id, e.enrolled_at
             FROM students s
             JOIN enrollments e ON s.student_id = e.student_id
             WHERE e.course_id = %s

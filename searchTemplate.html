@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Template</title>
+
+    <!-- Bootstrap (optional but used by your classes) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+
+    <!-- ✅ REQUIRED: jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body class="p-4">
+
+<!-- FILTER / SEARCH SECTION -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <form id="filterForm" class="row">
+            <div class="col-md-3 mb-2">
+                <select class="form-control" id="roleFilter">
+                    <option value="">All Roles</option>
+                    <option value="student">Students</option>
+                    <option value="teacher">Teachers</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="col-md-3 mb-2">
+                <select class="form-control" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="verified">Verified</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-2">
+                <input type="text"
+                       class="form-control"
+                       id="searchInput"
+                       placeholder="Search by name, email, or ID...">
+            </div>
+
+            <div class="col-md-2 mb-2">
+                <button type="button" id="resetFilters" class="btn btn-secondary btn-block">
+                    Reset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TABLE -->
+<table class="table table-hover" id="userTable">
+    <thead>
+        <tr>
+            <th>Role</th>
+            <th>ID</th>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        <tr class="user-row" data-role="student" data-status="verified">
+            <td>Student</td>
+            <td class="search-data">2023001</td>
+            <td class="search-data">Juan Dela Cruz</td>
+            <td class="search-data">juan@email.com</td>
+            <td>Verified</td>
+        </tr>
+
+        <tr class="user-row" data-role="teacher" data-status="pending">
+            <td>Teacher</td>
+            <td class="search-data">T-1002</td>
+            <td class="search-data">Maria Santos</td>
+            <td class="search-data">maria@email.com</td>
+            <td>Pending</td>
+        </tr>
+
+    </tbody>
+</table>
+
+<script>
+function performFilter() {
+    var searchVal = $('#searchInput').val().toLowerCase();
+    var roleVal = $('#roleFilter').val().toLowerCase();
+    var statusVal = $('#statusFilter').val().toLowerCase();
+
+    $(".user-row").each(function () {
+        var row = $(this);
+        var rowText = row.find('.search-data').text().toLowerCase();
+
+        var matchesSearch = rowText.indexOf(searchVal) > -1;
+        var matchesRole = roleVal === "" || row.attr('data-role').toLowerCase() === roleVal;
+        var matchesStatus = statusVal === "" || row.attr('data-status').toLowerCase() === statusVal;
+
+        row.toggle(matchesSearch && matchesRole && matchesStatus);
+    });
+}
+
+// Bind events AFTER page loads
+$(document).ready(function () {
+
+    $('#searchInput').on('keyup', performFilter);
+
+    $('#roleFilter, #statusFilter').on('change', performFilter);
+
+    $('#resetFilters').on('click', function () {
+        $('#searchInput, #roleFilter, #statusFilter').val('');
+        performFilter();
+    });
+
+});
+</script>
+
+</body>
+</html>

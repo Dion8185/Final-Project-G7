@@ -189,11 +189,11 @@
                                 <table class="table table-hover align-middle" id="userTable" width="100%">
                                     <thead class="thead-light">
                                         <tr>
+                                            <th>Role</th>
                                             <th>ID</th>
                                             <th>Full Name</th>
                                             <th>Email</th>
                                             <th>Status</th>
-                                            <th>Role</th>
                                             <th>Joined Date</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
@@ -201,6 +201,11 @@
                                     <tbody>
                                         {% for user in users %}
                                         <tr class="user-row" data-role="{{ user[5] }}" data-status="{% if user[6] == 1 %}verified{% else %}pending{% endif %}">
+                                            <td>
+                                                {% if user[5] == 'admin' %} <span class="badge badge-secondary">Admin</span>
+                                                {% elif user[5] == 'teacher' %} <span class="badge badge-danger">Teacher</span>
+                                                {% else %} <span class="badge badge-primary">Student</span> {% endif %}
+                                            </td>
                                             <td><span class="font-weight-bold text-dark search-data">{{ user[0] }}</span></td>
                                             <td class="search-data text-capitalize">
                                                 {% if user[5] == 'admin' and not user[1] %} Admin: {{user[0]}} {% else %} {{ user[1] }} {{ user[2] }} {{ user[3] }} {% endif %}
@@ -209,11 +214,6 @@
                                             <td>
                                                 {% if user[6] == 1 %} <span class="badge badge-success">Verified</span>
                                                 {% else %} <span class="badge badge-warning">Pending</span> {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if user[5] == 'admin' %} <span class="badge badge-secondary">Admin</span>
-                                                {% elif user[5] == 'teacher' %} <span class="badge badge-danger">Teacher</span>
-                                                {% else %} <span class="badge badge-primary">Student</span> {% endif %}
                                             </td>
                                             <td class="small">{{ user[7] }}</td>
                                             <td class="text-center">

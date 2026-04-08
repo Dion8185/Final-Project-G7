@@ -107,7 +107,6 @@ def manage_exams():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         
-        # Get exams for courses owned by this teacher
         cursor.execute("""
             SELECT e.*, c.course_name 
             FROM exams e 
@@ -220,4 +219,4 @@ def exam_analysis():
         return render_template('teacher_analysis.html')
     else:
         flash('Please log in to access the analysis dashboard.', 'danger')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.login')) 
