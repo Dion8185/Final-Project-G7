@@ -190,46 +190,54 @@
         </div>
     </div>
 
-    <!-- EDIT EXAM MODALS (LOOP) -->
+  <!-- EDIT EXAM MODALS (LOOP) -->
     {% for exam in exams %}
     <div class="modal fade" id="editExamModal{{ exam.exam_id }}" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title font-weight-bold">Edit Exam: {{ exam.title }}</h5>
+                    <h5 class="modal-title font-weight-bold">Update Exam: {{ exam.title }}</h5>
                     <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <!-- You will need an update_exam route in teacher.py -->
-                <form action="{{ url_for('teacher.manage_exams') }}" method="POST">
+                <form action="{{ url_for('teacher.update_exam') }}" method="POST">
                     <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
                     <div class="modal-body">
                         <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Exam Title</label>
+                            <label class="small font-weight-bold text-dark">Exam Name / Title</label>
                             <input type="text" name="title" class="form-control" value="{{ exam.title }}" required>
                         </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Assigned Course</label>
-                            <select name="course_id" class="form-control" required>
-                                {% for course in courses %}
-                                <option value="{{ course.course_id }}" {% if course.course_id == exam.course_id %}selected{% endif %}>{{ course.course_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        
                         <div class="row">
-                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Duration (Mins)</label><input type="number" name="duration" class="form-control" value="{{ exam.duration_minutes }}" required></div></div>
-                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Passing Grade (%)</label><input type="number" name="pass_percentage" class="form-control" value="{{ exam.pass_percentage }}" required></div></div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold text-dark">Duration (Minutes)</label>
+                                    <input type="number" name="duration" class="form-control" value="{{ exam.duration_minutes }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="small font-weight-bold text-dark">Passing Grade (%)</label>
+                                    <input type="number" name="pass_percentage" class="form-control" value="{{ exam.pass_percentage }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Placeholder (Disabled for now as per instructions) -->
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-muted">Schedule (Feature Coming Soon)</label>
+                            <input type="text" class="form-control" placeholder="Not available" disabled>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-info shadow-sm" type="submit">Update Changes</button>
+                        <button class="btn btn-secondary shadow-sm" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-info shadow-sm px-4" type="submit">Update Configurations</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
     {% endfor %}
-
+    
     <!-- DELETE CONFIRMATION MODAL -->
     <div class="modal fade" id="deleteExamModal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">

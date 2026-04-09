@@ -167,6 +167,32 @@ def add_exam():
         return redirect(url_for('teacher.manage_exams'))
     return redirect(url_for('auth.login'))
 
+@teacher.route('/update_exam', methods=['POST'])
+def update_exam():
+    if teacher_logged_in():
+        exam_id = request.form.get('exam_id')
+        title = request.form.get('title')
+        duration = request.form.get('duration')
+        pass_percent = request.form.get('pass_percentage')
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("""
+                UPDATE exams 
+                SET title = %s, duration_minutes = %s, pass_percentage = %s 
+                WHERE exam_id = %s
+            """, (title, duration, pass_percent, exam_id))
+            connection.commit()
+            flash('Exam configuration updated successfully!', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error updating exam: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('teacher.manage_exams'))
+    return redirect(url_for('auth.login'))
+
 #! 5. QUESTIONS (CENTRALIZED BANK LOGIC)
 @teacher.route('/manage_questions/<int:exam_id>')
 def manage_questions(exam_id):
