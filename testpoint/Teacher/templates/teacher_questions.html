@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>TestPoint</title>
+    <title>Manage Questions - {{ exam.title }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
-        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(231, 74, 59, 0.2) !important; }
-        .badge-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } }
+        .card { transition: all 0.3s cubic-bezier(.25, .8, .25, 1); border: none; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1) !important; }
+        .bank-item { border-left: 4px solid #4e73df; }
     </style>
 </head>
+
 <body id="page-top">
     <div id="wrapper">
         <!-- SIDE BAR -->
@@ -29,124 +28,207 @@
             <hr class="sidebar-divider my-0">
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
             <hr class="sidebar-divider">
-            <div class="sidebar-heading">Classroom</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_students') }}"><i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Classes</span></a></li>
+            <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Exams & Questions</span></a></li>
             <hr class="sidebar-divider">
-            <div class="sidebar-heading">Exam Control</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
-            <li class="nav-item active">
-                <a class="nav-link" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
-                <div id="collapseQuestions" class="collapse show"><div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-inner-item active" href="{{ url_for('teacher.manage_exams') }}">Manage Questions</a>
-                    <a class="collapse-inner-item" href="{{ url_for('teacher.manage_exams') }}">Excel Import</a>
-                </div></div>
-            </li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Results</div>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
-            <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
 
-        <!-- TOP BAR -->
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
-                    <ul class="navbar-nav ml-auto">
-                        
-                        <!-- NOTIFICATION DROP DOWN -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
-                            </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Student "Bob" detected tab-switching.</div></a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
-                            </div>
-                        </li>
-                        
-                        <!-- PROFILE DROP DOWN -->
-                        <div class="topbar-divider d-none d-sm-block"></div>
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }} {{ session['lastname'] }}</span>
-                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left"><i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout</button></form>
-                            </div>
-                        </li>
-                    </ul>
-                </nav>
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"></nav>
 
-                <!-- MAIN PAGE CONTENT -->
-                <div class="container-fluid animate__animated animate__fadeIn">
+                <div class="container-fluid py-4">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb bg-transparent p-0 small">
+                            <li class="breadcrumb-item"><a href="{{ url_for('teacher.manage_exams') }}">Exams</a></li>
+                            <li class="breadcrumb-item active">{{ exam.title }}</li>
+                        </ol>
+                    </nav>
+
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Question Management</h1>
+                        <h1 class="h3 mb-0 text-gray-800">Exam: {{ exam.title }}</h1>
                         <div>
-                            <button class="btn btn-sm btn-outline-danger shadow-sm mr-2"><i class="fas fa-download mr-1"></i> Excel Template</button>
-                            <button class="btn btn-sm btn-danger shadow-sm"><i class="fas fa-plus mr-1"></i> Add Manual Question</button>
+                            <button class="btn btn-outline-primary btn-sm shadow-sm" data-toggle="modal" data-target="#bankModal"><i class="fas fa-university"></i> Pick from Bank</button>
+                            <button class="btn btn-success btn-sm shadow-sm" data-toggle="modal" data-target="#excelModal"><i class="fas fa-file-excel"></i> Import</button>
+                            <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal"><i class="fas fa-plus"></i> New Question</button>
                         </div>
                     </div>
 
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3 bg-white">
-                            <form class="row">
-                                <div class="col-md-3">
-                                    <select class="form-control form-control-sm"><option>All Subjects</option></select>
-                                </div>
-                                <div class="col-md-3">
-                                    <select class="form-control form-control-sm"><option>All Question Types</option><option>MCQ</option><option>Identification</option></select>
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="text" class="form-control form-control-sm" placeholder="Search for questions...">
-                                </div>
-                            </form>
-                        </div>
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <h5 class="text-primary font-weight-bold mb-3">Questions in this Exam ({{ questions|length }})</h5>
+                    
+                    {% for q in questions %}
+                    <div class="card shadow mb-3 border-left-info">
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle border">
-                                    <thead class="bg-light">
-                                        <tr>
-                                            <th>Type</th>
-                                            <th>Question Content</th>
-                                            <th>Correct Answer</th>
-                                            <th>Difficulty</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><span class="badge badge-primary">MCQ</span></td>
-                                            <td class="small">What is the Big O complexity of a Binary Search?</td>
-                                            <td>O(log n)</td>
-                                            <td><span class="text-warning">Medium</span></td>
-                                            <td>
-                                                <button class="btn btn-sm btn-light btn-circle"><i class="fas fa-pen text-primary"></i></button>
-                                                <button class="btn btn-sm btn-light btn-circle"><i class="fas fa-trash text-danger"></i></button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="row align-items-center">
+                                <div class="col-md-10">
+                                    <span class="badge badge-light border text-uppercase">{{ q.question_type.replace('_', ' ') }}</span>
+                                    <span class="badge badge-pill badge-dark text-capitalize">{{ q.difficulty }}</span>
+                                    <p class="font-weight-bold text-dark mt-2 mb-1">{{ loop.index }}. {{ q.question_text }}</p>
+                                    
+                                    {% if q.question_type != 'identification' %}
+                                    <div class="row ml-1">
+                                        {% for opt in q.options %}
+                                        <div class="col-md-6 small {% if opt.is_correct %}text-success font-weight-bold{% else %}text-muted{% endif %}">
+                                            <i class="fas {% if opt.is_correct %}fa-check-circle{% else %}fa-circle{% endif %} mr-1"></i> {{ opt.option_text }}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <p class="small text-success font-weight-bold mb-0">Answer: {{ q.options[0].option_text if q.options else '---' }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 text-right">
+                                    <form action="{{ url_for('teacher.delete_question', q_id=q.question_id, exam_id=exam.exam_id) }}" method="POST">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove from Exam"><i class="fas fa-minus-circle"></i> Unlink</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                    {% else %}
+                    <div class="card shadow p-5 text-center">
+                        <p class="text-gray-500">No questions linked to this exam yet.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PICK FROM BANK -->
+    <div class="modal fade" id="bankModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Course Question Bank</h5>
+                    <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">The following questions are in your Course Bank but not in this exam.</p>
+                    <div class="list-group">
+                        {% for bq in bank_questions %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center bank-item mb-2 shadow-sm">
+                            <div>
+                                <small class="text-uppercase text-primary">{{ bq.question_type }}</small>
+                                <p class="mb-0 font-weight-bold">{{ bq.question_text }}</p>
+                            </div>
+                            <form action="{{ url_for('teacher.link_from_bank', exam_id=exam.exam_id, q_id=bq.question_id) }}" method="POST">
+                                <button class="btn btn-sm btn-primary"><i class="fas fa-link"></i> Add to Exam</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <p class="text-center py-3">No other questions available in the bank for this course.</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- FOOTER -->
-            <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
+    <!-- MODAL: MANUAL ADD -->
+    <div class="modal fade" id="manualModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title">Create New Question</h5>
+                        <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Question Text</label>
+                            <textarea name="question_text" class="form-control" required></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Type</label>
+                                <select name="question_type" class="form-control" id="qTypeSelect">
+                                    <option value="multiple_choice">Multiple Choice</option>
+                                    <option value="true_false">True / False</option>
+                                    <option value="identification">Identification</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Difficulty</label>
+                                <select name="difficulty" class="form-control">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Points</label>
+                                <input type="number" name="points" value="1" class="form-control">
+                            </div>
+                        </div>
+                        <hr>
+                        <div id="section_mc">
+                            <label class="text-primary font-weight-bold">Options (Select the correct one)</label>
+                            {% for i in range(4) %}
+                            <div class="input-group mb-2">
+                                <div class="input-group-prepend">
+                                    <div class="input-group-text"><input type="radio" name="correct_option" value="{{ i }}" {% if i==0 %}checked{% endif %}></div>
+                                </div>
+                                <input type="text" name="options[]" class="form-control" placeholder="Option {{ i+1 }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div id="section_tf" style="display:none;">
+                            <label>Correct Answer</label>
+                            <select name="tf_correct" class="form-control">
+                                <option value="True">True</option>
+                                <option value="False">False</option>
+                            </select>
+                        </div>
+                        <div id="section_ident" style="display:none;">
+                            <label>Accepted Answer</label>
+                            <input type="text" name="ident_answer" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary px-5">Save to Bank & Exam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EXCEL -->
+    <div class="modal fade" id="excelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
+                    <div class="modal-header bg-success text-white"><h5 class="modal-title">Bulk Import</h5></div>
+                    <div class="modal-body">
+                        <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
+                    </div>
+                    <div class="modal-footer"><button type="submit" class="btn btn-success">Upload</button></div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> (function($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
+    <script>
+        $('#qTypeSelect').on('change', function() {
+            const val = $(this).val();
+            $('#section_mc, #section_tf, #section_ident').hide();
+            if(val === 'multiple_choice') $('#section_mc').show();
+            else if(val === 'true_false') $('#section_tf').show();
+            else if(val === 'identification') $('#section_ident').show();
+        });
+    </script>
 </body>
 </html>

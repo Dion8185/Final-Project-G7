@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>TestPoint</title>
+    <title>Manage Exams - TestPoint</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
@@ -30,21 +30,22 @@
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Classroom</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_students') }}"><i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Exam Control</div>
             <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
-                <div id="collapseQuestions" class="collapse"><div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-inner-item" href="{{ url_for('teacher.manage_exams') }}">Manage Questions</a>
-                    <a class="collapse-inner-item" href="{{ url_for('teacher.manage_exams') }}">Excel Import</a>
-                </div></div>
+                <div id="collapseQuestions" class="collapse">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Manage Questions</a>
+                    </div>
+                </div>
             </li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Results</div>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.item_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
@@ -55,20 +56,11 @@
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
-                        
-                        <!-- NOTIFICATION DROP DOWN -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
                                 <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
                             </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Student "Bob" detected tab-switching.</div></a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
-                            </div>
                         </li>
-                        
-                        <!-- PROFILE DROP DOWN -->
                         <div class="topbar-divider d-none d-sm-block"></div>
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
@@ -85,7 +77,19 @@
                 </nav>
 
                 <!-- MAIN PAGE CONTENT -->
-                <div class="container-fluid animate__animated animate__fadeInUp">
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Exam Management</h1>
                         <button class="btn btn-sm btn-danger shadow-sm" data-toggle="modal" data-target="#createExamModal">
@@ -103,35 +107,40 @@
                                     <thead class="bg-light">
                                         <tr>
                                             <th>Exam Title</th>
-                                            <th>Subject</th>
-                                            <th>Time Limit</th>
+                                            <th>Course/Subject</th>
+                                            <th>Duration</th>
+                                            <th>Pass Score</th>
                                             <th>Status</th>
-                                            <th>Action</th>
+                                            <th class="text-center">Manage Questions</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for exam in exams %}
                                         <tr>
                                             <td class="font-weight-bold text-dark">{{ exam.title }}</td>
-                                            <td>{{ exam.subject }}</td>
-                                            <td>{{ exam.duration }} mins</td>
-                                            <td><span class="badge badge-success">Active</span></td>
+                                            <td>{{ exam.course_name }}</td>
+                                            <td>{{ exam.duration_minutes }} mins</td>
+                                            <td>{{ exam.pass_percentage }}%</td>
                                             <td>
-                                                <button class="btn btn-sm btn-circle btn-info shadow-sm" title="Edit"><i class="fas fa-edit"></i></button>
-                                                <button class="btn btn-sm btn-circle btn-danger shadow-sm" title="Delete"><i class="fas fa-trash"></i></button>
+                                                {% if exam.is_active %}
+                                                    <span class="badge badge-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}" class="btn btn-info btn-sm shadow-sm">
+                                                    <i class="fas fa-database mr-1"></i> Question Bank
+                                                </a>
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-circle btn-info mr-1" title="Edit" data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-circle btn-danger" title="Delete" data-toggle="modal" data-target="#deleteExamModal" data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}"><i class="fas fa-trash"></i></button>
                                             </td>
                                         </tr>
                                         {% else %}
-                                        <tr>
-                                            <td class="font-weight-bold text-dark">Midterm: Data Structures</td>
-                                            <td>Computer Science</td>
-                                            <td>60 mins</td>
-                                            <td><span class="badge badge-success">Active</span></td>
-                                            <td>
-                                                <button class="btn btn-sm btn-circle btn-info shadow-sm"><i class="fas fa-edit"></i></button>
-                                                <button class="btn btn-sm btn-circle btn-danger shadow-sm"><i class="fas fa-trash"></i></button>
-                                            </td>
-                                        </tr>
+                                        <tr><td colspan="7" class="text-center text-gray-500 py-4">No exams created yet.</td></tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
@@ -140,8 +149,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- FOOTER -->
             <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
@@ -151,40 +158,95 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title font-weight-bold">New Exam Configuration</h5>
+                    <h5 class="modal-title font-weight-bold">Configure New Exam</h5>
                     <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <form action="#" method="POST">
+                <form action="{{ url_for('teacher.add_exam') }}" method="POST">
                     <div class="modal-body">
                         <div class="form-group">
                             <label class="small font-weight-bold text-dark">Exam Title</label>
-                            <input type="text" class="form-control" placeholder="e.g. Unit 1 Quiz" required>
+                            <input type="text" name="title" class="form-control" placeholder="e.g. Preliminary Exam" required>
                         </div>
                         <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Subject/Course</label>
-                            <select class="form-control">
-                                <option>Computer Science</option>
-                                <option>Web Development</option>
+                            <label class="small font-weight-bold text-dark">Select Course</label>
+                            <select name="course_id" class="form-control" required>
+                                <option value="">-- Select Course --</option>
+                                {% for course in courses %}
+                                <option value="{{ course.course_id }}">{{ course.course_name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Duration (Mins)</label>
-                                    <input type="number" class="form-control" value="60">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Passing Score (%)</label>
-                                    <input type="number" class="form-control" value="75">
-                                </div>
-                            </div>
+                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Duration (Mins)</label><input type="number" name="duration" class="form-control" value="60" required></div></div>
+                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Passing Grade (%)</label><input type="number" name="pass_percentage" class="form-control" value="75" required></div></div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light">
                         <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-danger shadow-sm" type="submit">Initialize Exam</button>
+                        <button class="btn btn-danger shadow-sm" type="submit">Create Exam</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT EXAM MODALS (LOOP) -->
+    {% for exam in exams %}
+    <div class="modal fade" id="editExamModal{{ exam.exam_id }}" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold">Edit Exam: {{ exam.title }}</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <!-- You will need an update_exam route in teacher.py -->
+                <form action="{{ url_for('teacher.manage_exams') }}" method="POST">
+                    <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Exam Title</label>
+                            <input type="text" name="title" class="form-control" value="{{ exam.title }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Assigned Course</label>
+                            <select name="course_id" class="form-control" required>
+                                {% for course in courses %}
+                                <option value="{{ course.course_id }}" {% if course.course_id == exam.course_id %}selected{% endif %}>{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Duration (Mins)</label><input type="number" name="duration" class="form-control" value="{{ exam.duration_minutes }}" required></div></div>
+                            <div class="col-md-6"><div class="form-group"><label class="small font-weight-bold text-dark">Passing Grade (%)</label><input type="number" name="pass_percentage" class="form-control" value="{{ exam.pass_percentage }}" required></div></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-info shadow-sm" type="submit">Update Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteExamModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold">Confirm Deletion</h5>
+                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form id="deleteExamForm" method="POST">
+                    <div class="modal-body text-center py-4">
+                        <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                        <p class="font-weight-bold">Delete exam: <span id="delExamTitle" class="text-danger"></span>?</p>
+                        <p class="small text-muted">Warning: This will delete all questions and student results linked to this exam.</p>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-danger px-4 shadow-sm" type="submit">Yes, Delete Permanently</button>
                     </div>
                 </form>
             </div>
@@ -194,6 +256,21 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> (function($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
+    <script>
+        (function($) {
+            "use strict";
+            $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); });
+
+            // Setup Delete Modal
+            $('#deleteExamModal').on('show.bs.modal', function (event) {
+                var btn = $(event.relatedTarget);
+                var id = btn.data('id');
+                var title = btn.data('title');
+                $('#delExamTitle').text(title);
+                var action = "{{ url_for('teacher.delete_exam', exam_id='0') }}".replace('0', id);
+                $('#deleteExamForm').attr('action', action);
+            });
+        })(jQuery);
+    </script>
 </body>
 </html>
