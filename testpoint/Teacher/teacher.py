@@ -95,27 +95,57 @@ def manage_enrollees(course_id):
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         
-        cursor.execute("SELECT * FROM courses WHERE course_id = %s AND teacher_id = %s", (course_id, teacher_id))
+        # Validate course ownership
+        cursor.execute("""
+            SELECT * FROM courses 
+            WHERE course_id = %s AND teacher_id = %s
+        """, (course_id, teacher_id))
         course = cursor.fetchone()
+
         if not course:
             flash("Unauthorized access.", "danger")
             return redirect(url_for('teacher.my_courses'))
 
+        # ✅ 1. GET CURRENTLY ENROLLED STUDENTS (FOR TABLE)
         cursor.execute("""
-            SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id, e.enrolled_at 
-            FROM students s
-            JOIN enrollments e ON s.student_id = e.student_id
+            SELECT 
+                e.enrollment_id,
+                s.student_id,
+                s.firstname,
+                s.lastname,
+                u.email,
+                e.enrolled_at
+            FROM enrollments e
+            JOIN students s ON e.student_id = s.student_id
+            JOIN users u ON s.student_id = u.user_id
             WHERE e.course_id = %s
         """, (course_id,))
         enrollees = cursor.fetchall()
-        
-        cursor.execute("SELECT student_id, firstname, lastname FROM students")
+
+        # ✅ 2. GET AVAILABLE STUDENTS (NOT ENROLLED, VERIFIED ONLY)
+        cursor.execute("""
+            SELECT s.student_id, s.firstname, s.lastname
+            FROM students s
+            INNER JOIN users u ON s.student_id = u.user_id
+            LEFT JOIN enrollments e 
+                ON s.student_id = e.student_id AND e.course_id = %s
+            WHERE u.is_verified = 1
+            AND e.student_id IS NULL
+        """, (course_id,))
         all_students = cursor.fetchall()
-        
+
         cursor.close()
         connection.close()
-        return render_template('teacher_enrollees.html', course=course, enrollees=enrollees, all_students=all_students)
+
+        return render_template(
+            'teacher_enrollees.html',
+            course=course,
+            enrollees=enrollees,
+            all_students=all_students
+        )
+
     return redirect(url_for('auth.login'))
+
 
 #! 4. EXAMS
 @teacher.route('/manage_exams')

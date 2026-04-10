@@ -89,7 +89,7 @@
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching.</div>
+                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div>
                                 </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
                             </div>
@@ -131,9 +131,19 @@
                         {% endif %}
                     {% endwith %}
 
-                    <div class="row">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" id="searchInput" class="form-control" placeholder="Search courses by code, title, or teacher...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="courseGrid">
                         {% for course in courses %}
-                        <div class="col-xl-4 col-md-6 mb-4">
+                        <div class="col-xl-4 col-md-6 mb-4 course-card">
                             <div class="card shadow h-100 border-left-danger">
                                 <div class="card-header bg-white py-3">
                                     <h6 class="m-0 font-weight-bold text-danger">{{ course.course_code }}</h6>
@@ -182,6 +192,16 @@
                 $("body").toggleClass("sidebar-toggled");
                 $(".sidebar").toggleClass("toggled");
             });
+
+            function filterCourses() {
+                var query = $('#searchInput').val().toLowerCase();
+                $('.course-card').each(function () {
+                    var card = $(this);
+                    card.toggle(card.text().toLowerCase().indexOf(query) > -1);
+                });
+            }
+
+            $('#searchInput').on('keyup', filterCourses);
         })(jQuery);
     </script>
 </body>

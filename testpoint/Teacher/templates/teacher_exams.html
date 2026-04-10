@@ -39,6 +39,7 @@
                 <div id="collapseQuestions" class="collapse">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Manage Questions</a>
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
                     </div>
                 </div>
             </li>
@@ -60,6 +61,13 @@
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
                                 <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
                             </a>
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div>
+                                </a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
+                            </div>
                         </li>
                         <div class="topbar-divider d-none d-sm-block"></div>
                         <li class="nav-item dropdown no-arrow">
@@ -98,6 +106,16 @@
                     </div>
 
                     <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" id="searchInput" class="form-control" placeholder="Search exam title, course, or status...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mb-4">
                         <div class="card-header py-3 bg-white">
                             <h6 class="m-0 font-weight-bold text-danger">My Created Exams</h6>
                         </div>
@@ -117,7 +135,7 @@
                                     </thead>
                                     <tbody>
                                         {% for exam in exams %}
-                                        <tr>
+                                        <tr class="exam-row">
                                             <td class="font-weight-bold text-dark">{{ exam.title }}</td>
                                             <td>{{ exam.course_name }}</td>
                                             <td>{{ exam.duration_minutes }} mins</td>
@@ -268,6 +286,16 @@
         (function($) {
             "use strict";
             $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); });
+
+            function filterExams() {
+                var query = $('#searchInput').val().toLowerCase();
+                $('.exam-row').each(function () {
+                    var row = $(this);
+                    row.toggle(row.text().toLowerCase().indexOf(query) > -1);
+                });
+            }
+
+            $('#searchInput').on('keyup', filterExams);
 
             // Setup Delete Modal
             $('#deleteExamModal').on('show.bs.modal', function (event) {

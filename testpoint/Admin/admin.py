@@ -336,8 +336,7 @@ def manage_courses():
         firstname = session.get('firstname') 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
-        
-        # JOIN to get the teacher's name assigned to the course
+
         cursor.execute("""
             SELECT c.*, t.firstname AS teacher_fname, t.lastname AS teacher_lname,
             (SELECT COUNT(*) FROM enrollments WHERE course_id = c.course_id) AS student_count
@@ -347,8 +346,13 @@ def manage_courses():
         """)
         courses = cursor.fetchall()
         
-        # Fetch list of all teachers for the dropdown in Modals
-        cursor.execute("SELECT teacher_id, firstname, lastname FROM teachers")
+        cursor.execute("""
+            SELECT t.teacher_id, t.firstname, t.lastname
+            FROM teachers t
+            INNER JOIN users u ON t.teacher_id = u.user_id
+            WHERE u.is_verified = 1
+        """)
+        
         teachers = cursor.fetchall()
         
         cursor.close()
@@ -577,7 +581,16 @@ def manage_enrollments(course_id):
         """, (course_id,))
         enrollees = cursor.fetchall()
         
-        cursor.execute("SELECT student_id, firstname, lastname FROM students")
+        cursor.execute("""
+            SELECT s.student_id, s.firstname, s.lastname
+            FROM students s
+            INNER JOIN users u ON s.student_id = u.user_id
+            LEFT JOIN enrollments e 
+                ON s.student_id = e.student_id AND e.course_id = %s
+            WHERE u.is_verified = 1
+            AND e.student_id IS NULL;
+        """, (course_id,))
+        
         all_students = cursor.fetchall()
         
         cursor.close()

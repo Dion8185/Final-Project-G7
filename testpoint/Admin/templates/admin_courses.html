@@ -102,6 +102,17 @@
                         </button>
                     </div>
 
+                    <!-- Search Section -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Search by course code, title, or teacher...">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}

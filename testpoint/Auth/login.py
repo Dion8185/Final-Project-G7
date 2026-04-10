@@ -56,57 +56,88 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
         msg.html = f"""
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Verification Code</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verification Code</title>
 </head>
-<body style="margin:0;padding:0;font-family:'Georgia',serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="min-height:100vh;">
-    <tr><td align="center" style="padding:48px 16px;">
-      <table width="520" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;width:100%;background-color:#16161e;border:1px solid #2a2a38;border-radius:16px;overflow:hidden;">
-        <tr><td style="height:4px;background:linear-gradient(90deg,#c9a96e 0%,#e8c98a 50%,#c9a96e 100%);"></td></tr>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+<body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
         <tr>
-          <td align="center" style="padding:40px 48px 32px;">
-            <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#c9a96e,#8a6535);margin:0 auto 16px;text-align:center;line-height:52px;font-size:22px;">✦</div>
-            <span style="font-family:'Georgia',serif;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:#c9a96e;">Verification Required</span>
-          </td>
+            <td align="center">
+                <!-- Main Card -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                    style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+                    <!-- Blue Top Bar -->
+                    <tr>
+                        <td style="height: 6px; background-color: #2d58d1; border-radius: 12px 12px 0 0;"></td>
+                    </tr>
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 40px 20px;">
+                            <h1><i class="fas fa-book-reader" style="font-size: 42px; color: #2d58d1;"></i></h1>
+                            <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">
+                                TestPoint Examination System
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a; font-weight: normal;">
+                                Hello, <span style="color: #2d58d1; font-weight: 600;">{recipient_name}</span>
+                            </p>
+
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">
+                                Use the one-time code below to complete your verification. This code is valid for
+                                <strong style="color: #333;">10 minutes</strong> and should not be shared with anyone.
+                            </p>
+
+                            <!-- OTP Code Box (Updated to Blue Theme) -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                                style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 8px;">
+                                <tr>
+                                    <td align="center" style="padding: 25px;">
+                                        <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1e40af; opacity: 0.7;">
+                                            Your verification code
+                                        </p>
+                                        <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 40px; font-weight: 700; letter-spacing: 12px; color: #1e40af; text-indent: 12px;">
+                                            {otp_code}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">
+                                If you did not request this code, you can safely disregard this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
+                            <p style="margin: 0 0 6px; font-size: 12px; color: #64748b;">
+                                Need help? <a href="#" style="color: #2d58d1; text-decoration: none; font-weight: 600;">Contact Support</a>
+                            </p>
+                            <p style="margin: 0; font-size: 11px; color: #94a3b8; letter-spacing: 1px;">
+                                © 2026 · All rights reserved
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
         </tr>
-        <tr><td style="padding:0 48px;"><div style="height:1px;background:linear-gradient(90deg,transparent,#2a2a38,transparent);"></div></td></tr>
-        <tr>
-          <td style="padding:40px 48px 32px;">
-            <p style="margin:0 0 8px;font-size:22px;color:#f0ede8;font-weight:normal;line-height:1.3;">
-              Hello, <span style="color:#c9a96e;">{recipient_name}</span>
-            </p>
-            <p style="margin:0 0 32px;font-size:15px;color:#7a7a8c;line-height:1.7;">
-              Use the one-time code below to complete your verification. This code is valid for
-              <strong style="color:#a0a0b0;">10 minutes</strong> and should not be shared with anyone.
-            </p>
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td align="center" style="padding:32px 0;background-color:#0f0f13;border-radius:12px;border:1px solid #2a2a38;">
-                  <p style="margin:0 0 10px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#5a5a6e;">Your verification code</p>
-                  <p style="margin:0;font-family:'Courier New',monospace;font-size:42px;font-weight:700;letter-spacing:14px;color:#c9a96e;text-indent:14px;">{otp_code}</p>
-                </td>
-              </tr>
-            </table>
-            <p style="margin:28px 0 0;font-size:13px;color:#5a5a6e;line-height:1.7;">
-              If you did not request this code, you can safely disregard this email.
-            </p>
-          </td>
-        </tr>
-        <tr><td style="padding:0 48px;"><div style="height:1px;background:linear-gradient(90deg,transparent,#2a2a38,transparent);"></div></td></tr>
-        <tr>
-          <td align="center" style="padding:28px 48px 40px;">
-            <p style="margin:0 0 6px;font-size:12px;color:#3a3a4a;">Need help? <a href="#" style="color:#c9a96e;text-decoration:none;">Contact Support</a></p>
-            <p style="margin:0;font-size:11px;color:#2e2e3a;letter-spacing:1px;">© 2026 · All rights reserved</p>
-          </td>
-        </tr>
-        <tr><td style="height:2px;background:linear-gradient(90deg,transparent,#2a2a38,transparent);"></td></tr>
-      </table>
-    </td></tr>
-  </table>
+    </table>
 </body>
+
 </html>
 """
     
@@ -187,11 +218,15 @@ def login():
             return redirect(url_for('student.student_dashboard'))
 
         elif user['role'] == 'teacher':
-            query_fetcch_teacher = "SELECT firstname FROM teachers WHERE email = %s;"
-            cursor.execute(query_fetcch_teacher, (email_input,))
+            query_fetch_teacher = "SELECT firstname, lastname FROM teachers WHERE email = %s;"
+            cursor.execute(query_fetch_teacher, (email_input,))
             teacher_data = cursor.fetchone()
             session['teacher_logged_in'] = True
             session['user_id'] = user['user_id']
+            session['email'] = user['email']
+            if teacher_data:
+                session['firstname'] = teacher_data.get('firstname', '')
+                session['lastname'] = teacher_data.get('lastname', '')
             cursor.close()
             connection.close()
             return redirect(url_for('teacher.teacher_dashboard'))
