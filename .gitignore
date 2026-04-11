@@ -6,3 +6,6 @@ testpoint/Teacher/__pycache__/teacher.cpython-314.pyc
 __pycache__/app.cpython-314.pyc
 testpoint/__pycache__/__init__.cpython-314.pyc
 .gitignore
+templates/.html
+templates/searchTemplate.html
+templates
