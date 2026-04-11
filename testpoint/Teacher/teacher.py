@@ -230,11 +230,9 @@ def manage_questions(exam_id):
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         
-        # 1. Get Exam and Course Details
         cursor.execute("SELECT * FROM exams WHERE exam_id = %s", (exam_id,))
         exam = cursor.fetchone()
         
-        # 2. Get Questions currently linked to this exam via the junction table
         cursor.execute("""
             SELECT q.* FROM questions q
             JOIN exam_questions eq ON q.question_id = eq.question_id
@@ -242,13 +240,10 @@ def manage_questions(exam_id):
         """, (exam_id,))
         questions = cursor.fetchall()
         
-        # 3. Fetch options for each question
         for q in questions:
             cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
             q['options'] = cursor.fetchall()
 
-        # 4. Optional: Fetch other questions from the Course Bank NOT in this exam
-        # This allows teachers to "reuse" questions
         cursor.execute("""
             SELECT * FROM questions 
             WHERE course_id = %s AND question_id NOT IN (

@@ -342,6 +342,7 @@ def manage_courses():
             (SELECT COUNT(*) FROM enrollments WHERE course_id = c.course_id) AS student_count
             FROM courses c
             LEFT JOIN teachers t ON c.teacher_id = t.teacher_id
+            WHERE c.is_active = 1
             ORDER BY c.course_code ASC
         """)
         courses = cursor.fetchall()
@@ -362,74 +363,182 @@ def manage_courses():
 
 @admin.route('/add_course', methods=['POST'])
 def add_course():
-    if admin_logged_in():
-        course_code = request.form.get('course_code')
-        course_name = request.form.get('course_name')
-        description = request.form.get('description')
-        teacher_id = request.form.get('teacher_id') # Get assigned teacher
-        
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-        try:
-            # Set to NULL if no teacher selected
-            t_id = teacher_id if teacher_id != "" else None
-            cursor.execute("INSERT INTO courses (course_code, course_name, description, teacher_id) VALUES (%s, %s, %s, %s)", 
-                           (course_code, course_name, description, t_id))
-            connection.commit()
-            flash(f'Course {course_code} added successfully!', 'success')
-        except mysql.connector.Error as err:
-            flash(f'Error: {err}', 'danger')
-        finally:
-            cursor.close()
-            connection.close()
-        return redirect(url_for('admin.manage_courses'))
-    return redirect(url_for('auth.login'))
+    if not admin_logged_in():
+        return redirect(url_for('auth.login'))
+
+    course_code = request.form.get('course_code')
+    course_name = request.form.get('course_name')
+    description = request.form.get('description')
+    teacher_id = request.form.get('teacher_id')
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+
+    try:
+        # 🔍 Check duplicate by course_code ONLY
+        cursor.execute("""
+            SELECT course_id FROM courses 
+            WHERE course_code = %s
+        """, (course_code,))
+
+        if cursor.fetchone():
+            flash('Course code already exists. Please use a different code.', 'warning')
+            return redirect(url_for('admin.manage_courses'))
+
+        t_id = teacher_id if teacher_id != "" else None
+
+        cursor.execute("""
+            INSERT INTO courses (course_code, course_name, description, teacher_id) 
+            VALUES (%s, %s, %s, %s)
+        """, (course_code, course_name, description, t_id))
+
+        connection.commit()
+        flash(f'Course {course_code} added successfully!', 'success')
+
+    except mysql.connector.Error as err:
+        flash(f'Error: {err}', 'danger')
+
+    finally:
+        cursor.close()
+        connection.close()
+
+    return redirect(url_for('admin.manage_courses'))
 
 @admin.route('/update_course/<int:course_id>', methods=['POST'])
 def update_course(course_id):
+    if not admin_logged_in():
+        return redirect(url_for('auth.login'))
+
+    course_code = request.form.get('course_code')
+    course_name = request.form.get('course_name')
+    description = request.form.get('description')
+    teacher_id = request.form.get('teacher_id')
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+
+    try:
+        # 🔍 Check duplicate code excluding current record
+        cursor.execute("""
+            SELECT course_id FROM courses 
+            WHERE course_code = %s AND course_id != %s
+        """, (course_code, course_id))
+
+        if cursor.fetchone():
+            flash('Course code already exists. Please use a different code.', 'warning')
+            return redirect(url_for('admin.manage_courses'))
+
+        t_id = teacher_id if teacher_id != "" else None
+
+        cursor.execute("""
+            UPDATE courses 
+            SET course_code = %s, course_name = %s, description = %s, teacher_id = %s 
+            WHERE course_id = %s
+        """, (course_code, course_name, description, t_id, course_id))
+
+        connection.commit()
+        flash('Course updated successfully.', 'success')
+
+    except mysql.connector.Error as err:
+        flash(f'Error: {err}', 'danger')
+
+    finally:
+        cursor.close()
+        connection.close()
+
+    return redirect(url_for('admin.manage_courses'))
+@admin.route('/trashed_courses')
+def trashed_courses():
+    if not admin_logged_in():
+        return redirect(url_for('auth.login'))
+    trashed_courses = []
+    try:
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM courses WHERE is_active = 0")
+        trashed_courses = cursor.fetchall()
+    except mysql.connector.Error as err:
+        flash(f'Error fetching trashed courses: {err}', 'danger')
+
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals() and connection.is_connected():
+            connection.close()
+
+    return render_template('admin_trashed_courses.html', trashed_courses=trashed_courses)
+
+@admin.route('/deactivate_course/<int:course_id>', methods=['POST'])
+def deactivate_course(course_id):
     if admin_logged_in():
-        course_code = request.form.get('course_code')
-        course_name = request.form.get('course_name')
-        description = request.form.get('description')
-        teacher_id = request.form.get('teacher_id')
-        
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         try:
-            t_id = teacher_id if teacher_id != "" else None
-            cursor.execute("""
-                UPDATE courses 
-                SET course_code = %s, course_name = %s, description = %s, teacher_id = %s 
-                WHERE course_id = %s
-            """, (course_code, course_name, description, t_id, course_id))
+            cursor.execute("UPDATE courses SET is_active = 0 WHERE course_id = %s", (course_id,))
+            cursor.execute("UPDATE courses SET teacher_id = NULL WHERE course_id = %s", (course_id,))
             connection.commit()
-            flash('Course updated successfully.', 'success')
+            flash('Course deactivated.', 'success')
+            
         except mysql.connector.Error as err:
-            flash(f'Error: {err}', 'danger')
+            flash(f'Cannot deactivate course: {err}', 'danger')
         finally:
             cursor.close()
             connection.close()
         return redirect(url_for('admin.manage_courses'))
     return redirect(url_for('auth.login'))
 
-@admin.route('/delete_course/<int:course_id>', methods=['POST'])
-def delete_course(course_id):
+@admin.route('/restore_course/<string:course_code>', methods=['POST'])
+def restore_course(course_code):
     if admin_logged_in():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         try:
-            cursor.execute("DELETE FROM courses WHERE course_id = %s", (course_id,))
+            cursor.execute("UPDATE courses SET is_active = 1 WHERE course_code = %s", (course_code,))
             connection.commit()
-            flash('Course deleted.', 'success')
+            flash('Course restored.', 'success')
         except mysql.connector.Error as err:
-            flash(f'Cannot delete: {err}', 'danger')
+            flash(f'Cannot restore course: {err}', 'danger')
         finally:
             cursor.close()
             connection.close()
         return redirect(url_for('admin.manage_courses'))
     return redirect(url_for('auth.login'))
 
+@admin.route('/delete_course_permanently/<string:course_code>', methods=['POST'])
+def delete_course_permanently(course_code):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("DELETE FROM courses WHERE course_code = %s", (course_code,))
+            connection.commit()
+            flash('Course deleted permanently.', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Cannot delete course: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.trashed_courses'))
+    return redirect(url_for('auth.login'))
 
+@admin.route('/empty_course_trash', methods=['POST'])
+def empty_course_trash():
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            cursor.execute("DELETE FROM courses WHERE is_active = 0")
+            connection.commit()
+            flash('Course trash emptied.', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Cannot empty course trash: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+        return redirect(url_for('admin.trashed_courses'))
+    return redirect(url_for('auth.login'))
+
+    
 #! MANAGE EXAMS
 
 @admin.route('/oversee_exams')
@@ -484,7 +593,6 @@ def oversee_exams():
 #     return redirect(url_for('auth.login'))
 
 
-    
 @admin.route('/user_logs')
 def user_logs():
     if admin_logged_in():
@@ -578,7 +686,7 @@ def manage_enrollments(course_id):
             FROM students s
             JOIN enrollments e ON s.student_id = e.student_id
             WHERE e.course_id = %s
-        """, (course_id,))
+        """, (course['course_id'],))
         enrollees = cursor.fetchall()
         
         cursor.execute("""
@@ -589,7 +697,7 @@ def manage_enrollments(course_id):
                 ON s.student_id = e.student_id AND e.course_id = %s
             WHERE u.is_verified = 1
             AND e.student_id IS NULL;
-        """, (course_id,))
+        """, (course['course_id'],))
         
         all_students = cursor.fetchall()
         

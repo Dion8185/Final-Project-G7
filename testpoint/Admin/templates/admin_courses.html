@@ -94,12 +94,17 @@
                     </ul>
                 </nav>
 
-                <div class="container-fluid animate__animated animate__fadeIn">
+                 <div class="container-fluid animate__animated animate__fadeIn">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Course Management</h1>
-                        <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addCourseModal">
-                            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Course
-                        </button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addCourseModal">
+                                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Course
+                            </button>
+                             <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-dark shadow-sm">
+                                <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Courses
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Search Section -->
@@ -270,18 +275,19 @@
     <div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog">
         <div class="modal-dialog" role="document">
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">Confirm Delete</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">Confirm Deactivation</h5>
+                    <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
                 <form id="deleteCourseForm" method="POST">
                     <div class="modal-body text-center py-4">
-                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                        <p class="font-weight-bold">Delete course <span id="delCode"></span>?</p>
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <p class="font-weight-bold">Deactivate course <span id="delCode"></span>?</p>
+                        <p class="small text-muted">The course will be moved to trash and can be restored later.</p>
                     </div>
                     <div class="modal-footer bg-light">
                         <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-danger px-4" type="submit">Yes, Delete</button>
+                        <button class="btn btn-warning px-4" type="submit">Yes, Deactivate</button>
                     </div>
                 </form>
             </div>
@@ -309,7 +315,7 @@
                 var btn = $(event.relatedTarget);
                 var id = btn.data('id');
                 $('#delCode').text(btn.data('name'));
-                var action = "{{ url_for('admin.delete_course', course_id='0') }}".replace('0', id);
+                var action = "{{ url_for('admin.deactivate_course', course_id='0') }}".replace('0', id);
                 $('#deleteCourseForm').attr('action', action);
             });
         })(jQuery);
