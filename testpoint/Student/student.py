@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 import mysql
 from testpoint import db_config
 from testpoint.Auth.login import user_logged_in
+from werkzeug.security import generate_password_hash
 
 student = Blueprint('student', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/student/static')

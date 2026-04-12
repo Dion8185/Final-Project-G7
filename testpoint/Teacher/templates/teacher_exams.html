@@ -126,6 +126,7 @@
                                         <tr>
                                             <th>Exam Title</th>
                                             <th>Course/Subject</th>
+                                            <th>Schedule</th>
                                             <th>Duration</th>
                                             <th>Pass Score</th>
                                             <th>Status</th>
@@ -138,6 +139,7 @@
                                         <tr class="exam-row">
                                             <td class="font-weight-bold text-dark">{{ exam.title }}</td>
                                             <td>{{ exam.course_name }}</td>
+                                            <td>{{ exam.date_time.strftime('%B %d, %Y | %I:%M %p') if exam.date_time else 'Not scheduled' }}</td>
                                             <td>{{ exam.duration_minutes }} mins</td>
                                             <td>{{ exam.pass_percentage }}%</td>
                                             <td>
@@ -232,6 +234,8 @@
                                     <input type="number" name="duration" class="form-control" value="{{ exam.duration_minutes }}" required>
                                 </div>
                             </div>
+                    
+
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="small font-weight-bold text-dark">Passing Grade (%)</label>
@@ -240,10 +244,17 @@
                             </div>
                         </div>
 
-                        <!-- Schedule Placeholder (Disabled for now as per instructions) -->
                         <div class="form-group">
-                            <label class="small font-weight-bold text-muted">Schedule (Feature Coming Soon)</label>
-                            <input type="text" class="form-control" placeholder="Not available" disabled>
+                            <label class="small font-weight-bold text-muted">Status</label>
+                            <select name="status" class="form-control">
+                                <option value="active" {% if exam.is_active %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if not exam.is_active %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+    
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-muted">Schedule</label>
+                            <input type="datetime-local" name="schedule" class="form-control" value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}">
                         </div>
                     </div>
                     <div class="modal-footer bg-light">

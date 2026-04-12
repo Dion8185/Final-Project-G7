@@ -314,7 +314,6 @@ def delete_account_permanently(user_id):
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
 
-
 @admin.route('/empty_trash', methods=['POST'])
 def empty_trash():
     if admin_logged_in():
@@ -327,7 +326,6 @@ def empty_trash():
         
         flash('Trash emptied successfully.', 'success')
         return redirect(url_for('admin.trashed_accounts'))
-
 
 #! MANAGE COURSES
 @admin.route('/manage_courses')
