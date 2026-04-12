@@ -278,7 +278,6 @@ def add_question(exam_id):
         q_text = request.form.get('question_text')
         q_type = request.form.get('question_type')
         difficulty = request.form.get('difficulty')
-        points = request.form.get('points')
 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
@@ -287,9 +286,9 @@ def add_question(exam_id):
             course_id = cursor.fetchone()['course_id']
             
             cursor.execute("""
-                INSERT INTO questions (course_id, question_text, question_type, difficulty, points)
+                INSERT INTO questions (course_id, question_text, question_type, difficulty)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (course_id, q_text, q_type, difficulty, points))
+            """, (course_id, q_text, q_type, difficulty))
             q_id = cursor.lastrowid
 
             cursor.execute("INSERT INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (exam_id, q_id))
@@ -346,9 +345,9 @@ def import_questions():
 
         for _, row in df.iterrows():
             cursor.execute("""
-                INSERT INTO questions (course_id, question_text, question_type, difficulty, points)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (course_id, row['Question'], row['Type'], row['Difficulty'], row['Points']))
+                INSERT INTO questions (course_id, question_text, question_type, difficulty)
+                VALUES (%s, %s, %s, %s)
+            """, (course_id, row['Question'], row['Type'], row['Difficulty']))
             
             q_id = cursor.lastrowid
             # Link to junction table
