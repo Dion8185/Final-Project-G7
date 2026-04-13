@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from testpoint import db_config
 from testpoint.Auth.login import teacher_logged_in
 import mysql.connector
-import pandas as pd 
+import pandas as pd
 import io
 from datetime import datetime
 
@@ -196,7 +196,6 @@ def update_exam():
         pass_percent = request.form.get('pass_percentage')
         status = request.form.get('status')
         schedule = request.form.get('schedule')
-        
         status = status.lower() if status else 'inactive'
         
         if status == 'active':
