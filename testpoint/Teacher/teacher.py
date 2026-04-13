@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from testpoint import db_config
 from testpoint.Auth.login import teacher_logged_in
 import mysql.connector
-import pandas as pd
+import pandas as pd 
 import io
 from datetime import datetime
 
@@ -16,20 +16,24 @@ def teacher_dashboard():
         teacher_id = session.get('user_id')
         firstname = session.get('firstname')
         lastname = session.get('lastname')
+        
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         
         try:
+            # Stats: Count My Courses
             cursor.execute("SELECT COUNT(*) as count FROM courses WHERE teacher_id = %s", (teacher_id,))
             course_count = cursor.fetchone()['count']
-      
+            
+            # Stats: Count My Exams
             cursor.execute("""
                 SELECT COUNT(*) as count FROM exams e 
                 JOIN courses c ON e.course_id = c.course_id 
                 WHERE c.teacher_id = %s
             """, (teacher_id,))
             exam_count = cursor.fetchone()['count']
-
+            
+            # Stats: Count Total Enrolled Students
             cursor.execute("""
                 SELECT COUNT(DISTINCT e.student_id) as count FROM enrollments e
                 JOIN courses c ON e.course_id = c.course_id
@@ -37,6 +41,7 @@ def teacher_dashboard():
             """, (teacher_id,))
             student_count = cursor.fetchone()['count']
 
+            # Stats: Count Active Examinees
             cursor.execute("""
                 SELECT COUNT(*) as count FROM exam_attempts ea
                 JOIN exams ex ON ea.exam_id = ex.exam_id
@@ -196,6 +201,7 @@ def update_exam():
         pass_percent = request.form.get('pass_percentage')
         status = request.form.get('status')
         schedule = request.form.get('schedule')
+        
         status = status.lower() if status else 'inactive'
         
         if status == 'active':
