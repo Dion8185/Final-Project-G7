@@ -7,29 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Manage Questions - {{ exam.title }}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <style>
-        .bg-gradient-danger {
-            background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%);
-        }
-
-        .card {
-            transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
-            border: none;
-        }
-
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .bank-item {
-            border-left: 4px solid #4e73df;
-        }
+        .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
+        .card { transition: all 0.3s cubic-bezier(.25, .8, .25, 1); border: none; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1) !important; }
+        .bank-item { border-left: 4px solid #4e73df; }
     </style>
 </head>
 
@@ -37,66 +21,50 @@
     <div id="wrapper">
         <!-- SIDE BAR -->
         <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center"
-                href="{{ url_for('teacher.teacher_dashboard') }}">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
                 <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
                 <div class="sidebar-brand-text mx-3">Teacher Panel</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i
-                        class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Classroom</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i
-                        class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Exam Control</div>
-            <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i
-                        class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
+            <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i
-                        class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
                 <div id="collapseQuestions" class="collapse">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <a class="collapse-inner-item text-danger d-block p-2"
-                            href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Manage
-                            Questions</a>
-                        <a class="collapse-inner-item text-danger d-block p-2"
-                            href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Manage Questions</a>
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
                     </div>
                 </div>
             </li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Results</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i
-                        class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.item_analysis') }}"><i
-                        class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.item_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0"
-                    id="sidebarToggle"></button></div>
+            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
 
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i
-                            class="fa fa-bars"></i></button>
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
                         <!-- Cheating Alerts Dropdown -->
                         <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
                                 <i class="fas fa-exclamation-triangle fa-fw text-danger"></i>
                                 <span class="badge badge-danger badge-counter badge-pulse">4</span>
                             </a>
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
                                 <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div>
-                                        <div class="small text-gray-500">Just Now</div>Student detected tab-switching in
-                                        Exam #4.
-                                    </div>
+                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div>
                                 </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
                             </div>
@@ -106,16 +74,12 @@
 
                         <!-- User Info Dropdown -->
                         <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname']
-                                    }} {{ session['lastname'] }}</span>
-                                <img class="img-profile rounded-circle"
-                                    src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }} {{ session['lastname'] }}</span>
+                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="#"><i
-                                        class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
+                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
                                 <div class="dropdown-divider"></div>
                                 <form action="{{ url_for('auth.logout') }}" method="POST">
                                     <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left">
@@ -138,59 +102,47 @@
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">Exam: {{ exam.title }}</h1>
                         <div>
-                            <button class="btn btn-outline-primary btn-sm shadow-sm" data-toggle="modal"
-                                data-target="#bankModal"><i class="fas fa-university"></i> Pick from Bank</button>
-                            <button class="btn btn-success btn-sm shadow-sm" data-toggle="modal"
-                                data-target="#excelModal"><i class="fas fa-file-excel"></i> Import</button>
-                            <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal"
-                                data-target="#manualModal"><i class="fas fa-plus"></i> New Question</button>
+                            <button class="btn btn-outline-primary btn-sm shadow-sm" data-toggle="modal" data-target="#bankModal"><i class="fas fa-university"></i> Pick from Bank</button>
+                            <button class="btn btn-success btn-sm shadow-sm" data-toggle="modal" data-target="#excelModal"><i class="fas fa-file-excel"></i> Import</button>
+                            <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal"><i class="fas fa-plus"></i> New Question</button>
                         </div>
                     </div>
 
                     <!-- Flash Messages -->
                     {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                    {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">{{ message }}</div>
-                    {% endfor %}
-                    {% endif %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
                     {% endwith %}
 
                     <h5 class="text-primary font-weight-bold mb-3">Questions in this Exam ({{ questions|length }})</h5>
-
+                    
                     {% for q in questions %}
                     <div class="card shadow mb-3 border-left-info">
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-md-10">
-                                    <span class="badge badge-light border text-uppercase">{{
-                                        q.question_type.replace('_', ' ') }}</span>
+                                    <span class="badge badge-light border text-uppercase">{{ q.question_type.replace('_', ' ') }}</span>
                                     <span class="badge badge-pill badge-dark text-capitalize">{{ q.difficulty }}</span>
-                                    <p class="font-weight-bold text-dark mt-2 mb-1">{{ loop.index }}. {{ q.question_text
-                                        }}</p>
-
+                                    <p class="font-weight-bold text-dark mt-2 mb-1">{{ loop.index }}. {{ q.question_text }}</p>
+                                    
                                     {% if q.question_type != 'identification' %}
                                     <div class="row ml-1">
                                         {% for opt in q.options %}
-                                        <div
-                                            class="col-md-6 small {% if opt.is_correct %}text-success font-weight-bold{% else %}text-muted{% endif %}">
-                                            <i
-                                                class="fas {% if opt.is_correct %}fa-check-circle{% else %}fa-circle{% endif %} mr-1"></i>
-                                            {{ opt.option_text }}
+                                        <div class="col-md-6 small {% if opt.is_correct %}text-success font-weight-bold{% else %}text-muted{% endif %}">
+                                            <i class="fas {% if opt.is_correct %}fa-check-circle{% else %}fa-circle{% endif %} mr-1"></i> {{ opt.option_text }}
                                         </div>
                                         {% endfor %}
                                     </div>
                                     {% else %}
-                                    <p class="small text-success font-weight-bold mb-0">Answer: {{
-                                        q.options[0].option_text if q.options else '---' }}</p>
+                                    <p class="small text-success font-weight-bold mb-0">Answer: {{ q.options[0].option_text if q.options else '---' }}</p>
                                     {% endif %}
                                 </div>
                                 <div class="col-md-2 text-right">
-                                    <form
-                                        action="{{ url_for('teacher.delete_question', q_id=q.question_id, exam_id=exam.exam_id) }}"
-                                        method="POST">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                            title="Remove from Exam"><i class="fas fa-minus-circle"></i> Unlink</button>
+                                    <form action="{{ url_for('teacher.delete_question', q_id=q.question_id, exam_id=exam.exam_id) }}" method="POST">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove from Exam"><i class="fas fa-minus-circle"></i> Unlink</button>
                                     </form>
                                 </div>
                             </div>
@@ -215,19 +167,15 @@
                     <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <p class="small text-muted">The following questions are in your Course Bank but not in this exam.
-                    </p>
+                    <p class="small text-muted">The following questions are in your Course Bank but not in this exam.</p>
                     <div class="list-group">
                         {% for bq in bank_questions %}
-                        <div
-                            class="list-group-item d-flex justify-content-between align-items-center bank-item mb-2 shadow-sm">
+                        <div class="list-group-item d-flex justify-content-between align-items-center bank-item mb-2 shadow-sm">
                             <div>
                                 <small class="text-uppercase text-primary">{{ bq.question_type }}</small>
                                 <p class="mb-0 font-weight-bold">{{ bq.question_text }}</p>
                             </div>
-                            <form
-                                action="{{ url_for('teacher.link_from_bank', exam_id=exam.exam_id, q_id=bq.question_id) }}"
-                                method="POST">
+                            <form action="{{ url_for('teacher.link_from_bank', exam_id=exam.exam_id, q_id=bq.question_id) }}" method="POST">
                                 <button class="btn btn-sm btn-primary"><i class="fas fa-link"></i> Add to Exam</button>
                             </form>
                         </div>
@@ -271,10 +219,7 @@
                                     <option value="hard">Hard</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <label>Points</label>
-                                <input type="number" name="points" value="1" class="form-control">
-                            </div>
+
                         </div>
                         <hr>
                         <div id="section_mc">
@@ -282,8 +227,7 @@
                             {% for i in range(4) %}
                             <div class="input-group mb-2">
                                 <div class="input-group-prepend">
-                                    <div class="input-group-text"><input type="radio" name="correct_option"
-                                            value="{{ i }}" {% if i==0 %}checked{% endif %}></div>
+                                    <div class="input-group-text"><input type="radio" name="correct_option" value="{{ i }}" {% if i==0 %}checked{% endif %}></div>
                                 </div>
                                 <input type="text" name="options[]" class="form-control" placeholder="Option {{ i+1 }}">
                             </div>
@@ -315,9 +259,7 @@
             <div class="modal-content">
                 <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title">Bulk Import</h5>
-                    </div>
+                    <div class="modal-header bg-success text-white"><h5 class="modal-title">Bulk Import</h5></div>
                     <div class="modal-body">
                         <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
                     </div>
@@ -330,14 +272,13 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $('#qTypeSelect').on('change', function () {
+        $('#qTypeSelect').on('change', function() {
             const val = $(this).val();
             $('#section_mc, #section_tf, #section_ident').hide();
-            if (val === 'multiple_choice') $('#section_mc').show();
-            else if (val === 'true_false') $('#section_tf').show();
-            else if (val === 'identification') $('#section_ident').show();
+            if(val === 'multiple_choice') $('#section_mc').show();
+            else if(val === 'true_false') $('#section_tf').show();
+            else if(val === 'identification') $('#section_ident').show();
         });
     </script>
 </body>
-
 </html>

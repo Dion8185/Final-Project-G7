@@ -94,8 +94,7 @@ def manage_enrollees(course_id):
         teacher_id = session.get('user_id')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
-        
-        # Validate course ownership
+
         cursor.execute("""
             SELECT * FROM courses 
             WHERE course_id = %s AND teacher_id = %s
@@ -106,7 +105,6 @@ def manage_enrollees(course_id):
             flash("Unauthorized access.", "danger")
             return redirect(url_for('teacher.my_courses'))
 
-        # ✅ 1. GET CURRENTLY ENROLLED STUDENTS (FOR TABLE)
         cursor.execute("""
             SELECT 
                 e.enrollment_id,
@@ -122,7 +120,6 @@ def manage_enrollees(course_id):
         """, (course_id,))
         enrollees = cursor.fetchall()
 
-        # ✅ 2. GET AVAILABLE STUDENTS (NOT ENROLLED, VERIFIED ONLY)
         cursor.execute("""
             SELECT s.student_id, s.firstname, s.lastname
             FROM students s
@@ -143,9 +140,7 @@ def manage_enrollees(course_id):
             enrollees=enrollees,
             all_students=all_students
         )
-
     return redirect(url_for('auth.login'))
-
 
 #! 4. EXAMS
 @teacher.route('/manage_exams')
@@ -156,13 +151,13 @@ def manage_exams():
         cursor = connection.cursor(dictionary=True)
         
         cursor.execute("""
-            SELECT e.*, c.course_name, c.course_code 
+            SELECT e.*, c.course_name, c.course_code, e.date_time
             FROM exams e 
             JOIN courses c ON e.course_id = c.course_id 
             WHERE c.teacher_id = %s
         """, (teacher_id,))
-        exams = cursor.fetchall()
         
+        exams = cursor.fetchall()
         cursor.execute("SELECT course_id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
         courses = cursor.fetchall()
         
@@ -206,6 +201,7 @@ def update_exam():
         pass_percent = request.form.get('pass_percentage')
         status = request.form.get('status')
         schedule = request.form.get('schedule')
+        
         status = status.lower() if status else 'inactive'
         
         if status == 'active':
@@ -218,16 +214,24 @@ def update_exam():
         
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
+        
         try:
             cursor.execute("""
                 UPDATE exams 
-                SET title = %s, duration_minutes = %s, pass_percentage = %s 
-                WHERE exam_id = %s
-            """, (title, duration, pass_percent, exam_id))
+                SET title = %s, 
+                duration_minutes = %s, 
+                pass_percentage = %s,
+                is_active = %s,
+                date_time = %s
+                WHERE exam_id = %s;
+            """, (title, duration, pass_percent, status_int, schedule, exam_id))
+
             connection.commit()
             flash('Exam configuration updated successfully!', 'success')
+        
         except mysql.connector.Error as err:
             flash(f'Error updating exam: {err}', 'danger')
+        
         finally:
             cursor.close()
             connection.close()
@@ -274,26 +278,21 @@ def add_question(exam_id):
         q_text = request.form.get('question_text')
         q_type = request.form.get('question_type')
         difficulty = request.form.get('difficulty')
-        points = request.form.get('points')
 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         try:
-            # 1. Get the Course ID associated with this exam
             cursor.execute("SELECT course_id FROM exams WHERE exam_id = %s", (exam_id,))
             course_id = cursor.fetchone()['course_id']
-
-            # 2. Insert into Centralized Bank (Questions table now uses course_id)
+            
             cursor.execute("""
-                INSERT INTO questions (course_id, question_text, question_type, difficulty, points)
+                INSERT INTO questions (course_id, question_text, question_type, difficulty)
                 VALUES (%s, %s, %s, %s, %s)
-            """, (course_id, q_text, q_type, difficulty, points))
+            """, (course_id, q_text, q_type, difficulty))
             q_id = cursor.lastrowid
 
-            # 3. Link this question to the current Exam
             cursor.execute("INSERT INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (exam_id, q_id))
 
-            # 4. Handle Options
             if q_type == 'multiple_choice':
                 options = request.form.getlist('options[]')
                 correct_idx = int(request.form.get('correct_option'))
@@ -346,9 +345,9 @@ def import_questions():
 
         for _, row in df.iterrows():
             cursor.execute("""
-                INSERT INTO questions (course_id, question_text, question_type, difficulty, points)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (course_id, row['Question'], row['Type'], row['Difficulty'], row['Points']))
+                INSERT INTO questions (course_id, question_text, question_type, difficulty)
+                VALUES (%s, %s, %s, %s)
+            """, (course_id, row['Question'], row['Type'], row['Difficulty']))
             
             q_id = cursor.lastrowid
             # Link to junction table
