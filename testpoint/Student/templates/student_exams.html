@@ -1,47 +1,129 @@
 {% extends 'student_base.html' %}
-{% block title %}Available Exams{% endblock %}
+{% block title %}My Exams{% endblock %}
 {% set sidebar_active = 'exams' %}
+
+{% block head %}
+<style>
+    .exam-card { 
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1); 
+        border-radius: 12px; 
+        overflow: hidden; 
+        border-left: 5px solid #4e73df;
+    }
+    .exam-card:hover { 
+        transform: translateY(-5px); 
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.175)!important; 
+    }
+    .course-header {
+        border-bottom: 2px solid #e3e6f0;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+    }
+    .status-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeInUp">
-    <h1 class="h3 mb-4 text-gray-800">Available Exams</h1>
-    <div class="row">
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Computer Science</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">Data Structures Midterm</div>
-                            <div class="mt-2 small text-gray-600"><i class="fas fa-clock mr-1"></i> 60 Minutes</div>
+<div class="container-fluid animate__animated animate__fadeIn">
+    <h1 class="h3 mb-4 text-gray-800">My Examinations</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {# GROUP EXAMS BY COURSE #}
+    {% for course_name, course_exams in exams|groupby('course_name') %}
+    <div class="course-section mb-5">
+        <div class="course-header d-flex align-items-center">
+            <div class="icon-circle bg-primary text-white mr-3">
+                <i class="fas fa-book"></i>
+            </div>
+            <div>
+                <h4 class="m-0 font-weight-bold text-dark">{{ course_name }}</h4>
+                <span class="text-xs text-uppercase text-muted font-weight-bold">
+                    Course Code: {{ course_exams[0].course_code }}
+                </span>
+            </div>
+        </div>
+
+        <div class="row">
+            {% for exam in course_exams %}
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card shadow h-100 exam-card border-0">
+                    <div class="card-body position-relative">
+                        {# STATUS BADGE #}
+                        <div class="status-badge">
+                            {% if exam.attempt_status == 'finished' %}
+                                <span class="badge badge-success px-3 py-2 rounded-pill shadow-sm">
+                                    <i class="fas fa-check-circle mr-1"></i> Completed
+                                </span>
+                            {% else %}
+                                <span class="badge badge-primary px-3 py-2 rounded-pill shadow-sm">
+                                    <i class="fas fa-clock mr-1"></i> Available
+                                </span>
+                            {% endif %}
                         </div>
-                        <div class="col-auto"><i class="fas fa-edit fa-2x text-gray-300"></i></div>
+
+                        <h5 class="font-weight-bold text-primary mb-3 pr-5">{{ exam.title }}</h5>
+                        
+                        <div class="mb-2 small">
+                            <i class="fas fa-calendar-alt text-gray-400 mr-2"></i> 
+                            <span class="text-dark font-weight-bold">Schedule:</span> 
+                            {{ exam.date_time.strftime('%b %d, %Y') }}
+                        </div>
+                        <div class="mb-2 small">
+                            <i class="fas fa-clock text-gray-400 mr-2"></i> 
+                            <span class="text-dark font-weight-bold">Time:</span> 
+                            {{ exam.date_time.strftime('%I:%M %p') }}
+                        </div>
+                        <div class="mb-4 small">
+                            <i class="fas fa-hourglass-half text-gray-400 mr-2"></i> 
+                            <span class="text-dark font-weight-bold">Duration:</span> 
+                            {{ exam.duration_minutes }} Minutes
+                        </div>
+
+                        {% if exam.attempt_status == 'finished' %}
+                            <button class="btn btn-block btn-light text-muted font-weight-bold shadow-sm" disabled>
+                                <i class="fas fa-lock mr-2"></i> Exam Finished
+                            </button>
+                        {% else %}
+                            <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}" 
+                               class="btn btn-block btn-primary font-weight-bold shadow-sm"
+                               onclick="return confirm('Starting this exam will begin the lockdown and timer. Proceed?')">
+                                <i class="fas fa-play mr-2"></i> Take Examination
+                            </a>
+                        {% endif %}
                     </div>
-                    <button class="btn btn-primary btn-block btn-sm mt-3 shadow-sm" data-toggle="modal" data-target="#startExamModal">Take Exam</button>
+                    
+                    <div class="card-footer bg-white py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted"><i class="fas fa-info-circle"></i> Passing Score: {{ exam.pass_percentage }}%</small>
+                        </div>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
     </div>
-</div>
-<div class="modal fade" id="startExamModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">Exam Instructions</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-dark">Please read the following carefully:</p>
-                <ul class="small text-muted">
-                    <li>Once started, the timer cannot be paused.</li>
-                    <li>Switching tabs or minimizing the browser will be logged as a violation.</li>
-                    <li>Ensure you have a stable internet connection.</li>
-                </ul>
-            </div>
-            <div class="modal-footer bg-light">
-                <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <a href="#" class="btn btn-primary">Start Now</a>
-            </div>
+    {% else %}
+    <div class="card shadow border-left-warning py-5">
+        <div class="card-body text-center">
+            <i class="fas fa-exclamation-triangle fa-3x text-gray-300 mb-3"></i>
+            <h4 class="text-gray-500 font-weight-bold">No Exams Found</h4>
+            <p class="text-gray-400">You are not currently enrolled in any courses with active examinations.</p>
         </div>
     </div>
+    {% endfor %}
 </div>
 {% endblock %}

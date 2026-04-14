@@ -4,7 +4,7 @@ from flask_mail import Mail
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '',
+    'password': 'dion8185',
     'database': 'test_point',
     'auth_plugin': 'mysql_native_password'
 }

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>TestPoint</title>
+    <meta http-equiv="refresh" content="30"> <!-- AUTO REFRESH EVERY 30 SECONDS -->
+    <title>Live Monitor - TestPoint</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
@@ -36,16 +36,16 @@
             <div class="sidebar-heading">Exam Control</div>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
             <li class="nav-item">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
+                <a class="nav-link collapsed" href="{{ url_for('teacher.question_bank') }}" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
                 <div id="collapseQuestions" class="collapse"><div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Manage Questions</a>
+                    <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">Manage Questions</a>
                     <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
                 </div></div>
             </li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Results</div>
             <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.item_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
@@ -60,13 +60,9 @@
                         <!-- NOTIFICATION DROP DOWN -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
+                                <i class="fas fa-broadcast-tower fa-fw text-danger"></i>
+                                <span class="badge badge-danger badge-counter badge-pulse">LIVE</span>
                             </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div></a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
-                            </div>
                         </li>
                         
                         <!-- PROFILE DROP DOWN -->
@@ -88,54 +84,62 @@
                 <!-- MAIN PAGE CONTENT -->
                 <div class="container-fluid animate__animated animate__fadeIn">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Live Student Proctoring</h1>
-                        <div class="badge badge-danger badge-pulse p-2 px-3 font-weight-bold">
-                            <i class="fas fa-circle mr-2"></i> MONITORING ACTIVE
+                        <h1 class="h3 mb-0 text-gray-800">Live Student Monitoring</h1>
+                        <div>
+                            <span class="badge badge-dark p-2 mr-2">Page Auto-Refreshes every 30s</span>
+                            <span class="badge badge-danger badge-pulse p-2"><i class="fas fa-circle"></i> SYSTEM ONLINE</span>
                         </div>
                     </div>
 
                     <div class="row">
-                        <div class="col-lg-12">
-                            <div class="card shadow border-left-danger mb-4">
+                        {% for a in attempts %}
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <!-- Card turns red if more than 2 tab switches -->
+                            <div class="card shadow h-100 border-left-{% if a.tab_switches > 2 %}danger{% else %}primary{% endif %}">
                                 <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm text-center align-middle">
-                                            <thead>
-                                                <tr>
-                                                    <th>Examinee</th>
-                                                    <th>Progress</th>
-                                                    <th>Tab Switches</th>
-                                                    <th>Status</th>
-                                                    <th>Control</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr class="bg-light">
-                                                    <td class="font-weight-bold">Alice Smith</td>
-                                                    <td><div class="progress progress-sm"><div class="progress-bar bg-success" style="width: 75%"></div></div></td>
-                                                    <td><span class="text-success h5 font-weight-bold">0</span></td>
-                                                    <td><span class="badge badge-success">On Page</span></td>
-                                                    <td><button class="btn btn-sm btn-outline-danger shadow-sm">Force Submit</button></td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="font-weight-bold text-danger">Bob Jenkins</td>
-                                                    <td><div class="progress progress-sm"><div class="progress-bar bg-danger" style="width: 20%"></div></div></td>
-                                                    <td><span class="text-danger h5 font-weight-bold badge-pulse">5</span></td>
-                                                    <td><span class="badge badge-danger">Violated Policy</span></td>
-                                                    <td><button class="btn btn-sm btn-danger shadow-sm">Suspend Student</button></td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ a.title }}</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ a.firstname }} {{ a.lastname }}</div>
+                                            <div class="mt-3 small text-dark">
+                                                <div class="mb-1"><i class="fas fa-clock mr-2 text-gray-400"></i>Started: <strong>{{ a.start_time.strftime('%H:%M:%S') }}</strong></div>
+                                                <div><i class="fas fa-external-link-alt mr-2 text-gray-400"></i>Tab Switches: 
+                                                    <span class="badge {% if a.tab_switches > 2 %}badge-danger{% else %}badge-secondary{% endif %}">
+                                                        {{ a.tab_switches }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-user-edit fa-2x text-gray-300"></i>
+                                        </div>
                                     </div>
                                 </div>
+                                {% if a.tab_switches > 2 %}
+                                <div class="card-footer bg-danger text-white py-1 small text-center">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> HIGH CHEATING RISK
+                                </div>
+                                {% endif %}
                             </div>
                         </div>
+                        {% else %}
+                        <div class="col-12 text-center py-5">
+                            <div class="p-5">
+                                <i class="fas fa-ghost fa-3x text-gray-300 mb-3"></i>
+                                <p class="text-gray-500 font-italic">No active examinees found at this moment.</p>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
 
             <!-- FOOTER -->
-            <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto text-center">
+                    <span>TestPoint © 2026</span>
+                </div>
+            </footer>
         </div>
     </div>
 

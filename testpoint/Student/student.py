@@ -1,22 +1,70 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-import mysql
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+import mysql.connector
 from testpoint import db_config
 from testpoint.Auth.login import user_logged_in
 from werkzeug.security import generate_password_hash
+from datetime import datetime
 
 student = Blueprint('student', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/student/static')
 
+@student.before_app_request
+def enforce_lockdown():
+    """Restricts navigation if an exam is in progress"""
+    active_exam_id = session.get('active_exam_id')
+    
+    # If student is in an exam
+    if active_exam_id:
+        # List of allowed routes during lockdown
+        allowed_endpoints = [
+            'student.take_exam', 
+            'student.save_progress', 
+            'student.log_violation', 
+            'student.submit_exam',
+            'auth.logout', # Required so they can 'Submit & Quit'
+            'static'
+        ]
+        
+        if request.endpoint and request.endpoint not in allowed_endpoints:
+            return redirect(url_for('student.take_exam', exam_id=active_exam_id))
+
+#! 1. DASHBOARD
 @student.route('/student')
 def student_dashboard():
-    
     if user_logged_in():
-        return render_template('student_dashboard.html')
+        student_id = session.get('user_id')
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+
+        try:
+            # Stats 1: Enrolled Courses
+            cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s", (student_id,))
+            course_count = cursor.fetchone()['count']
+
+            # Stats 2: Completed Exams
+            cursor.execute("SELECT COUNT(*) as count FROM exam_attempts WHERE student_id = %s AND status = 'finished'", (student_id,))
+            completed_count = cursor.fetchone()['count']
+
+            # Stats 3: Available Exams (Active exams in enrolled courses not yet finished)
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM exams e
+                JOIN enrollments en ON e.course_id = en.course_id
+                LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
+                WHERE en.student_id = %s AND e.is_active = 1 AND (ea.status IS NULL OR ea.status = 'in-progress')
+            """, (student_id, student_id))
+            available_count = cursor.fetchone()['count']
+
+            return render_template('student_dashboard.html', 
+                                   course_count=course_count, 
+                                   completed_count=completed_count, 
+                                   available_count=available_count)
+        finally:
+            cursor.close()
+            connection.close()
     
-    else:
-        flash('Please log in to access the dashboard.', 'danger')
-        return redirect(url_for('auth.login'))
-    
+    flash('Please log in to access the dashboard.', 'danger')
+    return redirect(url_for('auth.login'))
+
 #! PROFILE
 
 @student.route('/profile', methods=['GET', 'POST'])
@@ -80,3 +128,207 @@ def profile():
     finally:
         cursor.close()
         connection.close()
+
+#! 2. AVAILABLE EXAMS
+@student.route('/student_exams')
+def student_exams():
+    if user_logged_in():
+        student_id = session.get('user_id')
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+
+        # Fetch exams from courses student is enrolled in
+        cursor.execute("""
+            SELECT e.*, c.course_name, c.course_code, e.date_time, ea.status as attempt_status
+            FROM exams e
+            JOIN courses c ON e.course_id = c.course_id
+            JOIN enrollments en ON e.course_id = en.course_id
+            LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
+            WHERE en.student_id = %s AND e.is_active = 1
+        """, (student_id, student_id))
+        exams = cursor.fetchall()
+
+        cursor.close()
+        connection.close()
+        return render_template('student_exams.html', exams=exams)
+    return redirect(url_for('auth.login'))
+
+#! 1. SAVE PROGRESS (AJAX)
+@student.route('/save_progress', methods=['POST'])
+def save_progress():
+    data = request.get_json()
+    attempt_id = data.get('attempt_id')
+    q_id = data.get('question_id')
+    ans = data.get('answer', "")
+    is_flagged = data.get('is_flagged', 0)
+    current_idx = data.get('current_idx', 0)
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO student_answers (attempt_id, question_id, submitted_answer, is_flagged)
+            VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE submitted_answer = %s, is_flagged = %s
+        """, (attempt_id, q_id, ans, is_flagged, ans, is_flagged))
+        
+        cursor.execute("UPDATE exam_attempts SET current_q_index = %s WHERE attempt_id = %s", (current_idx, attempt_id))
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
+    return jsonify({"status": "saved"})
+
+#! 2. TAKE EXAM (PERSISTENT LOGIC)
+@student.route('/take_exam/<int:exam_id>')
+def take_exam(exam_id):
+    if not user_logged_in(): return redirect(url_for('auth.login'))
+    student_id = session.get('user_id')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    # Calculate Global Timer (Schedule + Duration)
+    cursor.execute("""
+        SELECT *, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(date_time, INTERVAL duration_minutes MINUTE)) as rem 
+        FROM exams WHERE exam_id = %s
+    """, (exam_id,))
+    exam = cursor.fetchone()
+    
+    if not exam or exam['rem'] <= 0:
+        session.pop('active_exam_id', None) # Clear lock if time expired
+        flash("Exam time has expired or exam not found.", "danger")
+        return redirect(url_for('student.student_exams'))
+
+    cursor.execute("SELECT * FROM exam_attempts WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
+    attempt = cursor.fetchone()
+
+    if attempt and attempt['status'] == 'finished':
+        session.pop('active_exam_id', None)
+        flash("Exam already completed.", "warning")
+        return redirect(url_for('student.student_exams'))
+
+    if not attempt:
+        cursor.execute("INSERT INTO exam_attempts (student_id, exam_id, status, start_time) VALUES (%s, %s, 'in-progress', NOW())", (student_id, exam_id))
+        connection.commit()
+        attempt_id = cursor.lastrowid
+        current_q = 0
+    else:
+        attempt_id = attempt['attempt_id']
+        current_q = attempt['current_q_index']
+
+    session['active_exam_id'] = exam_id
+
+    cursor.execute("""
+        SELECT q.* FROM questions q
+        JOIN exam_questions eq ON q.question_id = eq.question_id
+        WHERE eq.exam_id = %s
+        ORDER BY FIELD(q.question_type, 'true_false', 'multiple_choice', 'identification')
+    """, (exam_id,))
+    questions = cursor.fetchall()
+
+    for q in questions:
+        cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
+        q['options'] = cursor.fetchall()
+        cursor.execute("SELECT submitted_answer, is_flagged FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q['question_id']))
+        ans = cursor.fetchone()
+        q['saved_answer'] = ans['submitted_answer'] if ans else ""
+        q['is_flagged'] = ans['is_flagged'] if ans else 0
+
+    cursor.close()
+    connection.close()
+    return render_template('take_exam.html', exam=exam, questions=questions, 
+                           attempt_id=attempt_id, remaining_seconds=exam['rem'], 
+                           current_q=current_q, tab_switches=attempt['tab_switches'] if attempt else 0)
+
+#! 3. VIOLATION LOGGING
+@student.route('/log_violation', methods=['POST'])
+def log_violation():
+    data = request.get_json()
+    attempt_id = data.get('attempt_id')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    cursor.execute("UPDATE exam_attempts SET tab_switches = tab_switches + 1 WHERE attempt_id = %s", (attempt_id,))
+    connection.commit()
+    
+    cursor.execute("SELECT tab_switches FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+    result = cursor.fetchone()
+    new_count = result['tab_switches'] if result else 0
+    
+    cursor.close()
+    connection.close()
+    
+    return jsonify({"status": "logged", "new_count": new_count})
+
+#! 4. FINAL SUBMISSION
+@student.route('/submit_exam/<int:attempt_id>', methods=['POST'])
+def submit_exam(attempt_id):
+    if not user_logged_in(): return redirect(url_for('auth.login'))
+    session.pop('active_exam_id', None)
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # Get attempt details
+        cursor.execute("SELECT exam_id FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+        exam_id = cursor.fetchone()['exam_id']
+        
+        # Get all questions in this exam
+        cursor.execute("SELECT question_id FROM exam_questions WHERE exam_id = %s", (exam_id,))
+        questions = cursor.fetchall()
+
+        total_score = 0
+        for q in questions:
+            q_id = q['question_id']
+            
+            # Get student's answer
+            cursor.execute("SELECT submitted_answer FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
+            student_row = cursor.fetchone()
+            student_ans = str(student_row['submitted_answer']).strip().lower() if student_row else ""
+
+            # Get correct answer
+            cursor.execute("SELECT option_text FROM options WHERE question_id = %s AND is_correct = 1", (q_id,))
+            correct_row = cursor.fetchone()
+            correct_ans = str(correct_row['option_text']).strip().lower() if correct_row else None
+
+            if correct_ans and student_ans == correct_ans:
+                cursor.execute("UPDATE student_answers SET is_correct = 1 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
+                total_score += 1
+            else:
+                cursor.execute("UPDATE student_answers SET is_correct = 0 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
+
+        # Finalize Attempt
+        cursor.execute("UPDATE exam_attempts SET status = 'finished', end_time = NOW(), score = %s WHERE attempt_id = %s", (total_score, attempt_id))
+        connection.commit()
+        flash(f"Exam submitted! Final Score: {total_score}", "success")
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('student.student_results'))
+
+
+@student.route('/student_results')
+def student_results():
+    if not user_logged_in(): return redirect(url_for('auth.login'))
+    student_id = session.get('user_id')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    # Fetch finished attempts with exam and course details
+    cursor.execute("""
+        SELECT ea.*, e.title, e.pass_percentage, c.course_name, c.course_code,
+        (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as total_questions
+        FROM exam_attempts ea
+        JOIN exams e ON ea.exam_id = e.exam_id
+        JOIN courses c ON e.course_id = c.course_id
+        WHERE ea.student_id = %s AND ea.status = 'finished'
+        ORDER BY ea.end_time DESC
+    """, (student_id,))
+    results = cursor.fetchall()
+    
+    cursor.close()
+    connection.close()
+    return render_template('student_results.html', results=results)

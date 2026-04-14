@@ -4,28 +4,64 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{% block title %}Student{% endblock %}</title>
+    <title>{% block title %}Student Portal{% endblock %}</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(78, 115, 223, 0.2) !important; }
-        .timeline { border-left: 2px solid #e3e6f0; position: relative; list-style: none; padding-left: 20px; }
-        .timeline-item { margin-bottom: 20px; position: relative; }
-        .timeline-item::before { content: ''; background: #4e73df; border: 4px solid #fff; width: 16px; height: 16px; border-radius: 50%; position: absolute; left: -29px; top: 5px; box-shadow: 0 0 0 3px #e3e6f0; }
+        .card { border: none; }
+        /* Prevent UI interaction during lockdown */
+        {% if session.get('active_exam_id') %}
+        .no-nav { pointer-events: none; opacity: 0.6; }
+        {% endif %}
     </style>
     {% block head %}{% endblock %}
 </head>
 <body id="page-top">
     <div id="wrapper">
-        {% include 'student_sidebar.html' %}
+        
+        <!-- SIDEBAR: Hidden during active exam -->
+        {% if not session.get('active_exam_id') %}
+            {% include 'student_sidebar.html' %}
+        {% endif %}
+
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                {% include 'student_navbar.html' %}
+                
+                <!-- TOP NAVBAR -->
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    {% if not session.get('active_exam_id') %}
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
+                    {% else %}
+                    <span class="navbar-brand text-danger font-weight-bold ml-3"><i class="fas fa-lock mr-2"></i> LOCKDOWN MODE ACTIVE</span>
+                    {% endif %}
+
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ session['firstname'] }} {{ session['lastname'] }}</span>
+                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
+                            </a>
+                            <!-- User Menu: Only Logout is allowed during exam -->
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                {% if not session.get('active_exam_id') %}
+                                <a class="dropdown-item" href="{{ url_for('student.profile') }}"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
+                                <div class="dropdown-divider"></div>
+                                {% endif %}
+                                <form action="{{ url_for('auth.logout') }}" method="POST">
+                                    <button type="submit" class="dropdown-item text-danger font-weight-bold border-0 bg-transparent w-100 text-left">
+                                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i> {% if session.get('active_exam_id') %}Submit & Logout{% else %}Logout{% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+
                 {% block content %}{% endblock %}
+
             </div>
             <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
@@ -42,5 +78,6 @@
             });
         })(jQuery);
     </script>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
