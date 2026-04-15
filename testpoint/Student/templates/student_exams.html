@@ -1,8 +1,8 @@
 {% extends 'student_base.html' %}
 {% block title %}My Exams{% endblock %}
 {% set sidebar_active = 'exams' %}
-
 {% block head %}
+<meta http-equiv="refresh" content="5">
 <style>
     .exam-card { 
         transition: all 0.3s cubic-bezier(.25,.8,.25,1); 
@@ -34,7 +34,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}">
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
                     {{ message }}
                     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                 </div>
@@ -62,17 +62,12 @@
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card shadow h-100 exam-card border-0">
                     <div class="card-body position-relative">
-                        {# STATUS BADGE #}
+                        {# DYNAMIC STATUS BADGE #}
                         <div class="status-badge">
-                            {% if exam.attempt_status == 'finished' %}
-                                <span class="badge badge-success px-3 py-2 rounded-pill shadow-sm">
-                                    <i class="fas fa-check-circle mr-1"></i> Completed
-                                </span>
-                            {% else %}
-                                <span class="badge badge-primary px-3 py-2 rounded-pill shadow-sm">
-                                    <i class="fas fa-clock mr-1"></i> Available
-                                </span>
-                            {% endif %}
+                            <span class="badge badge-{{ exam.status_class }} px-3 py-2 rounded-pill shadow-sm">
+                                <i class="fas {% if exam.status_label == 'Completed' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-1"></i> 
+                                {{ exam.status_label }}
+                            </span>
                         </div>
 
                         <h5 class="font-weight-bold text-primary mb-3 pr-5">{{ exam.title }}</h5>
@@ -84,7 +79,7 @@
                         </div>
                         <div class="mb-2 small">
                             <i class="fas fa-clock text-gray-400 mr-2"></i> 
-                            <span class="text-dark font-weight-bold">Time:</span> 
+                            <span class="text-dark font-weight-bold">Start Time:</span> 
                             {{ exam.date_time.strftime('%I:%M %p') }}
                         </div>
                         <div class="mb-4 small">
@@ -93,23 +88,30 @@
                             {{ exam.duration_minutes }} Minutes
                         </div>
 
-                        {% if exam.attempt_status == 'finished' %}
-                            <button class="btn btn-block btn-light text-muted font-weight-bold shadow-sm" disabled>
-                                <i class="fas fa-lock mr-2"></i> Exam Finished
-                            </button>
-                        {% else %}
+                        {# DYNAMIC BUTTON LOGIC #}
+                        {% if exam.can_start %}
                             <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}" 
                                class="btn btn-block btn-primary font-weight-bold shadow-sm"
-                               onclick="return confirm('Starting this exam will begin the lockdown and timer. Proceed?')">
-                                <i class="fas fa-play mr-2"></i> Take Examination
+                               onclick="return confirm('Note: Starting this exam triggers Lockdown Mode. Proceed?')">
+                                <i class="fas fa-play mr-2"></i> Start Examination
                             </a>
+                        {% else %}
+                            <button class="btn btn-block btn-light text-muted font-weight-bold shadow-sm" disabled>
+                                {% if exam.status_label == 'Completed' %}
+                                    <i class="fas fa-check-double mr-2"></i> Submitted
+                                {% elif exam.status_label == 'Upcoming' %}
+                                    <i class="fas fa-lock mr-2"></i> Locked Until {{ exam.date_time.strftime('%I:%M %p') }}
+                                {% elif exam.status_label == 'Expired' %}
+                                    <i class="fas fa-times-circle mr-2"></i> Time Elapsed
+                                {% else %}
+                                    <i class="fas fa-ban mr-2"></i> Unavailable
+                                {% endif %}
+                            </button>
                         {% endif %}
                     </div>
                     
                     <div class="card-footer bg-white py-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted"><i class="fas fa-info-circle"></i> Passing Score: {{ exam.pass_percentage }}%</small>
-                        </div>
+                        <small class="text-muted"><i class="fas fa-info-circle"></i> Passing Score: {{ exam.pass_percentage }}%</small>
                     </div>
                 </div>
             </div>
@@ -117,11 +119,10 @@
         </div>
     </div>
     {% else %}
-    <div class="card shadow border-left-warning py-5">
-        <div class="card-body text-center">
-            <i class="fas fa-exclamation-triangle fa-3x text-gray-300 mb-3"></i>
-            <h4 class="text-gray-500 font-weight-bold">No Exams Found</h4>
-            <p class="text-gray-400">You are not currently enrolled in any courses with active examinations.</p>
+    <div class="card shadow border-left-warning py-5 text-center">
+        <div class="card-body">
+            <i class="fas fa-ghost fa-3x text-gray-300 mb-3"></i>
+            <h4 class="text-gray-500 font-weight-bold">No Exams Linked to Your Account</h4>
         </div>
     </div>
     {% endfor %}

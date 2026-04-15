@@ -3,7 +3,7 @@ import mysql.connector
 from testpoint import db_config
 from testpoint.Auth.login import user_logged_in
 from werkzeug.security import generate_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 
 student = Blueprint('student', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/student/static')
@@ -137,16 +137,46 @@ def student_exams():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
-        # Fetch exams from courses student is enrolled in
+        # 1. Fetch all exams in enrolled courses (active or not)
         cursor.execute("""
-            SELECT e.*, c.course_name, c.course_code, e.date_time, ea.status as attempt_status
+            SELECT e.*, c.course_name, c.course_code, ea.status as attempt_status
             FROM exams e
             JOIN courses c ON e.course_id = c.course_id
             JOIN enrollments en ON e.course_id = en.course_id
             LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-            WHERE en.student_id = %s AND e.is_active = 1
+            WHERE en.student_id = %s
         """, (student_id, student_id))
         exams = cursor.fetchall()
+        
+        now = datetime.now()
+
+        # 2. Add Logic for Status and Availability
+        for exam in exams:
+            start_time = exam['date_time']
+            end_time = start_time + timedelta(minutes=exam['duration_minutes'])
+            
+            # Default flags
+            exam['status_label'] = "Available"
+            exam['status_class'] = "primary"
+            exam['can_start'] = False
+
+            if exam['attempt_status'] == 'finished':
+                exam['status_label'] = "Completed"
+                exam['status_class'] = "success"
+            elif exam['is_active'] == 0:
+                exam['status_label'] = "Unavailable"
+                exam['status_class'] = "secondary"
+            elif now < start_time:
+                exam['status_label'] = "Upcoming"
+                exam['status_class'] = "warning"
+            elif now > end_time:
+                exam['status_label'] = "Expired"
+                exam['status_class'] = "danger"
+            else:
+                # Inside the window
+                exam['status_label'] = "Ongoing"
+                exam['status_class'] = "success"
+                exam['can_start'] = True
 
         cursor.close()
         connection.close()
