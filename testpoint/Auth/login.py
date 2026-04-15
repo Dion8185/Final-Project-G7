@@ -450,6 +450,21 @@ def resend_otp():
     return jsonify({"message": "Session expired."}), 400
 
 @auth.route('/logout', methods=['POST'])
-def logout(): 
+def logout():
+    active_exam_id = session.get('active_exam_id')
+    user_id = session.get('user_id')
+    
+    if active_exam_id and session.get('role') == 'student':
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("""
+            UPDATE exam_attempts SET status = 'finished', end_time = NOW() 
+            WHERE student_id = %s AND exam_id = %s AND status = 'in-progress'
+        """, (user_id, active_exam_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+
     session.clear()
+    flash("You have been logged out.", "info")
     return redirect(url_for('auth.login'))

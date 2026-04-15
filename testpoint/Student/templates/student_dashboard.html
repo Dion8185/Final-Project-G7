@@ -1,38 +1,64 @@
 {% extends 'student_base.html' %}
-{% block title %}Exam Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
 {% set sidebar_active = 'dashboard' %}
+
 {% block content %}
 <div class="container-fluid animate__animated animate__fadeInUp">
-    <h1 class="h3 mb-4 text-gray-800">Welcome, Alice!</h1>
+    <h1 class="h3 mb-4 text-gray-800">Welcome, {{ session.get('firstname') }}!</h1>
+    
     <div class="row">
-        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-primary shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Exams</div><div class="h5 mb-0 font-weight-bold text-gray-800">22</div></div></div></div>
-        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-success text-uppercase mb-1">Weighted GPA</div><div class="h5 mb-0 font-weight-bold text-gray-800">3.85</div></div></div></div>
-        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-info shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-info text-uppercase mb-1">Class Rank</div><div class="h5 mb-0 font-weight-bold text-gray-800">#4 / 45</div></div></div></div>
-        <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-warning shadow h-100 py-2"><div class="card-body"><div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Certificates</div><div class="h5 mb-0 font-weight-bold text-gray-800">5</div></div></div></div>
-    </div>
-
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-1">
-                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Course Progress</h6></div>
+        <!-- Enrolled Courses Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
-                    <h4 class="small font-weight-bold">Algorithms <span class="float-right">85%</span></h4><div class="progress mb-4"><div class="progress-bar bg-primary" style="width: 85%"></div></div>
-                    <h4 class="small font-weight-bold">Web Development <span class="float-right">100%</span></h4><div class="progress mb-4"><div class="progress-bar bg-success" style="width: 100%"></div></div>
-                    <h4 class="small font-weight-bold">Networking <span class="float-right">Pending Finals</span></h4><div class="progress"><div class="progress-bar bg-warning" style="width: 20%"></div></div>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">My Courses</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course_count }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-university fa-2x text-gray-300"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-2">
-                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Upcoming Exam Timeline</h6></div>
+
+        <!-- Available Exams Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
-                    <ul class="timeline">
-                        <li class="timeline-item"><strong>Algorithms Midterm</strong><br><small class="text-muted">Today at 2:00 PM</small></li>
-                        <li class="timeline-item"><strong>Networking Quiz 2</strong><br><small class="text-muted">Tomorrow</small></li>
-                        <li class="timeline-item"><strong>English Proficiency</strong><br><small class="text-muted">Next Monday</small></li>
-                    </ul>
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Exams</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_count }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-edit fa-2x text-gray-300"></i></div>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Completed Exams Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Finished Tests</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-check-double fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Placeholder -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Student Progress</h6></div>
+        <div class="card-body">
+            <p>You are currently enrolled in {{ course_count }} course(s). Make sure to check your available exams regularly.</p>
+            <a href="{{ url_for('student.student_exams') }}" class="btn btn-primary btn-sm">View Exams</a>
         </div>
     </div>
 </div>

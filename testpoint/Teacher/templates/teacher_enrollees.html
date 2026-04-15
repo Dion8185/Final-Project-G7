@@ -44,7 +44,7 @@
                 </a>
                 <div id="collapseQuestions" class="collapse">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Manage Questions</a>
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">Manage Questions</a>
                         <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Results</div>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.item_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a></li>
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
