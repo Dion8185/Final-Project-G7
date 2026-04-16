@@ -175,12 +175,14 @@ def login():
             return render_template('login.html')
     
         if user['is_verified'] == 0:
-            cursor.execute("SELECT firstname FROM students WHERE email = %s", (email_input,))
+            cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
             student_data = cursor.fetchone()
             fname = student_data['firstname'] if student_data else "User"
+            lname = student_data['lastname'] if student_data else ""
             session['pending_user_id'] = user['user_id']
             session['email'] = user['email']
             session['firstname'] = fname
+            session['lastname'] = lname
             
             cursor.close()
             connection.close()
@@ -207,12 +209,16 @@ def login():
             return render_template('login.html')
 
         elif user['role'] == 'student':
-            query_fetch_student = "SELECT firstname FROM students WHERE email = %s;"
+            query_fetch_student = "SELECT firstname, lastname FROM students WHERE email = %s;"
             cursor.execute(query_fetch_student, (email_input,))
             student_data = cursor.fetchone()
             
             session['user_logged_in'] = True
             session['user_id'] = user['user_id']
+            session['email'] = user['email']
+            if student_data:
+                session['firstname'] = student_data['firstname']
+                session['lastname'] = student_data['lastname']
             cursor.close()
             connection.close()
             return redirect(url_for('student.student_dashboard'))

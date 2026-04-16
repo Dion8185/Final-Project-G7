@@ -12,11 +12,13 @@
     <style>
         .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
         .card { border: none; }
-        /* Prevent UI interaction during lockdown */
-        {% if session.get('active_exam_id') %}
-        .no-nav { pointer-events: none; opacity: 0.6; }
-        {% endif %}
     </style>
+    {% if session.get('active_exam_id') %}
+    <style>
+        /* Prevent UI interaction during lockdown */
+        .no-nav { pointer-events: none; opacity: 0.6; }
+    </style>
+    {% endif %}
     {% block head %}{% endblock %}
 </head>
 <body id="page-top">
