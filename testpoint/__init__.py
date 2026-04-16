@@ -39,7 +39,7 @@ def create_app():
     
     app.register_blueprint(auth)
     app.register_blueprint(admin, url_prefix='/admin')
-    app.register_blueprint(teacher)
-    app.register_blueprint(student)
-    
+    app.register_blueprint(teacher, url_prefix='/teacher')
+    app.register_blueprint(student, url_prefix='/student')
+
     return app

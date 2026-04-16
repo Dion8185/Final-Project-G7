@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Question Bank - TestPoint</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
+        .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(231, 74, 59, 0.2) !important; }
+    </style>
+</head>
+<body id="page-top">
+    <div id="wrapper">
+        <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
+                <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+                <div class="sidebar-brand-text mx-3">Teacher Panel</div>
+            </a>
+            
+            <hr class="sidebar-divider my-0">
+            <li class="nav-item active">
+                <a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}">
+                    <i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span>
+                </a>
+            </li>
+            
+            <hr class="sidebar-divider">
+            <div class="sidebar-heading">Classroom</div>
+            
+            <!-- CONNECTED: Link to My Classes / Enrollment Logic -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('teacher.my_courses') }}">
+                    <i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span>
+                </a>
+            </li>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-heading">Exam Control</div>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('teacher.manage_exams') }}">
+                    <i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions">
+                    <i class="fas fa-fw fa-database"></i><span>Question Bank</span>
+                </a>
+                <div id="collapseQuestions" class="collapse">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">Manage Questions</a>
+                        <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
+                    </div>
+                </div>
+            </li>
+
+            <hr class="sidebar-divider">
+            <div class="sidebar-heading">Results</div>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a></li>
+            
+            <hr class="sidebar-divider d-none d-md-block">
+            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
+        </ul>
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                  <!-- TOP BAR -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
+                    <ul class="navbar-nav ml-auto">
+                        
+                        <!-- NOTIFICATION DROP DOWN -->
+                        <li class="nav-item dropdown no-arrow mx-1">
+                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
+                                <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
+                            </a>
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
+                                <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div></a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
+                            </div>
+                        </li>
+                        
+                        <!-- PROFILE DROP DOWN -->
+                        <div class="topbar-divider d-none d-sm-block"></div>
+                        <li class="nav-item dropdown no-arrow">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }} {{ session['lastname'] }}</span>
+                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
+                                <div class="dropdown-divider"></div>
+                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left"><i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout</button></form>
+                            </div>
+                        </li>
+                    </ul>
+                </nav>
+
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    <h1 class="h3 mb-4 text-gray-800">Master Question Bank</h1>
+                    <div class="row">
+                        {% for course in courses %}
+                        <div class="col-xl-4 col-md-6 mb-4">
+                            <div class="card border-left-danger shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">{{ course.course_code }}</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course.course_name }}</div>
+                                            <div class="mt-2 small text-muted font-italic">{{ course.question_count }} Questions in Bank</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a href="{{ url_for('teacher.course_question_bank', course_id=course.course_id) }}" class="btn btn-danger btn-circle btn-lg">
+                                                <i class="fas fa-folder-open"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-12 text-center py-5">
+                            <p class="text-gray-500">No courses assigned to you.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script> (function($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
+</body>
+</html>

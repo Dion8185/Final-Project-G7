@@ -1,0 +1,172 @@
+{% extends 'student_base.html' %}
+{% block title %}Exam Room{% endblock %}
+
+{% block head %}
+<style>
+    .question-step { display: none; min-height: 350px; }
+    .question-step.active { display: block; }
+    .q-indicator { width: 40px; height: 40px; line-height: 40px; cursor: pointer; border: 1px solid #ddd; 
+                   display: inline-block; margin: 3px; text-align: center; border-radius: 5px; font-weight: bold; }
+    .q-indicator.active { border: 3px solid #4e73df; transform: scale(1.1); }
+    .q-indicator.answered { background-color: #1cc88a; color: white; border-color: #1cc88a; }
+    .q-indicator.flagged { background-color: #f6c23e !important; color: white !important; }
+    .sticky-top { top: 20px; }
+    body { user-select: none; -webkit-user-select: none; } 
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Question <span id="q-idx-text">1</span> of {{ questions|length }}</h6>
+                    <button class="btn btn-sm btn-warning shadow-sm" id="btn-flag"><i class="fas fa-flag"></i> Flag for Review</button>
+                </div>
+                <div class="card-body">
+                    <form id="exam-form" action="{{ url_for('student.submit_exam', attempt_id=attempt_id) }}" method="POST">
+                        {% for q in questions %}
+                        <div class="question-step" id="step-{{ loop.index0 }}" data-q-id="{{ q.question_id }}" data-q-type="{{ q.question_type }}">
+                            <span class="badge badge-secondary mb-3 text-uppercase small">{{ q.question_type.replace('_',' ') }}</span>
+                            <h4 class="text-dark mb-4">{{ q.question_text }}</h4>
+                            <hr>
+                            
+                            {% if q.question_type in ['multiple_choice', 'true_false'] %}
+                                {% for opt in q.options %}
+                                <div class="custom-control custom-radio mb-3">
+                                    <input type="radio" id="opt_{{ opt.option_id }}" name="question_{{ q.question_id }}" 
+                                           value="{{ opt.option_text }}" class="custom-control-input ajax-save"
+                                           {% if q.saved_answer == opt.option_text %}checked{% endif %}>
+                                    <label class="custom-control-label text-dark" for="opt_{{ opt.option_id }}">{{ opt.option_text }}</label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <input type="text" name="question_{{ q.question_id }}" class="form-control ajax-save" 
+                                       placeholder="Type answer here..." value="{{ q.saved_answer }}" autocomplete="off">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </form>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-between">
+                    <button class="btn btn-secondary px-4 shadow-sm" id="btn-prev">Previous</button>
+                    <button class="btn btn-primary px-4 shadow-sm" id="btn-next">Next Question</button>
+                    <button class="btn btn-success px-4 shadow-sm" id="btn-submit" style="display:none;" onclick="confirmFinalSubmit()">Submit Exam</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4 sticky-top">
+                <div class="card-body text-center py-3 bg-light">
+                    <div class="small font-weight-bold text-danger text-uppercase mb-1">Time Remaining</div>
+                    <div class="h2 mb-0 font-weight-bold text-dark" id="timer">00:00</div>
+                </div>
+                <div class="card-body p-2 text-center" style="max-height: 350px; overflow-y: auto;">
+                    {% for q in questions %}
+                    <div class="q-indicator {% if q.saved_answer %}answered{% endif %} {% if q.is_flagged %}flagged{% endif %}" 
+                         id="map-{{ loop.index0 }}" onclick="jumpTo({{ loop.index0 }})">
+                        {{ loop.index }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    "use strict";
+    let currentIdx = {{ current_q }};
+    const totalQ = {{ questions|length }};
+    let timeLeft = {{ remaining_seconds }};
+    let switchCount = {{ tab_switches }};
+
+    // 1. BLOCK BACK BUTTON
+    history.pushState(null, null, location.href);
+    window.onpopstate = () => history.go(1);
+
+    // 2. TIMER
+    const timerInt = setInterval(() => {
+        if (timeLeft <= 0) { clearInterval(timerInt); document.getElementById('exam-form').submit(); }
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        $('#timer').text(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        timeLeft--;
+    }, 1000);
+
+    // 3. NAVIGATION (FIXED SYNC)
+    function showStep(idx) {
+        $('.question-step').hide().removeClass('active');
+        $('.q-indicator').removeClass('active');
+        $(`#step-${idx}`).fadeIn(200).addClass('active');
+        $(`#map-${idx}`).addClass('active');
+        $('#q-idx-text').text(idx + 1);
+        $('#btn-prev').prop('disabled', idx === 0);
+        
+        if (idx === totalQ - 1) { $('#btn-next').hide(); $('#btn-submit').show(); } 
+        else { $('#btn-next').show(); $('#btn-submit').hide(); }
+        currentIdx = idx;
+        syncProgress(); // Saves position on every move
+    }
+
+    $('#btn-next').click(() => showStep(currentIdx + 1));
+    $('#btn-prev').click(() => showStep(currentIdx - 1));
+    window.jumpTo = (idx) => showStep(idx);
+
+    // 4. AJAX SYNC (FIXED VALUE FETCHING)
+    function syncProgress() {
+        const step = $(`#step-${currentIdx}`);
+        const qId = step.data('q-id');
+        const qType = step.data('q-type');
+        let val = "";
+
+        // CORRECTLY FETCH VALUE BASED ON TYPE
+        if (qType === 'multiple_choice' || qType === 'true_false') {
+            val = step.find('input[type="radio"]:checked').val() || "";
+        } else {
+            val = step.find('input[type="text"]').val() || "";
+        }
+
+        const indicator = $(`#map-${currentIdx}`);
+        const flagged = indicator.hasClass('flagged') ? 1 : 0;
+        if (val !== "") indicator.addClass('answered');
+
+        fetch("{{ url_for('student.save_progress') }}", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ attempt_id: {{ attempt_id }}, question_id: qId, answer: val, is_flagged: flagged, current_idx: currentIdx })
+        });
+    }
+
+    $(document).on('change', '.ajax-save', syncProgress);
+    $(document).on('blur', 'input[type="text"].ajax-save', syncProgress);
+
+    $('#btn-flag').click(function() {
+        $(`#map-${currentIdx}`).toggleClass('flagged');
+        syncProgress();
+    });
+
+    // 5. ANTI-CHEATING
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            fetch("{{ url_for('student.log_violation') }}", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ attempt_id: {{ attempt_id }} })
+            }).then(res => res.json()).then(data => {
+                if (data.new_count >= 10) document.getElementById('exam-form').submit();
+                else alert("CHEATING DETECTED (" + data.new_count + "/10)");
+            });
+        }
+    });
+
+    window.confirmFinalSubmit = () => { if (confirm("Final Submit?")) document.getElementById('exam-form').submit(); };
+    showStep(currentIdx);
+});
+</script>
+{% endblock %}
