@@ -80,7 +80,7 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
                     <!-- Header -->
                     <tr>
                         <td align="center" style="padding: 40px 40px 20px;">
-                            <h1><i class="fas fa-book-reader" style="font-size: 42px; color: #2d58d1;"></i></h1>
+                            <h1 style="font-size: 42px;">📑</i></h1>
                             <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">
                                 TestPoint Examination System
                             </div>
