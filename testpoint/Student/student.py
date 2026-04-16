@@ -23,6 +23,41 @@ def enforce_lockdown():
         if request.endpoint and request.endpoint not in allowed_endpoints:
             return redirect(url_for('student.take_exam', exam_id=active_exam_id))
 
+@student.context_processor
+def inject_enrolled_courses():
+    if 'user_id' in session and session.get('role') == 'student':
+        student_id = session.get('user_id')
+        try:
+            connection = mysql.connector.connect(**db_config)
+            cursor = connection.cursor(dictionary=True)
+            
+            # Query all courses the student is enrolled in
+            cursor.execute("""
+                SELECT c.course_id, c.course_name, c.course_code 
+                FROM courses c
+                JOIN enrollments e ON c.course_id = e.course_id
+                WHERE e.student_id = %s
+            """, (student_id,))
+            courses = cursor.fetchall()
+            
+            cursor.close()
+            connection.close()
+            return dict(enrolled_courses=courses)
+        except Exception as e:
+            print(f"Error fetching sidebar courses: {e}")
+            return dict(enrolled_courses=[])
+    return dict(enrolled_courses=[])
+
+# You also need a route to handle the navigation when a course is clicked
+@student.route('/course/<int:course_id>')
+def view_course(course_id):
+    if not user_logged_in():
+        return redirect(url_for('auth.login'))
+    
+    # Logic to fetch specific course content goes here
+    # Render your course-specific page
+    return render_template('student_courses.html', course_id=course_id, sidebar_active='course_view', current_course_id=course_id)
+
 #! 1. DASHBOARD
 @student.route('/student')
 def student_dashboard():

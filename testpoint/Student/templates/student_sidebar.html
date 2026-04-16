@@ -1,0 +1,49 @@
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+        <div class="sidebar-brand-icon rotate-n-15"><i class="fas fa-user-graduate"></i></div>
+        <div class="sidebar-brand-text mx-3">Student Portal</div>
+    </a>
+    <hr class="sidebar-divider my-0">
+    {% set active = sidebar_active|default('dashboard') %}
+    <li class="nav-item {% if active == 'dashboard' %}active{% endif %}"><a class="nav-link" href="{{ url_for('student.student_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>Exam Dashboard</span></a></li>
+    
+    <li class="nav-item">
+        <a class="nav-link {% if active == 'course_view' %}active{% else %}collapsed{% endif %}" href="#" data-toggle="collapse" data-target="#collapseCourses"
+            aria-expanded="true" aria-controls="collapseCourses">
+            <i class="fas fa-fw fa-book"></i>
+            <span>My Courses</span>
+        </a>
+        <!-- The 'show' class is added if a course is currently being viewed -->
+        <div id="collapseCourses" class="collapse {% if active == 'course_view' %}show{% endif %}" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Enrolled Subjects:</h6>
+                
+                {% if enrolled_courses %}
+                    {% for course in enrolled_courses %}
+                        <a class="collapse-item {% if current_course_id == course.course_id %}active font-weight-bold{% endif %}" 
+                        href="{{ url_for('student.view_course', course_id=course.course_id) }}">
+                            <i class="fas fa-chevron-right mr-1 small"></i> {{ course.course_name }}
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <!-- Empty State -->
+                    <div class="collapse-item text-muted small italic">
+                        <i class="fas fa-info-circle mr-1"></i> No enrolled courses
+                    </div>
+                {% endif %}
+
+                <!-- Loading State Placeholder (Hidden by default, used if you implement AJAX later) -->
+                <div id="courseLoading" class="collapse-item d-none">
+                    <span class="spinner-border spinner-border-sm mr-2"></span> Loading...
+                </div>
+            </div>
+        </div>
+    </li>
+
+    <li class="nav-item {% if active == 'exams' %}active{% endif %}"><a class="nav-link" href="{{ url_for('student.student_exams') }}"><i class="fas fa-fw fa-pen-alt"></i><span>Available Exams</span></a></li>
+    <li class="nav-item {% if active == 'results' %}active{% endif %}"><a class="nav-link" href="{{ url_for('student.student_results') }}"><i class="fas fa-fw fa-poll-h"></i><span>Test Results</span></a></li>
+    <hr class="sidebar-divider d-none d-md-block">
+    <li class="nav-item {% if active == 'certificates' %}active{% endif %}"><a class="nav-link" href="#"><i class="fas fa-fw fa-award"></i><span>Certificates</span></a></li>
+    <hr class="sidebar-divider d-none d-md-block">
+    <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
+</ul>
