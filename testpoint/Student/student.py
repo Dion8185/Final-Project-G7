@@ -10,21 +10,16 @@ student = Blueprint('student', __name__, template_folder='templates', static_fol
 
 @student.before_app_request
 def enforce_lockdown():
-    """Restricts navigation if an exam is in progress"""
     active_exam_id = session.get('active_exam_id')
-    
-    # If student is in an exam
     if active_exam_id:
-        # List of allowed routes during lockdown
         allowed_endpoints = [
             'student.take_exam', 
             'student.save_progress', 
             'student.log_violation', 
             'student.submit_exam',
-            'auth.logout', # Required so they can 'Submit & Quit'
+            'auth.logout', 
             'static'
         ]
-        
         if request.endpoint and request.endpoint not in allowed_endpoints:
             return redirect(url_for('student.take_exam', exam_id=active_exam_id))
 
@@ -137,7 +132,6 @@ def student_exams():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
-        # 1. Fetch all exams in enrolled courses (active or not)
         cursor.execute("""
             SELECT e.*, c.course_name, c.course_code, ea.status as attempt_status
             FROM exams e
@@ -149,13 +143,11 @@ def student_exams():
         exams = cursor.fetchall()
         
         now = datetime.now()
-
-        # 2. Add Logic for Status and Availability
+        
         for exam in exams:
             start_time = exam['date_time']
             end_time = start_time + timedelta(minutes=exam['duration_minutes'])
             
-            # Default flags
             exam['status_label'] = "Available"
             exam['status_class'] = "primary"
             exam['can_start'] = False
@@ -173,7 +165,6 @@ def student_exams():
                 exam['status_label'] = "Expired"
                 exam['status_class'] = "danger"
             else:
-                # Inside the window
                 exam['status_label'] = "Ongoing"
                 exam['status_class'] = "success"
                 exam['can_start'] = True
@@ -217,7 +208,6 @@ def take_exam(exam_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
-    # Calculate Global Timer (Schedule + Duration)
     cursor.execute("""
         SELECT *, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(date_time, INTERVAL duration_minutes MINUTE)) as rem 
         FROM exams WHERE exam_id = %s
@@ -225,7 +215,7 @@ def take_exam(exam_id):
     exam = cursor.fetchone()
     
     if not exam or exam['rem'] <= 0:
-        session.pop('active_exam_id', None) # Clear lock if time expired
+        session.pop('active_exam_id', None) 
         flash("Exam time has expired or exam not found.", "danger")
         return redirect(url_for('student.student_exams'))
 

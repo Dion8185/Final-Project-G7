@@ -17,7 +17,6 @@ def admin_dashboard():
         role = session.get('role')
         firstname = session.get('firstname') 
         
-        # COUNT TOTAL USERS
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         cursor.execute("SELECT COUNT(*) FROM users")
