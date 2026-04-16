@@ -1,10 +1,18 @@
 from flask import Flask
 from flask_mail import Mail
+from dotenv import load_dotenv
+import os
+
+load_dotenv("passwordDB.env")
+passwordDB = os.getenv("DBPASSWORD")
+
+if not passwordDB:
+    raise ValueError("DBPASSWORD is not set in passwordDB.env")
 
 db_config = {
     'host': 'localhost',
     'user': 'root',
-    'password': '',
+    'password': passwordDB,
     'database': 'test_point',
     'auth_plugin': 'mysql_native_password'
 }
@@ -21,6 +29,7 @@ def create_app():
     app.config['MAIL_PASSWORD'] = 'yzfc xmrb bkpw yepp'
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_USE_SSL'] = True
+    
     mail.init_app(app)
     
     from testpoint.Auth.login import auth
