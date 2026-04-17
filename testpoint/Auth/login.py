@@ -216,6 +216,8 @@ def login():
             session['user_logged_in'] = True
             session['user_id'] = user['user_id']
             session['email'] = user['email']
+            session['role'] = 'student'
+
             if student_data:
                 session['firstname'] = student_data['firstname']
                 session['lastname'] = student_data['lastname']
@@ -230,6 +232,8 @@ def login():
             session['teacher_logged_in'] = True
             session['user_id'] = user['user_id']
             session['email'] = user['email']
+            session['role'] = 'teacher'
+            
             if teacher_data:
                 session['firstname'] = teacher_data.get('firstname', '')
                 session['lastname'] = teacher_data.get('lastname', '')

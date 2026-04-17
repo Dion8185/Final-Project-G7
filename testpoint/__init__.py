@@ -3,7 +3,7 @@ from flask_mail import Mail
 from dotenv import load_dotenv
 import os
 
-load_dotenv("passwordDB.env")
+load_dotenv("testpoint/passwordDB.env")
 passwordDB = os.getenv("DBPASSWORD")
 
 if not passwordDB:

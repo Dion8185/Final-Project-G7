@@ -23,7 +23,7 @@ def enforce_lockdown():
         if request.endpoint and request.endpoint not in allowed_endpoints:
             return redirect(url_for('student.take_exam', exam_id=active_exam_id))
 
-@student.context_processor
+@student.app_context_processor
 def inject_enrolled_courses():
     if 'user_id' in session and session.get('role') == 'student':
         student_id = session.get('user_id')
@@ -44,7 +44,7 @@ def inject_enrolled_courses():
             connection.close()
             return dict(enrolled_courses=courses)
         except Exception as e:
-            print(f"Error fetching sidebar courses: {e}")
+            print(f"DEBUG ERROR: {e}") # This will show in your terminal
             return dict(enrolled_courses=[])
     return dict(enrolled_courses=[])
 
