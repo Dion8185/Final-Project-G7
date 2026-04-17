@@ -270,7 +270,6 @@ def add_exam():
             connection.close()
     return redirect(url_for('auth.login'))
 
-
 @teacher.route('/update_exam', methods=['POST'])
 def update_exam():
     if teacher_logged_in():
@@ -284,6 +283,103 @@ def update_exam():
         return redirect(url_for('teacher.manage_exams'))
     return redirect(url_for('auth.login'))
 
+@teacher.route('/delete_exam/<int:exam_id>', methods=['POST'])
+def delete_exam(exam_id):
+    if teacher_logged_in():
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        cursor.execute("UPDATE exams SET archived = 1 WHERE exam_id = %s", (exam_id,)); 
+        connection.commit()
+        cursor.close()
+        connection.close()
+        flash('Deleted.', 'success')
+        return redirect(url_for('teacher.manage_exams'))
+    
+#! 9. TRASH BIN LOGIC (Using 'archived' column)
+
+@teacher.route('/trashed_exams')
+def trashed_exams():
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    teacher_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    cursor.execute("""
+        SELECT e.*, c.course_name, c.course_code
+        FROM exams e 
+        JOIN courses c ON e.course_id = c.course_id 
+        WHERE e.created_by = %s AND e.archived = 1
+    """, (teacher_id,))
+    exams = cursor.fetchall()
+    
+    cursor.close()
+    connection.close()
+    return render_template('teacher_trashed_exams.html', exams=exams)
+
+@teacher.route('/soft_delete_exam/<int:exam_id>', methods=['POST'])
+def soft_delete_exam(exam_id):
+    """Moves exam to trash by setting archived = 1"""
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        cursor.execute("UPDATE exams SET archived = 1 WHERE exam_id = %s", (exam_id,))
+        connection.commit()
+        flash('Exam moved to trash bin.', 'warning')
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('teacher.manage_exams'))
+
+@teacher.route('/restore_exam/<int:exam_id>', methods=['POST'])
+def restore_exam(exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        cursor.execute("UPDATE exams SET archived = 0 WHERE exam_id = %s", (exam_id,))
+        connection.commit()
+        flash('Exam restored successfully!', 'success')
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('teacher.trashed_exams'))
+
+@teacher.route('/delete_exam_permanently/<int:exam_id>', methods=['POST'])
+def delete_exam_permanently(exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM exams WHERE exam_id = %s", (exam_id,))
+        connection.commit()
+        flash('Exam permanently erased.', 'success')
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('teacher.trashed_exams'))
+
+@teacher.route('/empty_exam_trash', methods=['POST'])
+def empty_exam_trash():
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    teacher_id = session.get('user_id')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM exams WHERE created_by = %s AND archived = 1", (teacher_id,))
+        connection.commit()
+        flash('Trash bin emptied successfully.', 'success')
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('teacher.trashed_exams'))
+
+
+#! MANAGE QUESTIONS
 @teacher.route('/manage_questions/<int:exam_id>')
 def manage_questions(exam_id):
     if teacher_logged_in():
@@ -445,8 +541,3 @@ def unenroll_student(enrollment_id, course_id):
         return redirect(url_for('teacher.manage_enrollees', course_id=course_id))
     return redirect(url_for('auth.login'))
 
-@teacher.route('/delete_exam/<int:exam_id>', methods=['POST'])
-def delete_exam(exam_id):
-    if teacher_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(); cursor.execute("DELETE FROM exams WHERE exam_id = %s", (exam_id,)); connection.commit(); cursor.close(); connection.close(); flash('Deleted.', 'success')
-        return redirect(url_for('teacher.manage_exams'))

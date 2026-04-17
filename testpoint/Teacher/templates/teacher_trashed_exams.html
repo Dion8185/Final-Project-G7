@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Trash Bin - Exams | TestPoint</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
+        .exam-card { border-radius: 12px; border-left: 5px solid #858796; transition: 0.3s; }
+        .exam-card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body id="page-top">
+   <div id="wrapper">
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
+        <a class="sidebar-brand d-flex align-items-center justify-content-center"
+            href="{{ url_for('teacher.teacher_dashboard') }}">
+            <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <div class="sidebar-brand-text mx-3">Teacher Panel</div>
+        </a>
+        <hr class="sidebar-divider my-0">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i
+                    class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
+        <hr class="sidebar-divider">
+        <div class="sidebar-heading">Classroom</div>
+        <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i
+                    class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
+        <hr class="sidebar-divider">
+        <div class="sidebar-heading">Exam Control</div>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i
+                    class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions">
+                <i class="fas fa-fw fa-database"></i><span>Question Bank</span>
+            </a>
+            <div id="collapseQuestions" class="collapse">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}"
+                        style="text-decoration:none;">Manage Questions</a>
+                    <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}"
+                        style="text-decoration:none;">Excel Import</a>
+                </div>
+            </div>
+        </li>
+        <hr class="sidebar-divider">
+        <div class="sidebar-heading">Results</div>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i
+                    class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i
+                    class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a></li>
+        <hr class="sidebar-divider d-none d-md-block">
+        <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+    </ul>
+
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div id="content">
+            <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i
+                        class="fa fa-bars"></i></button>
+                <ul class="navbar-nav ml-auto">
+                    <!-- Notification Dropdown -->
+                    <li class="nav-item dropdown no-arrow mx-1">
+                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
+                            data-toggle="dropdown">
+                            <i class="fas fa-exclamation-triangle fa-fw text-danger"></i>
+                            <span class="badge badge-danger badge-counter badge-pulse">4</span>
+                        </a>
+                        <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                            <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div>
+                                    <div class="small text-gray-500">Just Now</div>Student detected tab-switching in
+                                    Exam #4.
+                                </div>
+                            </a>
+                            <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
+                        </div>
+                    </li>
+                    <!-- Profile Dropdown -->
+                    <div class="topbar-divider d-none d-sm-block"></div>
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-toggle="dropdown">
+                            <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }}
+                                {{ session['lastname'] }}</span>
+                            <img class="img-profile rounded-circle"
+                                src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                            <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                                Profile</a>
+                            <div class="dropdown-divider"></div>
+                            <form action="{{ url_for('auth.logout') }}" method="POST">
+                                <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <div class="container-fluid py-4 animate__animated animate__fadeIn">
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-outline-secondary mb-2">
+                                <i class="fas fa-arrow-left fa-sm"></i> Active Exams
+                            </a>
+                            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Deleted Exams</h1>
+                        </div>
+                        <form action="{{ url_for('teacher.empty_exam_trash') }}" method="POST" onsubmit="return confirm('Wipe everything in the trash?')">
+                            <button type="submit" class="btn btn-danger shadow-sm"><i class="fas fa-eraser mr-2"></i> Empty Trash</button>
+                        </form>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    {% for course_name, course_exams in exams|groupby('course_name') %}
+                    <div class="mb-4">
+                        <h5 class="font-weight-bold text-secondary text-uppercase small ml-1 mb-3">{{ course_name }}</h5>
+                        <div class="row">
+                            {% for exam in course_exams %}
+                            <div class="col-xl-4 col-md-6 mb-4">
+                                <div class="card shadow h-100 exam-card border-0">
+                                    <div class="card-body">
+                                        <h5 class="font-weight-bold text-dark">{{ exam.title }}</h5>
+                                        <p class="small text-muted mb-4">Deleted on: {{ exam.date_time }}</p>
+                                        <div class="row no-gutters">
+                                            <div class="col-6 pr-1">
+                                                <form action="{{ url_for('teacher.restore_exam', exam_id=exam.exam_id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-success btn-sm btn-block shadow-sm">Restore</button>
+                                                </form>
+                                            </div>
+                                            <div class="col-6 pl-1">
+                                                <button class="btn btn-outline-danger btn-sm btn-block shadow-sm" data-toggle="modal" data-target="#permDeleteModal" data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}">Delete Forever</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5"><p class="text-gray-500">Trash bin is empty.</p></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERM DELETE MODAL -->
+    <div class="modal fade" id="permDeleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white"><h5 class="modal-title">Final Deletion</h5></div>
+                <form id="permDeleteForm" method="POST">
+                    <div class="modal-body text-center py-4">
+                        <p>Destroy <span id="delTitle" class="font-weight-bold"></span>?</p>
+                        <small class="text-danger">This is irreversible.</small>
+                    </div>
+                    <div class="modal-footer"><button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button><button class="btn btn-danger btn-sm" type="submit">Destroy</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $('#permDeleteModal').on('show.bs.modal', function (event) {
+            var btn = $(event.relatedTarget);
+            $('#delTitle').text(btn.data('title'));
+            $('#permDeleteForm').attr('action', "{{ url_for('teacher.delete_exam_permanently', exam_id='0') }}".replace('0', btn.data('id')));
+        });
+    </script>
+</body>
+</html>
