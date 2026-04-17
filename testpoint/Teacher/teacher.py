@@ -229,7 +229,7 @@ def manage_exams():
         teacher_id = session.get('user_id')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT e.*, c.course_name, c.course_code, e.date_time FROM exams e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s", (teacher_id,))
+        cursor.execute("SELECT e.*, c.course_name, c.course_code, e.date_time FROM exams e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s AND e.archived = 0;", (teacher_id,))
         exams = cursor.fetchall()
         cursor.execute("SELECT course_id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
         courses = cursor.fetchall()
@@ -241,15 +241,35 @@ def manage_exams():
 @teacher.route('/add_exam', methods=['POST'])
 def add_exam():
     if teacher_logged_in():
-        course_id = request.form.get('course_id'); title = request.form.get('title'); duration = request.form.get('duration'); pass_percent = request.form.get('pass_percentage'); schedule = request.form.get('schedule'); teacher_id = session.get('user_id')
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        course_id = request.form.get('course_id')
+        title = request.form.get('title')
+        duration = request.form.get('duration')
+        pass_percent = request.form.get('pass_percentage')
+        schedule = request.form.get('schedule')
+        teacher_id = session.get('user_id')
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
         try:
-            cursor.execute("INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, date_time, created_by) VALUES (%s, %s, %s, %s, %s, %s)", (course_id, title, duration, pass_percent, schedule, teacher_id))
-            connection.commit(); flash('Exam created successfully!', 'success')
-        except mysql.connector.Error as err: flash(f'Database Error: {err}', 'danger')
-        finally: cursor.close(); connection.close()
-        return redirect(url_for('teacher.manage_exams'))
+            cursor.execute("""
+                INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, date_time, created_by, is_active) 
+                VALUES (%s, %s, %s, %s, %s, %s, 0)
+            """, (course_id, title, duration, pass_percent, schedule, teacher_id))
+            new_exam_id = cursor.lastrowid # Get the ID of the exam just created
+            connection.commit()
+            
+            flash('Exam Header Created! Now add your questions via Manual Entry or Excel Import.', 'success')
+            # REDIRECT DIRECTLY TO QUESTION MANAGEMENT
+            return redirect(url_for('teacher.manage_questions', exam_id=new_exam_id))
+            
+        except mysql.connector.Error as err:
+            flash(f'Database Error: {err}', 'danger')
+            return redirect(url_for('teacher.manage_exams'))
+        finally:
+            cursor.close()
+            connection.close()
     return redirect(url_for('auth.login'))
+
 
 @teacher.route('/update_exam', methods=['POST'])
 def update_exam():

@@ -12,45 +12,27 @@
     <style>
         .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
         .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .exam-card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border-radius: 10px; border-left: 5px solid #e74a3b; }
+        .exam-card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border-radius: 12px; border-left: 5px solid #e74a3b; }
         .exam-card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important; }
         .course-section-header { border-bottom: 2px solid #e3e6f0; margin-bottom: 20px; padding-bottom: 10px; }
     </style>
 </head>
 
-<body id="page-top">
-    <div id="wrapper">
+ <div id="wrapper">
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
                 <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
                 <div class="sidebar-brand-text mx-3">Teacher Panel</div>
             </a>
-            
             <hr class="sidebar-divider my-0">
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}">
-                    <i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span>
-                </a>
-            </li>
-            
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Classroom</div>
-            
-            <!-- CONNECTED: Link to My Classes / Enrollment Logic -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('teacher.my_courses') }}">
-                    <i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span>
-                </a>
-            </li>
-
+            <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Exam Control</div>
-            <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('teacher.manage_exams') }}">
-                    <i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span>
-                </a>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions">
                     <i class="fas fa-fw fa-database"></i><span>Question Bank</span>
@@ -62,53 +44,59 @@
                     </div>
                 </div>
             </li>
-
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Results</div>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a></li>
-            
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
         </ul>
 
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                <!-- TOP BAR -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
                     <ul class="navbar-nav ml-auto">
+                        <!-- Notification Dropdown -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter">4</span>
+                                <i class="fas fa-exclamation-triangle fa-fw text-danger"></i>
+                                <span class="badge badge-danger badge-counter badge-pulse">4</span>
                             </a>
+                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
+                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                    <div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div>
+                                </a>
+                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
+                            </div>
                         </li>
+                        <!-- Profile Dropdown -->
                         <div class="topbar-divider d-none d-sm-block"></div>
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }} {{ session['lastname'] }}</span>
                                 <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
                             </a>
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
+                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
+                                <div class="dropdown-divider"></div>
+                                <form action="{{ url_for('auth.logout') }}" method="POST">
+                                    <button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left">
+                                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                                    </button>
+                                </form>
+                            </div>
                         </li>
                     </ul>
                 </nav>
 
                 <div class="container-fluid animate__animated animate__fadeIn">
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Exam Management</h1>
-                        <button class="btn btn-sm btn-danger shadow-sm" data-toggle="modal" data-target="#createExamModal">
-                            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i>Create New Exam
+                        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Exam Management</h1>
+                        <button class="btn btn-danger shadow-sm px-4" data-toggle="modal" data-target="#createExamModal">
+                            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Create New Exam
                         </button>
-                    </div>
-
-                    <!-- SEARCH BAR -->
-                    <div class="card shadow mb-4">
-                        <div class="card-body py-3">
-                            <div class="input-group">
-                                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span></div>
-                                <input type="text" id="searchInput" class="form-control border-left-0" placeholder="Filter exams by title or course...">
-                            </div>
-                        </div>
                     </div>
 
                     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -119,43 +107,51 @@
                         {% endif %}
                     {% endwith %}
 
-                    <!-- GROUPED EXAM CARDS -->
+                    <!-- SEARCH AND FILTER -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body py-3">
+                            <div class="input-group">
+                                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span></div>
+                                <input type="text" id="searchInput" class="form-control border-left-0" placeholder="Quick find exam or course subject...">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GROUPED EXAM CARDS BY COURSE -->
                     {% for course_name, course_exams in exams|groupby('course_name') %}
                     <div class="course-section mb-5">
                         <div class="course-section-header d-flex align-items-center">
-                            <i class="fas fa-book-open text-danger mr-3 fa-lg"></i>
+                            <div class="icon-circle bg-danger text-white mr-3"><i class="fas fa-book"></i></div>
                             <h4 class="m-0 font-weight-bold text-dark">{{ course_name }}</h4>
                         </div>
 
-                        <div class="row">
+                        <div class="row mt-3">
                             {% for exam in course_exams %}
                             <div class="col-xl-4 col-md-6 mb-4 exam-item">
-                                <div class="card shadow h-100 exam-card">
+                                <div class="card shadow h-100 exam-card border-0">
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h5 class="font-weight-bold text-danger m-0 exam-title">{{ exam.title }}</h5>
+                                            <h5 class="font-weight-bold text-danger m-0">{{ exam.title }}</h5>
                                             <span class="badge {% if exam.is_active %}badge-success{% else %}badge-warning{% endif %}">
                                                 {{ 'Active' if exam.is_active else 'Inactive' }}
                                             </span>
                                         </div>
-                                        
-                                        <div class="small mb-3 text-muted">
-                                            <div class="mb-1"><i class="fas fa-calendar-day mr-2"></i> {{ exam.date_time.strftime('%b %d, %Y | %I:%M %p') if exam.date_time else 'Unscheduled' }}</div>
-                                            <div class="mb-1"><i class="fas fa-stopwatch mr-2"></i> {{ exam.duration_minutes }} Minutes</div>
-                                            <div class="mb-1"><i class="fas fa-award mr-2"></i> Passing Grade: {{ exam.pass_percentage }}%</div>
+                                        <hr>
+                                        <div class="small text-muted mb-4">
+                                            <div class="mb-1"><i class="fas fa-calendar-alt mr-2"></i> {{ exam.date_time.strftime('%b %d, %Y | %I:%M %p') if exam.date_time else 'Unscheduled' }}</div>
+                                            <div class="mb-1"><i class="fas fa-stopwatch mr-2"></i> {{ exam.duration_minutes }} Minutes Limit</div>
+                                            <div class="mb-1"><i class="fas fa-check-circle mr-2"></i> {{ exam.pass_percentage }}% Passing Grade</div>
                                         </div>
 
-                                        <hr>
-
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}" class="btn btn-sm btn-info shadow-sm">
-                                                <i class="fas fa-database mr-1"></i> Questions
+                                            <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}" class="btn btn-sm btn-info shadow-sm font-weight-bold">
+                                                <i class="fas fa-plus-circle mr-1"></i> Questions
                                             </a>
                                             <div>
-                                                <a href="{{ url_for('teacher.view_results', exam_id=exam.exam_id) }}" class="btn btn-sm btn-circle btn-primary" title="Student Results">
+                                                <a href="{{ url_for('teacher.view_results', exam_id=exam.exam_id) }}" class="btn btn-sm btn-circle btn-primary" title="Student Scores">
                                                     <i class="fas fa-list-ol"></i>
                                                 </a>
-                                                <button class="btn btn-sm btn-circle btn-secondary mx-1" title="Edit Exam" data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}">
+                                                <button class="btn btn-sm btn-circle btn-secondary mx-1" title="Edit Config" data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                                 <button class="btn btn-sm btn-circle btn-danger" title="Delete" data-toggle="modal" data-target="#deleteExamModal" data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}">
@@ -171,8 +167,8 @@
                     </div>
                     {% else %}
                     <div class="text-center py-5">
-                        <img src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_posting_photo.svg" style="width: 200px;" class="mb-4">
-                        <p class="text-gray-500 font-italic">No exams found. Click "Create New Exam" to get started.</p>
+                        <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i>
+                        <p class="text-gray-500">No exams have been initialized for your courses.</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -181,6 +177,38 @@
         </div>
     </div>
 
+    <!-- CREATE EXAM MODAL -->
+    <div class="modal fade" id="createExamModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold">Step 1: Exam Initialization</h5>
+                    <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <form action="{{ url_for('teacher.add_exam') }}" method="POST">
+                    <div class="modal-body bg-light">
+                        <p class="small text-muted mb-4">After initialization, you will be redirected to Step 2: Adding Questions.</p>
+                        <div class="form-group"><label class="small font-weight-bold">Exam Title</label><input type="text" name="title" class="form-control" required placeholder="e.g. Midterm Examination"></div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold">Assign to Subject</label>
+                            <select name="course_id" class="form-control" required>
+                                <option value="">-- Select Course --</option>
+                                {% for course in courses %}
+                                <option value="{{ course.course_id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-6"><div class="form-group"><label class="small font-weight-bold">Schedule</label><input type="datetime-local" name="schedule" class="form-control" value="{{ now.strftime('%Y-%m-%dT%H:%M') }}"></div></div>
+                            <div class="col-3"><div class="form-group"><label class="small font-weight-bold">Mins</label><input type="number" name="duration" class="form-control" value="60" required></div></div>
+                            <div class="col-3"><div class="form-group"><label class="small font-weight-bold">Pass %</label><input type="number" name="pass_percentage" class="form-control" value="75" required></div></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-white"><button class="btn btn-danger btn-block shadow" type="submit">Create & Add Questions <i class="fas fa-arrow-right ml-2"></i></button></div>
+                </form>
+            </div>
+        </div>
+    </div>
     <!-- CREATE EXAM MODAL -->
     <div class="modal fade" id="createExamModal" tabindex="-1">
         <div class="modal-dialog">
@@ -260,17 +288,14 @@
         $(document).ready(function() {
             "use strict";
             $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); });
-
-            // SEARCH FILTER FOR CARDS
+            
             $('#searchInput').on('keyup', function() {
-                var value = $(this).val().toLowerCase();
+                var val = $(this).val().toLowerCase();
                 $('.exam-item').each(function() {
-                    var cardText = $(this).text().toLowerCase();
-                    $(this).toggle(cardText.indexOf(value) > -1);
+                    $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
                 });
             });
 
-            // DELETE MODAL SETUP
             $('#deleteExamModal').on('show.bs.modal', function (event) {
                 var btn = $(event.relatedTarget);
                 $('#delExamTitle').text(btn.data('title'));
