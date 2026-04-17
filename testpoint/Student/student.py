@@ -173,7 +173,7 @@ def student_exams():
             JOIN courses c ON e.course_id = c.course_id
             JOIN enrollments en ON e.course_id = en.course_id
             LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-            WHERE en.student_id = %s
+            WHERE en.student_id = %s AND e.archived = 0;
         """, (student_id, student_id))
         exams = cursor.fetchall()
         
