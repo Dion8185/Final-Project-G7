@@ -48,18 +48,8 @@ def inject_enrolled_courses():
             return dict(enrolled_courses=[])
     return dict(enrolled_courses=[])
 
-# You also need a route to handle the navigation when a course is clicked
-@student.route('/course/<int:course_id>')
-def view_course(course_id):
-    if not user_logged_in():
-        return redirect(url_for('auth.login'))
-    
-    # Logic to fetch specific course content goes here
-    # Render your course-specific page
-    return render_template('student_courses.html', course_id=course_id, sidebar_active='course_view', current_course_id=course_id)
-
 #! 1. DASHBOARD
-@student.route('/student')
+@student.route('/student_dashboard')
 def student_dashboard():
     if user_logged_in():
         student_id = session.get('user_id')
@@ -387,3 +377,61 @@ def student_results():
     cursor.close()
     connection.close()
     return render_template('student_results.html', results=results)
+
+#! 5. COURSE CONTENT
+@student.route('/course/<int:course_id>')
+def view_course(course_id):
+    if not user_logged_in():
+        return redirect(url_for('auth.login'))
+    
+    student_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # 1. Fetch Course & Teacher Details
+        cursor.execute("""
+            SELECT c.*, t.firstname as t_fname, t.lastname as t_lname, t.email as t_email 
+            FROM courses c
+            LEFT JOIN teachers t ON c.teacher_id = t.teacher_id
+            WHERE c.course_id = %s
+        """, (course_id,))
+        course = cursor.fetchone()
+
+        # 2. Fetch Student Progress for this course
+        # Count total exams in this course
+        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE course_id = %s AND is_active = 1", (course_id,))
+        total_exams = cursor.fetchone()['total']
+
+        # Count completed exams by student
+        cursor.execute("""
+            SELECT COUNT(*) as completed FROM exam_attempts ea
+            JOIN exams e ON ea.exam_id = e.exam_id
+            WHERE e.course_id = %s AND ea.student_id = %s AND ea.status = 'finished'
+        """, (course_id, student_id))
+        completed_exams = cursor.fetchone()['completed']
+
+        # Calculate progress percentage
+        progress_pct = int((completed_exams / total_exams) * 100) if total_exams > 0 else 0
+
+        # 3. Fetch Specific Exams for this Course
+        cursor.execute("""
+            SELECT e.*, ea.status as attempt_status, ea.score, 
+            (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as total_q
+            FROM exams e
+            LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
+            WHERE e.course_id = %s AND e.is_active = 1
+        """, (student_id, course_id))
+        course_exams = cursor.fetchall()
+
+        return render_template('student_courses.html', 
+                               course=course, 
+                               course_exams=course_exams,
+                               progress_pct=progress_pct,
+                               completed_count=completed_exams,
+                               total_count=total_exams,
+                               sidebar_active='course_view', 
+                               current_course_id=course_id)
+    finally:
+        cursor.close()
+        connection.close()

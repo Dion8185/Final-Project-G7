@@ -1,21 +1,168 @@
 {% extends 'student_base.html' %}
-{% block title %}Course Details{% endblock %}
+{% block title %}{{ course.course_code }} - {{ course.course_name }}{% endblock %}
 {% set sidebar_active = 'course_view' %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeInUp">
-    <h1 class="h3 mb-4 text-gray-800">Course Details</h1>
-    
+<div class="container-fluid animate__animated animate__fadeIn">
+
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ course.course_name }}</h1>
+        <span class="badge badge-primary p-2">{{ course.course_code }}</span>
+    </div>
+
+    <!-- Quick Stats Row -->
     <div class="row">
-        <div class="col-12">
+        <!-- Progress Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Course Progress</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ progress_pct }}%</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ progress_pct }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-tasks fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exams Completed Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tests Finished</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }} / {{ total_count }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructor Card -->
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Instructor</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-user-tie fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Course Details & Exams -->
+        <div class="col-lg-8">
+            <!-- Course Description -->
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Course Information</h6>
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle mr-2"></i>About this Course</h6>
                 </div>
                 <div class="card-body">
-                    <p>Course ID: {{ course_id }}</p>
-                    <p>This page will show course-specific content, exams, and materials.</p>
-                    <!-- Add more course content here -->
+                    <p class="text-gray-700">{{ course.description or 'No description available for this course.' }}</p>
+                </div>
+            </div>
+
+            <!-- Course Exams Table -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-edit mr-2"></i>Assessment List</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table m-0 table-hover">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Exam Title</th>
+                                    <th>Status</th>
+                                    <th>Score</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if course_exams %}
+                                    {% for exam in course_exams %}
+                                    <tr>
+                                        <td class="align-middle font-weight-bold">{{ exam.title }}</td>
+                                        <td class="align-middle">
+                                            {% if exam.attempt_status == 'finished' %}
+                                                <span class="badge badge-success">Completed</span>
+                                            {% elif exam.attempt_status == 'in-progress' %}
+                                                <span class="badge badge-warning">In Progress</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle">
+                                            {% if exam.attempt_status == 'finished' %}
+                                                {{ exam.score }} / {{ exam.total_q }}
+                                            {% else %}
+                                                --
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            {% if exam.attempt_status == 'finished' %}
+                                                <a href="{{ url_for('student.student_results') }}" class="btn btn-sm btn-outline-primary">View Review</a>
+                                            {% else %}
+                                                <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}" class="btn btn-sm btn-primary">Start Exam</a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No exams have been posted for this course yet.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Teacher Contact & Resources -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4 text-center">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <img class="img-profile rounded-circle" style="width:80px;" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
+                    </div>
+                    <h5 class="font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname }}</h5>
+                    <p class="small text-muted mb-3">Course Instructor</p>
+                    <a href="mailto:{{ course.t_email }}" class="btn btn-sm btn-outline-secondary btn-block">
+                        <i class="fas fa-envelope mr-1"></i> Send Message
+                    </a>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">Learning Materials</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-3">
+                        <i class="fas fa-folder-open fa-3x text-gray-200 mb-2"></i>
+                        <p class="small text-muted">No materials uploaded yet by instructor.</p>
+                    </div>
                 </div>
             </div>
         </div>
