@@ -7,3 +7,4 @@ __pycache__/app.cpython-314.pyc
 templates/searchTemplate.html
 testpoint/__init__.py
 testpoint/passwordDB.env
+passwordDB.env
