@@ -175,10 +175,41 @@
                         {% endif %}
                     {% endwith %}
 
+                    <!-- FILTERS & SEARCH -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <form id="filterForm" class="row">
+                                <div class="col-md-3 mb-2">
+                                    <select class="form-control" id="typeFilter">
+                                        <option value="">All Types</option>
+                                        <option value="multiple_choice">Multiple Choice</option>
+                                        <option value="true_false">True / False</option>
+                                        <option value="identification">Identification</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <select class="form-control" id="difficultyFilter">
+                                        <option value="">All Difficulties</option>
+                                        <option value="easy">Easy</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="hard">Hard</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Search by question text...">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <!-- FORM START -->
                     <form id="bulkDeleteForm" action="{{ url_for('teacher.bulk_delete_bank_questions', course_id=course.course_id) }}" method="POST">
                         {% for q in questions %}
-                        <div class="card shadow mb-2 question-card" id="card-{{ q.question_id }}">
+                        <div class="card shadow mb-2 question-card" id="card-{{ q.question_id }}" 
+                            data-type="{{ q.question_type }}" data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
                             <div class="card-body p-3">
                                 <div class="row align-items-start">
                                     <div class="col-auto pt-1">
@@ -189,9 +220,14 @@
                                     </div>
                                     <div class="col">
                                         <span class="badge badge-secondary small text-uppercase">{{ q.question_type.replace('_',' ') }}</span>
-                                        <span class="badge badge-pill badge-dark small text-capitalize">{{ q.difficulty }}</span>
+                                        <span class="badge badge-pill small text-capitalize 
+                                            {% if q.difficulty == 'easy' %}badge-success
+                                            {% elif q.difficulty == 'medium' %}badge-warning text-dark
+                                            {% elif q.difficulty == 'hard' %}badge-danger
+                                            {% else %}badge-secondary{% endif %}">
+                                            {{ q.difficulty }}
+                                        </span>
                                         <p class="text-dark font-weight-bold my-2" style="font-size: 1.1rem;">{{ q.question_text }}</p>
-                                        
                                         <div class="row no-gutters">
                                             {% for opt in q.options %}
                                             <div class="col-md-6 small mb-1 {% if opt.is_correct %}text-success font-weight-bold{% else %}text-muted{% endif %}">
@@ -290,6 +326,7 @@
             "use strict";
             $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); });
 
+            // Bulk select logic (existing)
             const selectAll = $('#selectAll');
             const qCheckboxes = $('.q-checkbox');
             const bulkBar = $('#bulkBar');
@@ -330,6 +367,29 @@
                 if (val === 'multiple_choice') $('#section_mc').show();
                 else if (val === 'true_false') $('#section_tf').show();
                 else $('#section_ident').show();
+            });
+
+            // FILTERING LOGIC
+            function performFilter() {
+                var searchVal = $('#searchInput').val().toLowerCase();
+                var typeVal = $('#typeFilter').val();
+                var diffVal = $('#difficultyFilter').val();
+                $('.question-card').each(function() {
+                    var card = $(this);
+                    var cardType = card.attr('data-type');
+                    var cardDiff = card.attr('data-difficulty');
+                    var cardText = card.attr('data-text');
+                    var matchesType = (typeVal === '' || cardType === typeVal);
+                    var matchesDiff = (diffVal === '' || cardDiff === diffVal);
+                    var matchesSearch = (searchVal === '' || cardText.indexOf(searchVal) > -1);
+                    card.toggle(matchesType && matchesDiff && matchesSearch);
+                });
+            }
+            $('#searchInput').on('keyup', performFilter);
+            $('#typeFilter, #difficultyFilter').on('change', performFilter);
+            $('#resetFilters').on('click', function() {
+                $('#searchInput, #typeFilter, #difficultyFilter').val('');
+                performFilter();
             });
         });
     </script>
