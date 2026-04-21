@@ -27,6 +27,7 @@ def enforce_lockdown():
 def inject_enrolled_courses():
     if 'user_id' in session and session.get('role') == 'student':
         student_id = session.get('user_id')
+        
         try:
             connection = mysql.connector.connect(**db_config)
             cursor = connection.cursor(dictionary=True)
@@ -53,6 +54,8 @@ def inject_enrolled_courses():
 def student_dashboard():
     if user_logged_in():
         student_id = session.get('user_id')
+        student_firstname = session.get('firstname')
+        student_lastname = session.get('lastname')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
@@ -77,7 +80,10 @@ def student_dashboard():
             return render_template('student_dashboard.html', 
                                    course_count=course_count, 
                                    completed_count=completed_count, 
-                                   available_count=available_count)
+                                   available_count=available_count,
+                                   student_firstname=student_firstname,
+                                   student_lastname = student_lastname
+                                   )
         finally:
             cursor.close()
             connection.close()

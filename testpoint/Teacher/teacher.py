@@ -156,7 +156,6 @@ def delete_bank_question(q_id, course_id):
     if teacher_logged_in():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
-        # This will delete options too if ON DELETE CASCADE is set
         cursor.execute("DELETE FROM questions WHERE question_id = %s", (q_id,))
         connection.commit()
         cursor.close()
@@ -167,7 +166,6 @@ def delete_bank_question(q_id, course_id):
 @teacher.route('/bulk_delete_bank_questions/<int:course_id>', methods=['POST'])
 def bulk_delete_bank_questions(course_id):
     if teacher_logged_in():
-        # Get the list of question IDs from the checkboxes
         question_ids = request.form.getlist('question_ids[]')
         
         if not question_ids:
@@ -177,7 +175,6 @@ def bulk_delete_bank_questions(course_id):
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         try:
-            # SQL IN clause to delete all selected IDs
             format_strings = ','.join(['%s'] * len(question_ids))
             cursor.execute(f"DELETE FROM questions WHERE question_id IN ({format_strings})", tuple(question_ids))
             connection.commit()
@@ -255,11 +252,11 @@ def add_exam():
                 INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, date_time, created_by, is_active) 
                 VALUES (%s, %s, %s, %s, %s, %s, 0)
             """, (course_id, title, duration, pass_percent, schedule, teacher_id))
-            new_exam_id = cursor.lastrowid # Get the ID of the exam just created
+            new_exam_id = cursor.lastrowid
             connection.commit()
             
             flash('Exam Header Created! Now add your questions via Manual Entry or Excel Import.', 'success')
-            # REDIRECT DIRECTLY TO QUESTION MANAGEMENT
+
             return redirect(url_for('teacher.manage_questions', exam_id=new_exam_id))
             
         except mysql.connector.Error as err:
@@ -296,7 +293,6 @@ def delete_exam(exam_id):
         return redirect(url_for('teacher.manage_exams'))
     
 #! 9. TRASH BIN LOGIC (Using 'archived' column)
-
 @teacher.route('/trashed_exams')
 def trashed_exams():
     if not teacher_logged_in(): return redirect(url_for('auth.login'))

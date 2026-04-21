@@ -1,171 +1,538 @@
 {% extends 'student_base.html' %}
-{% block title %}Exam Room{% endblock %}
+{% block title %}Exam: {{ exam.title }}{% endblock %}
 
 {% block head %}
 <style>
-    .question-step { display: none; min-height: 350px; }
+
+    body {
+        background-color: #f4f4f2;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    #lockdown-overlay {
+        position: fixed; inset: 0;
+        background: rgba(10, 10, 10, 0.93);
+        z-index: 99999;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        text-align: center; padding: 24px; gap: 16px;
+    }
+    #lockdown-overlay .lock-icon {
+        width: 64px; height: 64px; border-radius: 50%;
+        background: rgba(239,80,80,0.15);
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 4px;
+    }
+    #lockdown-overlay h2 {
+        color: #fff; font-size: 22px; font-weight: 600; margin: 0;
+    }
+    #lockdown-overlay p {
+        color: #b4b2a9; font-size: 15px; margin: 0; max-width: 380px; line-height: 1.6;
+    }
+    #lockdown-overlay .btn-enter {
+        margin-top: 8px; padding: 12px 32px;
+        background: #e24b4a; color: #fff; border: none;
+        border-radius: 10px; font-size: 15px; font-weight: 600;
+        cursor: pointer; transition: background .15s;
+    }
+    #lockdown-overlay .btn-enter:hover { background: #a32d2d; }
+
+    /* ── EXAM LAYOUT ── */
+    .exam-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        padding: 20px;
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+        .exam-grid { grid-template-columns: 1fr; }
+        .exam-sidebar { order: -1; }
+    }
+
+    /* ── CARD BASE ── */
+    .exam-card {
+        background: #fff;
+        border: 0.5px solid rgba(0,0,0,.1);
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* ── PROGRESS BAR ── */
+    .progress-bar-track { height: 3px; background: #e5e4e0; }
+    .progress-bar-fill  { height: 100%; background: #378add; transition: width .4s ease; }
+
+    /* ── CARD HEADER / FOOTER ── */
+    .card-head, .card-foot {
+        padding: 14px 20px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        background: #fff;
+    }
+    .card-head { border-bottom: 0.5px solid rgba(0,0,0,.08); }
+    .card-foot { border-top: 0.5px solid rgba(0,0,0,.08); background: #f9f9f7; flex-wrap: wrap; }
+    .q-counter { font-size: 14px; color: #888; font-weight: 400; }
+    .q-counter strong { color: #1a1a1a; font-weight: 600; }
+
+    /* ── FLAG BUTTON ── */
+    .btn-flag {
+        font-size: 13px; font-weight: 500;
+        padding: 7px 14px; border-radius: 8px;
+        border: 0.5px solid #ef9f27;
+        background: #faeeda; color: #854f0b;
+        cursor: pointer; transition: background .15s;
+    }
+    .btn-flag:hover  { background: #fac775; }
+    .btn-flag.active { background: #ef9f27; color: #fff; border-color: #ba7517; }
+
+    /* ── QUESTION BODY ── */
+    .card-body { padding: 24px 20px; min-height: 300px; }
+    .q-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+    .badge-type {
+        font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+        background: #e6f1fb; color: #185fa5; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .badge-pts {
+        font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px;
+        background: #f4f4f2; color: #666; border: 0.5px solid rgba(0,0,0,.1);
+    }
+    .q-text {
+        font-size: 17px; font-weight: 500; line-height: 1.55;
+        color: #1a1a1a; margin-bottom: 20px;
+    }
+    .q-divider { border: none; border-top: 0.5px solid rgba(0,0,0,.08); margin-bottom: 20px; }
+
+    /* ── QUESTION STEPS ── */
+    .question-step { display: none; }
     .question-step.active { display: block; }
-    .q-indicator { width: 40px; height: 40px; line-height: 40px; cursor: pointer; border: 1px solid #ddd; 
-                   display: inline-block; margin: 3px; text-align: center; border-radius: 5px; font-weight: bold; }
-    .q-indicator.active { border: 3px solid #4e73df; transform: scale(1.1); }
-    .q-indicator.answered { background-color: #1cc88a; color: white; border-color: #1cc88a; }
-    .q-indicator.flagged { background-color: #f6c23e !important; color: white !important; }
-    .sticky-top { top: 20px; }
-    body { user-select: none; -webkit-user-select: none; } 
+
+    /* ── RADIO OPTIONS ── */
+    .options-wrap { display: flex; flex-direction: column; gap: 10px; }
+    .option-label {
+        display: flex; align-items: center; gap: 14px;
+        padding: 13px 16px; border-radius: 8px;
+        border: 0.5px solid rgba(0,0,0,.12);
+        cursor: pointer; transition: border-color .15s, background .15s;
+        font-size: 15px; color: #1a1a1a;
+    }
+    .option-label:hover { border-color: #b5d4f4; background: #eef6fd; }
+    .option-label input[type="radio"] { display: none; }
+    .radio-custom {
+        width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%;
+        border: 2px solid rgba(0,0,0,.25);
+        display: flex; align-items: center; justify-content: center;
+        transition: border-color .15s, background .15s;
+    }
+    .option-label:has(input:checked) {
+        border-color: #378add; background: #eef6fd;
+    }
+    .option-label:has(input:checked) .radio-custom {
+        border-color: #378add; background: #378add;
+    }
+    .option-label:has(input:checked) .radio-custom::after {
+        content: ''; width: 6px; height: 6px;
+        border-radius: 50%; background: #fff;
+    }
+
+    /* ── TEXT INPUT ── */
+    .id-input {
+        width: 100%; padding: 11px 14px; font-size: 15px;
+        border: 0.5px solid rgba(0,0,0,.2); border-left: 3px solid #378add;
+        border-radius: 8px; background: #fff; color: #1a1a1a;
+        outline: none; transition: box-shadow .15s;
+    }
+    .id-input:focus { box-shadow: 0 0 0 3px rgba(55,138,221,.14); }
+    .id-label { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 8px; display: block; }
+
+    /* ── NAV BUTTONS ── */
+    .btn-nav {
+        font-size: 14px; font-weight: 500; padding: 10px 22px;
+        border-radius: 8px; border: 0.5px solid rgba(0,0,0,.18);
+        background: #fff; color: #1a1a1a; cursor: pointer; transition: background .15s;
+    }
+    .btn-nav:hover:not(:disabled) { background: #f4f4f2; }
+    .btn-nav:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-nav-primary {
+        background: #378add; color: #fff; border-color: #378add;
+    }
+    .btn-nav-primary:hover:not(:disabled) { background: #185fa5; border-color: #185fa5; }
+    .btn-nav-success {
+        background: #1d9e75; color: #fff; border-color: #1d9e75;
+    }
+    .btn-nav-success:hover:not(:disabled) { background: #0f6e56; }
+
+    /* ── VIOLATION BANNER ── */
+    #violation-banner {
+        display: none;
+        background: #fcebeb; color: #a32d2d;
+        border: 0.5px solid #f09595; border-radius: 8px;
+        padding: 10px 16px; font-size: 13px; margin-bottom: 4px;
+    }
+
+    /* ── SIDEBAR ── */
+    .timer-section { padding: 18px; text-align: center; border-bottom: 0.5px solid rgba(0,0,0,.08); }
+    .timer-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #a32d2d; margin-bottom: 4px; }
+    .timer-value {
+        font-size: 36px; font-weight: 600; letter-spacing: .04em;
+        font-variant-numeric: tabular-nums; color: #1a1a1a;
+    }
+    .timer-value.warning { color: #a32d2d; }
+
+    .map-section-header {
+        padding: 10px 16px; font-size: 12px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: .05em; color: #888;
+        border-bottom: 0.5px solid rgba(0,0,0,.08);
+    }
+    .map-grid {
+        display: flex; flex-wrap: wrap; gap: 6px;
+        padding: 14px; max-height: 260px; overflow-y: auto;
+    }
+    .q-indicator {
+        width: 36px; height: 36px; border-radius: 8px;
+        border: 0.5px solid rgba(0,0,0,.15);
+        background: #fff; color: #888;
+        font-size: 13px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all .15s;
+    }
+    .q-indicator:hover { border-color: #378add; color: #378add; }
+    .q-indicator.active {
+        border: 2px solid #378add; color: #378add;
+        background: #eef6fd; transform: scale(1.1);
+    }
+    .q-indicator.answered { background: #1d9e75 !important; color: #fff !important; border-color: #0f6e56 !important; }
+    .q-indicator.flagged  { background: #ef9f27 !important; color: #fff !important; border-color: #ba7517 !important; }
+    .q-indicator.answered.active,
+    .q-indicator.flagged.active { box-shadow: 0 0 0 2px #378add; }
+
+    .map-legend {
+        display: flex; flex-wrap: wrap; gap: 10px;
+        padding: 10px 14px; border-top: 0.5px solid rgba(0,0,0,.08);
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #888; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    .map-footer {
+        padding: 10px 16px; font-size: 12px; color: #999; text-align: center;
+        border-top: 0.5px solid rgba(0,0,0,.08);
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Question <span id="q-idx-text">1</span> of {{ questions|length }}</h6>
-                    <button class="btn btn-sm btn-warning shadow-sm" id="btn-flag"><i class="fas fa-flag"></i> Flag for Review</button>
-                </div>
-                <div class="card-body">
-                    <form id="exam-form" action="{{ url_for('student.submit_exam', attempt_id=attempt_id) }}" method="POST">
-                        {% for q in questions %}
-                        <div class="question-step" id="step-{{ loop.index0 }}" data-q-id="{{ q.question_id }}" data-q-type="{{ q.question_type }}">
-                            <span class="badge badge-secondary mb-3 text-uppercase small">{{ q.question_type.replace('_',' ') }}</span>
-                            <h4 class="text-dark mb-4">{{ q.question_text }}</h4>
-                            <hr>
-                            
-                            {% if q.question_type in ['multiple_choice', 'true_false'] %}
-                                {% for opt in q.options %}
-                                <div class="custom-control custom-radio mb-3">
-                                    <input type="radio" id="opt_{{ opt.option_id }}" name="question_{{ q.question_id }}" 
-                                           value="{{ opt.option_text }}" class="custom-control-input ajax-save"
-                                           {% if q.saved_answer == opt.option_text %}checked{% endif %}>
-                                    <label class="custom-control-label text-dark" for="opt_{{ opt.option_id }}">{{ opt.option_text }}</label>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <input type="text" name="question_{{ q.question_id }}" class="form-control ajax-save" 
-                                       placeholder="Type answer here..." value="{{ q.saved_answer }}" autocomplete="off">
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </form>
-                </div>
-                <div class="card-footer bg-white d-flex justify-content-between">
-                    <button class="btn btn-secondary px-4 shadow-sm" id="btn-prev">Previous</button>
-                    <button class="btn btn-primary px-4 shadow-sm" id="btn-next">Next Question</button>
-                    <button class="btn btn-success px-4 shadow-sm" id="btn-submit" style="display:none;" onclick="confirmFinalSubmit()">Submit Exam</button>
-                </div>
-            </div>
+<!-- LOCKDOWN OVERLAY -->
+<div id="lockdown-overlay">
+    <div class="lock-icon">
+        <i class="fas fa-shield-alt fa-2x text-danger"></i>
+    </div>
+    <h2>Secure exam mode</h2>
+    <p>This exam requires fullscreen mode. Exiting fullscreen, switching tabs, or losing focus will be logged as a violation.</p>
+    <button class="btn-enter" onclick="startLockdown()">
+        <i class="fas fa-expand mr-2"></i> Enter fullscreen &amp; begin
+    </button>
+</div>
+
+<div class="exam-grid animate__animated animate__fadeIn">
+
+    <!-- LEFT: QUESTION AREA -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        <div id="violation-banner">
+            ⚠ Violation logged — please stay in fullscreen mode.
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow mb-4 sticky-top">
-                <div class="card-body text-center py-3 bg-light">
-                    <div class="small font-weight-bold text-danger text-uppercase mb-1">Time Remaining</div>
-                    <div class="h2 mb-0 font-weight-bold text-dark" id="timer">00:00</div>
+        <div class="exam-card">
+            <div class="progress-bar-track">
+                <div class="progress-bar-fill" id="progress-fill"
+                     style="width: {{ ((questions|selectattr('saved_answer')|list|length) / (questions|length) * 100)|int }}%">
                 </div>
-                <div class="card-body p-2 text-center" style="max-height: 350px; overflow-y: auto;">
+            </div>
+
+            <div class="card-head">
+                <span class="q-counter">
+                    Question <strong id="q-idx-text">1</strong> of {{ questions|length }}
+                </span>
+                <button class="btn-flag" id="btn-flag">
+                    <i class="fas fa-flag mr-1"></i> Flag for review
+                </button>
+            </div>
+
+            <div class="card-body" id="exam-container">
+                <form id="exam-form" action="{{ url_for('student.submit_exam', attempt_id=attempt_id) }}" method="POST">
                     {% for q in questions %}
-                    <div class="q-indicator {% if q.saved_answer %}answered{% endif %} {% if q.is_flagged %}flagged{% endif %}" 
-                         id="map-{{ loop.index0 }}" onclick="jumpTo({{ loop.index0 }})">
-                        {{ loop.index }}
+                    <div class="question-step" id="step-{{ loop.index0 }}"
+                         data-q-id="{{ q.question_id }}" data-q-type="{{ q.question_type }}">
+
+                        <div class="q-badges">
+                            <span class="badge-type">{{ q.question_type.replace('_',' ') }}</span>
+                            <span class="badge-pts">{{ q.points if q.points else 1 }} pt{{ 's' if (q.points and q.points > 1) else '' }}</span>
+                        </div>
+
+                        <p class="q-text">{{ q.question_text }}</p>
+                        <hr class="q-divider">
+
+                        {% if q.question_type in ['multiple_choice', 'true_false'] %}
+                        <div class="options-wrap">
+                            {% for opt in q.options %}
+                            <label class="option-label">
+                                <input type="radio"
+                                       name="question_{{ q.question_id }}"
+                                       value="{{ opt.option_text }}"
+                                       class="ajax-save"
+                                       {% if q.saved_answer == opt.option_text %}checked{% endif %}>
+                                <span class="radio-custom"></span>
+                                {{ opt.option_text }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div>
+                            <label class="id-label">Type your answer:</label>
+                            <input type="text"
+                                   name="question_{{ q.question_id }}"
+                                   class="id-input ajax-save"
+                                   placeholder="Enter your answer…"
+                                   value="{{ q.saved_answer }}"
+                                   autocomplete="off">
+                        </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
-                </div>
+                </form>
+            </div>
+
+            <div class="card-foot">
+                <button class="btn-nav" id="btn-prev">← Previous</button>
+                <button class="btn-nav btn-nav-primary" id="btn-next">Next →</button>
+                <button class="btn-nav btn-nav-success" id="btn-submit" style="display:none" onclick="confirmFinalSubmit()">
+                    <i class="fas fa-check-double mr-1"></i> Submit exam
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- RIGHT: SIDEBAR -->
+    <div class="exam-sidebar" style="display:flex;flex-direction:column;gap:16px;">
+        <div class="exam-card">
+            <div class="timer-section">
+                <div class="timer-label">Time remaining</div>
+                <div class="timer-value" id="timer">00:00</div>
+            </div>
+
+            <div class="map-section-header">Question map</div>
+            <div class="map-grid">
+                {% for q in questions %}
+                <div class="q-indicator
+                            {% if q.saved_answer %}answered{% endif %}
+                            {% if q.is_flagged %}flagged{% endif %}"
+                     id="map-{{ loop.index0 }}"
+                     onclick="jumpTo({{ loop.index0 }})">
+                    {{ loop.index }}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="map-legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#1d9e75;"></div> Answered
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#ef9f27;"></div> Flagged
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:#e0e0da;border:0.5px solid #bbb;"></div> Unanswered
+                </div>
+            </div>
+            <div class="map-footer">
+                <i class="fas fa-info-circle mr-1"></i> Answers save automatically
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-$(document).ready(function() {
+$(document).ready(function () {
     "use strict";
+
     let currentIdx = {{ current_q }};
-    const totalQ = {{ questions|length }};
-    let timeLeft = {{ remaining_seconds }};
-    let switchCount = {{ tab_switches }};
+    const totalQ   = {{ questions|length }};
+    let timeLeft   = {{ remaining_seconds }};
+    let isUnloading = false;
 
-    // 1. BLOCK BACK BUTTON
-    history.pushState(null, null, location.href);
-    window.onpopstate = () => history.go(1);
+    /* ── 1. LOCKDOWN & FULLSCREEN ── */
+    window.startLockdown = function () {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        $('#lockdown-overlay').fadeOut(300);
+    };
 
-    // 2. TIMER
+    // Exit Fullscreen triggers Overlay + Silent Violation Log
+    document.addEventListener('fullscreenchange', () => {
+        if (!isUnloading && !document.fullscreenElement) {
+            $('#lockdown-overlay').fadeIn(200);
+            handleViolation('Fullscreen Exited');
+        }
+    });
+
+    /* ── 2. TIMER (Based on Real Schedule) ── */
+    function renderTimer() {
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        const el = document.getElementById('timer');
+        if(el) {
+            el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+            el.classList.toggle('text-danger', timeLeft < 300);
+        }
+    }
+    renderTimer();
+
     const timerInt = setInterval(() => {
-        if (timeLeft <= 0) { clearInterval(timerInt); document.getElementById('exam-form').submit(); }
-        let m = Math.floor(timeLeft / 60);
-        let s = timeLeft % 60;
-        $('#timer').text(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        if (timeLeft <= 0) {
+            clearInterval(timerInt);
+            isUnloading = true;
+            document.getElementById('exam-form').submit();
+            return;
+        }
         timeLeft--;
+        renderTimer();
     }, 1000);
 
-    // 3. NAVIGATION (FIXED SYNC)
+    /* ── 3. NAVIGATION (One-at-a-time) ── */
     function showStep(idx) {
+        if (idx < 0 || idx >= totalQ) return;
+
         $('.question-step').hide().removeClass('active');
         $('.q-indicator').removeClass('active');
-        $(`#step-${idx}`).fadeIn(200).addClass('active');
+
+        $(`#step-${idx}`).show().addClass('active');
         $(`#map-${idx}`).addClass('active');
         $('#q-idx-text').text(idx + 1);
         $('#btn-prev').prop('disabled', idx === 0);
-        
-        if (idx === totalQ - 1) { $('#btn-next').hide(); $('#btn-submit').show(); } 
-        else { $('#btn-next').show(); $('#btn-submit').hide(); }
+
+        const isLast = idx === totalQ - 1;
+        $('#btn-next').toggle(!isLast);
+        $('#btn-submit').toggle(isLast);
+
         currentIdx = idx;
-        syncProgress(); // Saves position on every move
+        syncProgress(); // Save position on every move
     }
 
+    window.jumpTo = idx => showStep(idx);
     $('#btn-next').click(() => showStep(currentIdx + 1));
     $('#btn-prev').click(() => showStep(currentIdx - 1));
-    window.jumpTo = (idx) => showStep(idx);
 
-    // 4. AJAX SYNC (FIXED VALUE FETCHING)
-    function syncProgress() {
-        const step = $(`#step-${currentIdx}`);
-        const qId = step.data('q-id');
-        const qType = step.data('q-type');
-        let val = "";
-
-        // CORRECTLY FETCH VALUE BASED ON TYPE
-        if (qType === 'multiple_choice' || qType === 'true_false') {
-            val = step.find('input[type="radio"]:checked').val() || "";
-        } else {
-            val = step.find('input[type="text"]').val() || "";
-        }
-
-        const indicator = $(`#map-${currentIdx}`);
-        const flagged = indicator.hasClass('flagged') ? 1 : 0;
-        if (val !== "") indicator.addClass('answered');
-
-        fetch("{{ url_for('student.save_progress') }}", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ attempt_id: {{ attempt_id }}, question_id: qId, answer: val, is_flagged: flagged, current_idx: currentIdx })
-        });
-    }
-
-    $(document).on('change', '.ajax-save', syncProgress);
-    $(document).on('blur', 'input[type="text"].ajax-save', syncProgress);
-
-    $('#btn-flag').click(function() {
+    /* ── 4. FLAG & PROGRESS BAR ── */
+    $('#btn-flag').click(() => {
         $(`#map-${currentIdx}`).toggleClass('flagged');
         syncProgress();
     });
 
-    // 5. ANTI-CHEATING
-    document.addEventListener("visibilitychange", function() {
-        if (document.hidden) {
-            fetch("{{ url_for('student.log_violation') }}", {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ attempt_id: {{ attempt_id }} })
-            }).then(res => res.json()).then(data => {
-                if (data.new_count >= 10) document.getElementById('exam-form').submit();
-                else alert("CHEATING DETECTED (" + data.new_count + "/10)");
-            });
+    function updateProgress() {
+        const done = $('.q-indicator.answered').length;
+        const pct  = Math.round((done / totalQ) * 100);
+        $('#progress-fill').css('width', pct + '%');
+    }
+
+    /* ── 5. AJAX DATA SYNC (Answer + Flag + Position) ── */
+    function syncProgress() {
+        if (isUnloading) return;
+        const step  = $(`#step-${currentIdx}`);
+        const qId   = step.data('q-id');
+        const qType = step.data('q-type');
+        let val = '';
+
+        if (qType === 'multiple_choice' || qType === 'true_false') {
+            val = step.find('input:checked').val() || '';
+        } else {
+            val = step.find('input[type="text"]').val() || '';
+        }
+
+        const indicator = $(`#map-${currentIdx}`);
+        if (val.trim() !== "") { 
+            indicator.addClass('answered'); 
+            updateProgress(); 
+        }
+        
+        const flagged = indicator.hasClass('flagged') ? 1 : 0;
+
+        fetch("{{ url_for('student.save_progress') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                attempt_id:  {{ attempt_id }},
+                question_id: qId,
+                answer:      val,
+                is_flagged:  flagged,
+                current_idx: currentIdx
+            })
+        });
+    }
+
+    $(document).on('change', '.ajax-save', syncProgress);
+    $(document).on('keyup', 'input[type="text"].ajax-save', syncProgress);
+
+    /* ── 6. STRICT CHEATING DETECTION (Silent logging) ── */
+    function handleViolation(reason) {
+        if (isUnloading) return;
+        
+        // Logs violation to backend for Teacher to see later
+        fetch("{{ url_for('student.log_violation') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ attempt_id: {{ attempt_id }} })
+        });
+
+        console.warn("Security Alert: " + reason);
+    }
+
+    // A. Detect Tab Switch
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && !isUnloading) {
+            $('#lockdown-overlay').fadeIn(200);
+            handleViolation('Tab switch detected');
         }
     });
 
-    window.confirmFinalSubmit = () => { if (confirm("Final Submit?")) document.getElementById('exam-form').submit(); };
+    window.addEventListener('blur', () => {
+        if (!isUnloading) {
+            setTimeout(() => {
+                if (!document.hasFocus() && !isUnloading) {
+                    $('#lockdown-overlay').fadeIn(200);
+                    handleViolation('Focus lost (Possible Popup, Bubble, or Task Switch)');
+                }
+            }, 600);
+        }
+    });
+
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', () => {
+        if (!isUnloading) {
+
+            if (Math.abs(window.innerWidth - lastWidth) > 50) {
+                $('#lockdown-overlay').fadeIn(200);
+                handleViolation('Window Resized (Possible Split-screen attempt)');
+                lastWidth = window.innerWidth;
+            }
+        }
+    });
+
+    window.onbeforeunload = () => { isUnloading = true; };
+    history.pushState(null, null, location.href);
+    window.onpopstate = () => history.go(1);
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    window.confirmFinalSubmit = () => {
+        if (confirm('Are you sure you want to finalize and submit your exam?')) {
+            isUnloading = true;
+            document.getElementById('exam-form').submit();
+        }
+    };
+
+    if (!document.fullscreenElement) $('#lockdown-overlay').show();
+    
     showStep(currentIdx);
 });
 </script>
