@@ -220,6 +220,50 @@ def manage_enrollees(course_id):
         return render_template('teacher_enrollees.html', course=course, enrollees=enrollees, all_students=all_students)
     return redirect(url_for('auth.login'))
 
+@teacher.route('/bulk_enroll_students', methods=['POST'])
+def bulk_enroll_students():
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    course_id = request.form.get('course_id')
+    student_ids = request.form.getlist('student_ids[]')
+
+    if not student_ids:
+        flash("No students selected for enrollment.", "warning")
+        return redirect(url_for('teacher.manage_enrollees', course_id=course_id))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        for s_id in student_ids:
+            # We use IGNORE or check existence to prevent errors if student is already there
+            cursor.execute("INSERT IGNORE INTO enrollments (student_id, course_id) VALUES (%s, %s)", (s_id, course_id))
+        
+        connection.commit()
+        flash(f'Successfully enrolled {len(student_ids)} students.', 'success')
+    except mysql.connector.Error as err:
+        flash(f'Error: {err}', 'danger')
+    finally:
+        cursor.close()
+        connection.close()
+
+    return redirect(url_for('teacher.manage_enrollees', course_id=course_id))
+
+@teacher.route('/enroll_student', methods=['POST'])
+def enroll_student():
+    if teacher_logged_in():
+        s_id = request.form.get('student_id'); c_id = request.form.get('course_id'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        try: cursor.execute("INSERT INTO enrollments (student_id, course_id) VALUES (%s, %s)", (s_id, c_id)); connection.commit(); flash('Enrolled.', 'success')
+        finally: cursor.close(); connection.close()
+        return redirect(url_for('teacher.manage_enrollees', course_id=c_id))
+    return redirect(url_for('auth.login'))
+
+@teacher.route('/unenroll_student/<int:enrollment_id>/<int:course_id>', methods=['POST'])
+def unenroll_student(enrollment_id, course_id):
+    if teacher_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(); cursor.execute("DELETE FROM enrollments WHERE enrollment_id = %s", (enrollment_id,)); connection.commit(); cursor.close(); connection.close(); flash('Removed.', 'success')
+        return redirect(url_for('teacher.manage_enrollees', course_id=course_id))
+    return redirect(url_for('auth.login'))
+
 @teacher.route('/manage_exams')
 def manage_exams():
     if teacher_logged_in():
@@ -378,20 +422,60 @@ def empty_exam_trash():
 #! MANAGE QUESTIONS
 @teacher.route('/manage_questions/<int:exam_id>')
 def manage_questions(exam_id):
-    if teacher_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True, buffered=True)
+    
+    try:
         cursor.execute("SELECT * FROM exams WHERE exam_id = %s", (exam_id,))
         exam = cursor.fetchone()
-        cursor.execute("SELECT q.* FROM questions q JOIN exam_questions eq ON q.question_id = eq.question_id WHERE eq.exam_id = %s", (exam_id,))
+
+        if not exam:
+            flash("Exam not found or has been deleted.", "danger")
+            return redirect(url_for('teacher.manage_exams'))
+
+        cursor.execute("""
+            SELECT q.* FROM questions q
+            JOIN exam_questions eq ON q.question_id = eq.question_id
+            WHERE eq.exam_id = %s
+            ORDER BY FIELD(q.difficulty, 'easy', 'medium', 'hard'), q.question_id DESC
+        """, (exam_id,))
         questions = cursor.fetchall()
+      
         for q in questions:
             cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
             q['options'] = cursor.fetchall()
-        cursor.execute("SELECT * FROM questions WHERE course_id = %s AND question_id NOT IN (SELECT question_id FROM exam_questions WHERE exam_id = %s)", (exam['course_id'], exam_id))
+            
+        cursor.execute("""
+            SELECT * FROM questions 
+            WHERE course_id = %s AND question_id NOT IN (
+                SELECT question_id FROM exam_questions WHERE exam_id = %s
+            )
+            ORDER BY 
+                FIELD(difficulty, 'easy', 'medium', 'hard') ASC,
+                FIELD(question_type, 'multiple_choice', 'true_false', 'identification') ASC
+        """, (exam['course_id'], exam_id))
         bank_questions = cursor.fetchall()
-        cursor.close(); connection.close()
-        return render_template('teacher_questions.html', exam=exam, questions=questions, bank_questions=bank_questions)
-    return redirect(url_for('auth.login'))
+        
+        for bq in bank_questions:
+            cursor.execute("SELECT * FROM options WHERE question_id = %s", (bq['question_id'],))
+            bq['options'] = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        flash(f"Database Error: {err}", "danger")
+        questions = []
+        bank_questions = []
+        exam = None
+    finally:
+        if cursor: cursor.close()
+        if connection: connection.close()
+        
+    return render_template('teacher_questions.html', 
+                           exam=exam, 
+                           questions=questions, 
+                           bank_questions=bank_questions)
 
 @teacher.route('/add_question/<int:exam_id>', methods=['POST'])
 def add_question(exam_id):
@@ -419,31 +503,81 @@ def add_question(exam_id):
 
 @teacher.route('/import_questions', methods=['POST'])
 def import_questions():
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    exam_id = request.form.get('exam_id'); file = request.files.get('excel_file'); connection = None; cursor = None
-    if not file or not file.filename.endswith(('.xlsx', '.xls')): return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+    if not teacher_logged_in():
+        return redirect(url_for('auth.login'))
+
+    exam_id = request.form.get('exam_id')
+    course_id = request.form.get('course_id')
+    file = request.files.get('excel_file')
+    
+    connection = None
+    cursor = None
+
+    if not file or not file.filename.endswith(('.xlsx', '.xls')):
+        flash('Invalid file format. Please upload an .xlsx file.', 'danger')
+        return redirect(request.referrer)
+
     try:
-        df = pd.read_excel(file, engine='openpyxl'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT course_id FROM exams WHERE exam_id = %s", (exam_id,))
-        course_id = cursor.fetchone()['course_id']
+        # 1. Load Excel
+        df = pd.read_excel(file, engine='openpyxl')
+        
+        connection = mysql.connector.connect(**db_config)
+        # Use buffered to handle multiple queries in the loop
+        cursor = connection.cursor(dictionary=True, buffered=True)
+
+        # 2. Logic Check: Determine target Course
+        # If we have an exam_id, we look up its course. If not, we use course_id directly.
+        target_course_id = course_id
+        if exam_id and int(exam_id) != 0:
+            cursor.execute("SELECT course_id FROM exams WHERE exam_id = %s", (exam_id,))
+            exam_row = cursor.fetchone()
+            if exam_row:
+                target_course_id = exam_row['course_id']
+
+        # 3. Process Rows
         for _, row in df.iterrows():
-            cursor.execute("INSERT INTO questions (course_id, question_text, question_type, difficulty) VALUES (%s, %s, %s, %s)", (course_id, row['Question'], row['Type'], row['Difficulty']))
+            # A. Insert into Master 'questions' table
+            cursor.execute("""
+                INSERT INTO questions (course_id, question_text, question_type, difficulty)
+                VALUES (%s, %s, %s, %s)
+            """, (target_course_id, row['Question'], row['Type'], row['Difficulty']))
+            
             q_id = cursor.lastrowid
-            cursor.execute("INSERT INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (exam_id, q_id))
-            q_type = str(row['Type']).lower().strip(); correct_answer = str(row['Answer']).strip()
+            
+            # B. LINK TO EXAM ONLY IF EXAM_ID IS NOT 0
+            if exam_id and int(exam_id) != 0:
+                cursor.execute("INSERT INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (exam_id, q_id))
+            
+            # C. Insert Options
+            q_type = str(row['Type']).lower().strip()
+            correct_ans = str(row['Answer']).strip()
+
             if q_type == 'multiple_choice':
                 opts = [str(row['OptA']), str(row['OptB']), str(row['OptC']), str(row['OptD'])]
-                for opt in opts: cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, opt, 1 if opt.strip() == correct_answer else 0))
+                for opt_text in opts:
+                    is_correct = 1 if opt_text.strip() == correct_ans else 0
+                    cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", 
+                                   (q_id, opt_text, is_correct))
             elif q_type == 'true_false':
-                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, 'True', 1 if correct_answer.lower() == 'true' else 0))
-                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, 'False', 1 if correct_answer.lower() == 'false' else 0))
-            elif q_type == 'identification': cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, correct_answer, 1))
-        connection.commit(); flash('Imported!', 'success')
-    except Exception as e: flash(f'Error: {e}', 'danger')
+                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", 
+                               (q_id, 'True', 1 if correct_ans.lower() == 'true' else 0))
+                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", 
+                               (q_id, 'False', 1 if correct_ans.lower() == 'false' else 0))
+            elif q_type == 'identification':
+                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", 
+                               (q_id, correct_ans, 1))
+
+        connection.commit()
+        flash('Import successful!', 'success')
+        
+    except Exception as e:
+        if connection: connection.rollback()
+        flash(f'Import Error: {str(e)}', 'danger')
     finally:
         if cursor: cursor.close()
         if connection: connection.close()
-    return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+    return redirect(request.referrer)
 
 @teacher.route('/link_from_bank/<int:exam_id>/<int:q_id>', methods=['POST'])
 def link_from_bank(exam_id, q_id):
@@ -453,6 +587,59 @@ def link_from_bank(exam_id, q_id):
         except: flash('Already in exam.', 'warning')
         finally: cursor.close(); connection.close()
         return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+    
+@teacher.route('/bulk_link_from_bank/<int:exam_id>', methods=['POST'])
+def bulk_link_from_bank(exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    q_ids = request.form.getlist('bank_q_ids[]')
+    
+    if not q_ids:
+        flash("No questions were selected from the bank.", "warning")
+        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        for q_id in q_ids:
+            cursor.execute("INSERT IGNORE INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (exam_id, q_id))
+        
+        connection.commit()
+        flash(f"Successfully linked {len(q_ids)} questions to the exam.", "success")
+    except mysql.connector.Error as err:
+        flash(f"Database Error: {err}", "danger")
+    finally:
+        cursor.close()
+        connection.close()
+        
+    return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+@teacher.route('/bulk_unlink_questions/<int:exam_id>', methods=['POST'])
+def bulk_unlink_questions(exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    q_ids = request.form.getlist('question_ids[]')
+    
+    if not q_ids:
+        flash("No questions selected.", "warning")
+        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    try:
+        # Construct the SQL to remove only the links for selected questions in this exam
+        format_strings = ','.join(['%s'] * len(q_ids))
+        query = f"DELETE FROM exam_questions WHERE exam_id = %s AND question_id IN ({format_strings})"
+        cursor.execute(query, [exam_id] + q_ids)
+        connection.commit()
+        flash(f"Successfully unlinked {len(q_ids)} questions.", "success")
+    except mysql.connector.Error as err:
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close()
+        connection.close()
+        
+    return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
 @teacher.route('/delete_question/<int:q_id>/<int:exam_id>', methods=['POST'])
 def delete_question(q_id, exam_id):
@@ -521,19 +708,4 @@ def exam_analysis():
     exams = cursor.fetchall(); cursor.close(); connection.close()
     return render_template('teacher_analysis.html', exams=exams)
 
-@teacher.route('/enroll_student', methods=['POST'])
-def enroll_student():
-    if teacher_logged_in():
-        s_id = request.form.get('student_id'); c_id = request.form.get('course_id'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        try: cursor.execute("INSERT INTO enrollments (student_id, course_id) VALUES (%s, %s)", (s_id, c_id)); connection.commit(); flash('Enrolled.', 'success')
-        finally: cursor.close(); connection.close()
-        return redirect(url_for('teacher.manage_enrollees', course_id=c_id))
-    return redirect(url_for('auth.login'))
-
-@teacher.route('/unenroll_student/<int:enrollment_id>/<int:course_id>', methods=['POST'])
-def unenroll_student(enrollment_id, course_id):
-    if teacher_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(); cursor.execute("DELETE FROM enrollments WHERE enrollment_id = %s", (enrollment_id,)); connection.commit(); cursor.close(); connection.close(); flash('Removed.', 'success')
-        return redirect(url_for('teacher.manage_enrollees', course_id=course_id))
-    return redirect(url_for('auth.login'))
 

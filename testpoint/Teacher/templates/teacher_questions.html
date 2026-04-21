@@ -1,102 +1,594 @@
 {% extends "teacher_base.html" %}
 {% block title %}Questions - {{ exam.title }}{% endblock %}
 
+{% block head %}
+<style>
+    /* ── MAIN PAGE STYLES ── */
+    .question-card {
+        transition: all 0.2s;
+        border-left: 5px solid transparent;
+    }
+
+    .question-card:hover {
+        border-left: 5px solid #4e73df;
+        background-color: #f8f9fc;
+    }
+
+    .question-card.selected {
+        background-color: #f0f7ff;
+        border-left: 5px solid #4e73df;
+    }
+
+    /* BULK BAR */
+    .bulk-actions-bar {
+        position: sticky;
+        top: 70px;
+        z-index: 1000;
+        background: #fff;
+        border: 2px solid #4e73df;
+        border-radius: 10px;
+        display: none !important;
+    }
+
+    /* ── BANK MODAL UI/UX ── */
+    .bank-item-card {
+        transition: all 0.15s ease;
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, .08);
+        border-radius: 8px;
+        position: relative;
+    }
+
+    .bank-item-card:hover {
+        border-color: #4e73df;
+        background-color: #f8f9fc;
+    }
+
+    .bank-item-card.is-selected {
+        border-color: #4e73df;
+        background-color: #eef6fd;
+        box-shadow: 0 0 0 1px #4e73df;
+    }
+
+    /* Difficulty Border Colors */
+    .border-left-easy {
+        border-left: 5px solid #1cc88a !important;
+    }
+
+    .border-left-medium {
+        border-left: 5px solid #f6c23e !important;
+    }
+
+    .border-left-hard {
+        border-left: 5px solid #e74a3b !important;
+    }
+
+    /* Question Type Badge Colors */
+    .badge-mc {
+        background-color: #4e73df;
+        color: white;
+    }
+
+    .badge-tf {
+        background-color: #36b9cc;
+        color: white;
+    }
+
+    .badge-ident {
+        background-color: #858796;
+        color: white;
+    }
+
+    .bank-item-container {
+        padding: 5px;
+        background: #fdfdfd;
+    }
+
+    .bank-section-title {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #b7b9cc;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-top: 1.5rem;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eaecf4;
+    }
+
+    .bank-section-title:first-child {
+        margin-top: 0;
+    }
+
+    .text-xxs {
+        font-size: 0.65rem;
+    }
+
+    .answer-preview {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        background: #f1f8f5;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    /* Color Borders for Difficulty */
+    .border-left-easy {
+        border-left: 6px solid #1cc88a !important;
+    }
+
+    .border-left-medium {
+        border-left: 6px solid #f6c23e !important;
+    }
+
+    .border-left-hard {
+        border-left: 6px solid #e74a3b !important;
+    }
+
+    /* Badge Colors */
+    .badge-mc {
+        background-color: #4e73df;
+        color: white;
+    }
+
+    .badge-tf {
+        background-color: #36b9cc;
+        color: white;
+    }
+
+    .badge-ident {
+        background-color: #858796;
+        color: white;
+    }
+
+    /* Modal selection state */
+    .bank-item-card.is-selected {
+        border-color: #4e73df !important;
+        background-color: #eef6fd !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="animate__animated animate__fadeIn py-4">
-    <nav aria-label="breadcrumb"><ol class="breadcrumb bg-transparent p-0 small">
-        <li class="breadcrumb-item"><a href="{{ url_for('teacher.manage_exams') }}">Exams</a></li>
-        <li class="breadcrumb-item active">{{ exam.title }}</li>
-    </ol></nav>
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent p-0 small">
+            <li class="breadcrumb-item"><a href="{{ url_for('teacher.manage_exams') }}">Exams</a></li>
+            <li class="breadcrumb-item active">{{ exam.title }}</li>
+        </ol>
+    </nav>
 
+    <!-- Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Exam Content Management</h1>
+        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Manage Exam Questions | {{ exam.title }}</h1>
         <div>
-            <button class="btn btn-outline-primary btn-sm shadow-sm" data-toggle="modal" data-target="#bankModal"><i class="fas fa-university"></i> Pick from Bank</button>
-            <button class="btn btn-success btn-sm shadow-sm" data-toggle="modal" data-target="#excelModal"><i class="fas fa-file-excel"></i> Bulk Import</button>
-            <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal"><i class="fas fa-plus"></i> New Question</button>
+            <button class="btn btn-outline-primary btn-sm shadow-sm mr-1" data-toggle="modal" data-target="#bankModal">
+                <i class="fas fa-university mr-1"></i> Pick from Bank
+            </button>
+            <button class="btn btn-success btn-sm shadow-sm mr-1" data-toggle="modal" data-target="#excelModal">
+                <i class="fas fa-file-excel mr-1"></i> Import Excel
+            </button>
+            <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal">
+                <i class="fas fa-plus mr-1"></i> New Question
+            </button>
         </div>
     </div>
 
-    <h5 class="text-primary font-weight-bold">Linked Questions ({{ questions|length }})</h5>
-    {% for q in questions %}
-    <div class="card shadow mb-3 border-left-info"><div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-md-10">
-                <span class="badge badge-light border">{{ q.question_type }}</span>
-                <span class="badge badge-pill badge-dark text-capitalize">{{ q.difficulty }}</span>
-                <p class="font-weight-bold text-dark mt-2 mb-1">{{ loop.index }}. {{ q.question_text }}</p>
-                {% if q.question_type == 'identification' %}
-                    <p class="small text-success font-weight-bold">Answer: {{ q.options[0].option_text if q.options else '---' }}</p>
-                {% else %}
-                    <div class="row ml-1">
-                        {% for opt in q.options %}<div class="col-md-6 small {{ 'text-success font-weight-bold' if opt.is_correct else 'text-muted' }}"><i class="fas {{ 'fa-check-circle' if opt.is_correct else 'fa-circle' }} mr-1"></i> {{ opt.option_text }}</div>{% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-            <div class="col-md-2 text-right">
-                <form action="{{ url_for('teacher.delete_question', q_id=q.question_id, exam_id=exam.exam_id) }}" method="POST"><button class="btn btn-sm btn-outline-danger">Unlink</button></form>
+    <!-- BULK ACTIONS BAR (FOR LINKED QUESTIONS) -->
+    <div class="bulk-actions-bar shadow p-3 mb-4" id="bulkBar">
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="font-weight-bold text-primary">
+                <i class="fas fa-check-double mr-2"></i><span id="selectedCount">0</span> Items Selected
+            </span>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-dark mr-2" id="btnDeselectAll">Clear
+                    Selection</button>
+                <button type="submit" form="bulkUnlinkForm" class="btn btn-primary btn-sm shadow-sm"
+                    onclick="return confirm('Unlink all selected questions?')">
+                    <i class="fas fa-link-slash mr-1"></i> Bulk Unlink
+                </button>
             </div>
         </div>
-    </div></div>
-    {% endfor %}
+    </div>
+
+    <!-- MAIN PAGE FILTERS -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <form id="filterForm" class="row">
+                <div class="col-md-3 mb-2">
+                    <select class="form-control" id="typeFilter">
+                        <option value="">All Types</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="true_false">True / False</option>
+                        <option value="identification">Identification</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <select class="form-control" id="difficultyFilter">
+                        <option value="">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search question text...">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SELECT ALL TOGGLE -->
+    <div class="card shadow-sm mb-3 border-left-primary">
+        <div class="card-body py-2 bg-light d-flex justify-content-between align-items-center">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="selectAll">
+                <label class="custom-control-label font-weight-bold text-dark" for="selectAll">Select All Visible Linked
+                    Questions</label>
+            </div>
+            <span class="small text-muted font-weight-bold">{{ questions|length }} Total Linked</span>
+        </div>
+    </div>
+
+    <!-- LINKED QUESTIONS LIST -->
+    <form id="bulkUnlinkForm" action="{{ url_for('teacher.bulk_unlink_questions', exam_id=exam.exam_id) }}"
+        method="POST">
+        {% for q in questions %}
+        <div class="card shadow mb-2 question-card" data-type="{{ q.question_type }}"
+            data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
+            <div class="card-body p-3">
+                <div class="row no-gutters align-items-start">
+                    <div class="col-auto mr-3 pt-1">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}"
+                                class="custom-control-input q-checkbox" id="chk-{{ q.question_id }}">
+                            <label class="custom-control-label" for="chk-{{ q.question_id }}"></label>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <span class="badge badge-secondary small text-uppercase">{{ q.question_type.replace('_',' ')
+                            }}</span>
+                        <span
+                            class="badge badge-pill {{ 'badge-success' if q.difficulty == 'easy' else 'badge-warning' if q.difficulty == 'medium' else 'badge-danger' }} small text-capitalize">{{
+                            q.difficulty }}</span>
+                        <p class="text-dark font-weight-bold mt-2 mb-1">{{ loop.index }}. {{ q.question_text }}</p>
+                        <ul class="options-list" style="list-style: none; padding-left: 0;">
+                            {% for opt in q.options %}
+                            <li
+                                class="small {% if opt.is_correct %}text-success font-weight-bold{% else %}text-muted{% endif %}">
+                                <i
+                                    class="fas {% if opt.is_correct %}fa-check-circle{% else %}fa-circle{% endif %} fa-xs mr-2"></i>
+                                {{ opt.option_text }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-sm btn-link text-danger"
+                            onclick="unlinkSingle({{ q.question_id }})">Unlink</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </form>
 </div>
 
-<!-- BANK PICKER MODAL -->
-<div class="modal fade" id="bankModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-    <div class="modal-header bg-primary text-white"><h5 class="modal-title">Pick from Course Bank</h5><button class="close text-white" data-dismiss="modal"><span>&times;</span></button></div>
-    <div class="modal-body">
-        <div class="list-group">
-            {% for bq in bank_questions %}
-            <div class="list-group-item d-flex justify-content-between align-items-center mb-2 shadow-sm" style="border-left: 4px solid #4e73df;">
-                <div><small class="text-primary">{{ bq.question_type }}</small><p class="mb-0 font-weight-bold">{{ bq.question_text }}</p></div>
-                <form action="{{ url_for('teacher.link_from_bank', exam_id=exam.exam_id, q_id=bq.question_id) }}" method="POST"><button class="btn btn-sm btn-primary">Add</button></form>
+<!-- ── BANK PICKER MODAL ── -->
+<div class="modal fade" id="bankModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <!-- FORM WRAPS THE ENTIRE CONTENT SO THE FOOTER BUTTON WORKS -->
+        <form action="{{ url_for('teacher.bulk_link_from_bank', exam_id=exam.exam_id) }}" method="POST"
+            class="modal-content border-0 shadow-lg">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-university mr-2"></i>Pick from Master Bank
+                </h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>&times;</span></button>
             </div>
-            {% endfor %}
+
+            <div class="modal-body bg-light">
+                <!-- 1. BANK FILTERS (STAY AT TOP) -->
+                <div class="sticky-top bg-light pt-2 pb-3" style="z-index: 10; top: -1rem;">
+                    <div class="row no-gutters bg-white p-3 shadow-sm rounded border">
+                        <div class="col-md-12 mb-2">
+                            <input type="text" id="bankSearch" class="form-control form-control-sm"
+                                placeholder="Search bank by keyword...">
+                        </div>
+                        <div class="col-md-5 pr-1">
+                            <select id="bankTypeFilter" class="form-control form-control-sm">
+                                <option value="">All Types</option>
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="true_false">True / False</option>
+                                <option value="identification">Identification</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5 px-1">
+                            <select id="bankDifficultyFilter" class="form-control form-control-sm">
+                                <option value="">All Difficulties</option>
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 pl-1">
+                            <div class="custom-control custom-checkbox pt-1 text-center border rounded bg-light"
+                                style="height:31px;">
+                                <input type="checkbox" class="custom-control-input" id="selectAllBank">
+                                <label class="custom-control-label small font-weight-bold text-dark"
+                                    for="selectAllBank">All</label>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-2 px-1 text-right">
+                            <small class="text-muted font-weight-bold">
+                                Matched: <span id="bankMatchCount" class="text-primary font-weight-bolder">0</span> / {{
+                                bank_questions|length }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. BANK LIST WITH DIFFICULTY GROUPING -->
+                <div class="bank-item-container" id="bankList">
+                    {% for diff in ['easy', 'medium', 'hard'] %}
+                    {% set group = bank_questions|selectattr('difficulty', 'equalto', diff)|list %}
+                    {% if group|length > 0 %}
+                    <div class="bank-section" id="section-{{ diff }}">
+                        <!-- Color Coded Header -->
+                        <div class="bank-section-title border-left-{{ diff }}">
+                            {{ diff|capitalize }} Questions
+                        </div>
+
+                        {% for bq in group %}
+                        <div class="bank-item-card bg-white p-3 mb-2 border-left-{{ diff }}"
+                            data-search="{{ bq.question_text|lower }}" data-type="{{ bq.question_type }}"
+                            data-difficulty="{{ bq.difficulty }}">
+
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" name="bank_q_ids[]" value="{{ bq.question_id }}"
+                                    class="custom-control-input bank-checkbox" id="bank-q-{{ bq.question_id }}">
+                                <label class="custom-control-label d-block pointer w-100"
+                                    for="bank-q-{{ bq.question_id }}">
+                                    <!-- Type Badge -->
+                                    <span class="badge badge-pill text-xxs text-uppercase 
+                                                {% if bq.question_type == 'multiple_choice' %}badge-mc
+                                                {% elif bq.question_type == 'true_false' %}badge-tf
+                                                {% else %}badge-ident{% endif %}">
+                                        {{ bq.question_type.replace('_',' ') }}
+                                    </span>
+
+                                    <p class="mb-1 mt-1 text-dark font-weight-bold small">{{ bq.question_text }}</p>
+
+                                    <!-- Correct Answer Preview -->
+                                    <div class="answer-preview small text-success font-weight-bold">
+                                        <i class="fas fa-check-circle mr-1"></i>
+                                        {% for opt in bq.options %}
+                                        {% if opt.is_correct %}{{ opt.option_text }}{% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Empty State -->
+                    <div id="bankEmptyState" class="text-center py-5 d-none">
+                        <i class="fas fa-search fa-2x text-gray-300 mb-2"></i>
+                        <p class="small text-muted">No questions match your current filters.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. FOOTER (STAY AT BOTTOM) -->
+            <div class="modal-footer bg-white border-top shadow-sm">
+                <button class="btn btn-secondary btn-sm px-4" type="button" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm font-weight-bold">
+                    <i class="fas fa-link mr-1"></i> Link Selected Questions
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Manual Modal -->
+<div class="modal fade" id="manualModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold">New Question</h5>
+            </div>
+            <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST">
+                <div class="modal-body bg-light">
+                    <div class="form-group"><label class="font-weight-bold">Question Text</label>
+                        <textarea name="question_text" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><label>Type</label>
+                            <select name="question_type" class="form-control" id="qTypeSelect">
+                                <option value="multiple_choice">Multiple Choice</option>
+                                <option value="true_false">True / False</option>
+                                <option value="identification">Identification</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6"><label>Difficulty</label>
+                            <select name="difficulty" class="form-control">
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                    </div>
+                    <hr>
+                    <div id="section_mc">
+                        {% for i in range(4) %}
+                        <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text bg-white">
+                                    <input type="radio" name="correct_option" value="{{ i }}" {{ 'checked' if i==0 }}>
+                                </div>
+                            </div>
+                            <input type="text" name="options[]" class="form-control" placeholder="Choice {{ i+1 }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div id="section_tf" style="display:none;">
+                        <select name="tf_correct" class="form-control">
+                            <option value="True">True</option>
+                            <option value="False">False</option>
+                        </select>
+                    </div>
+                    <div id="section_ident" style="display:none;">
+                        <input type="text" name="ident_answer" class="form-control" placeholder="Correct Answer">
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary btn-block shadow">Save to Exam &
+                        Bank</button></div>
+            </form>
         </div>
     </div>
-</div></div></div>
+</div>
 
-<!-- MANUAL ADD MODAL (Dynamic Logic Restored) -->
-<div class="modal fade" id="manualModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-    <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST">
-        <div class="modal-header bg-dark text-white"><h5 class="modal-title">Manual Creation</h5></div>
-        <div class="modal-body">
-            <div class="form-group"><label>Question Text</label><textarea name="question_text" class="form-control" required></textarea></div>
-            <div class="row">
-                <div class="col-md-6"><label>Type</label><select name="question_type" class="form-control" id="qTypeSelect"><option value="multiple_choice">Multiple Choice</option><option value="true_false">True / False</option><option value="identification">Identification</option></select></div>
-                <div class="col-md-6"><label>Difficulty</label><select name="difficulty" class="form-control"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></div>
+<!-- Excel Modal -->
+<div class="modal fade" id="excelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold">Excel Import</h5>
             </div>
-            <hr>
-            <div id="section_mc">
-                <label class="text-primary font-weight-bold">Options</label>
-                {% for i in range(4) %}<div class="input-group mb-2"><div class="input-group-prepend"><div class="input-group-text"><input type="radio" name="correct_option" value="{{ i }}" {{ 'checked' if i==0 }}></div></div><input type="text" name="options[]" class="form-control" placeholder="Option {{ i+1 }}"></div>{% endfor %}
-            </div>
-            <div id="section_tf" style="display:none;"><label>Correct Answer</label><select name="tf_correct" class="form-control"><option value="True">True</option><option value="False">False</option></select></div>
-            <div id="section_ident" style="display:none;"><label>Accepted Answer</label><input type="text" name="ident_answer" class="form-control"></div>
+            <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
+                <input type="hidden" name="course_id" value="{{ exam.course_id }}">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
+                    <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success btn-block shadow-sm">Process Excel</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-footer"><button type="submit" class="btn btn-primary btn-block">Save to Bank & Exam</button></div>
-    </form>
-</div></div></div>
-
-<!-- EXCEL MODAL -->
-<div class="modal fade" id="excelModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
-    <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
-        <div class="modal-header bg-success text-white"><h5 class="modal-title">Excel Import</h5></div>
-        <div class="modal-body"><input type="file" name="excel_file" class="form-control" accept=".xlsx" required></div>
-        <div class="modal-footer"><button type="submit" class="btn btn-success btn-block">Upload</button></div>
-    </form>
-</div></div></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    $('#qTypeSelect').on('change', function() {
-        const val = $(this).val();
-        $('#section_mc, #section_tf, #section_ident').hide();
-        if(val === 'multiple_choice') $('#section_mc').show();
-        else if(val === 'true_false') $('#section_tf').show();
-        else if(val === 'identification') $('#section_ident').show();
+    $(document).ready(function () {
+        const bulkBar = $('#bulkBar'), countLabel = $('#selectedCount'), selectAll = $('#selectAll');
+
+        // Main Page UI Logic
+        function updateUI() {
+            const checkedCount = $('.q-checkbox:checked').length;
+            countLabel.text(checkedCount);
+            if (checkedCount > 0) { bulkBar.attr('style', 'display: block !important'); }
+            else { bulkBar.attr('style', 'display: none !important'); selectAll.prop('checked', false); }
+        }
+        updateUI();
+
+        $(document).on('change', '.q-checkbox', function () {
+            $(this).closest('.question-card').toggleClass('selected', this.checked);
+            updateUI();
+        });
+
+        selectAll.on('change', function () {
+            $('.question-card:visible').each(function () {
+                $(this).find('.q-checkbox').prop('checked', selectAll.prop('checked'));
+                $(this).toggleClass('selected', selectAll.prop('checked'));
+            });
+            updateUI();
+        });
+
+        $('#btnDeselectAll').on('click', function () {
+            $('.q-checkbox').prop('checked', false);
+            $('.question-card').removeClass('selected');
+            updateUI();
+        });
+
+        // Bank Modal Logic
+        // ── BANK MODAL FILTERING LOGIC ──
+        function applyBankFilters() {
+            const search = $('#bankSearch').val().toLowerCase();
+            const typeF = $('#bankTypeFilter').val();
+            const diffF = $('#bankDifficultyFilter').val();
+            let visibleCount = 0;
+
+            $('.bank-item-card').each(function () {
+                const item = $(this);
+                const matchesType = (typeF === '' || item.attr('data-type') === typeF);
+                const matchesDiff = (diffF === '' || item.attr('data-difficulty') === diffF);
+                const matchesSearch = (search === '' || item.attr('data-search').includes(search));
+
+                if (matchesType && matchesDiff && matchesSearch) {
+                    item.attr('style', 'display: block !important'); // Force show
+                    visibleCount++;
+                } else {
+                    item.attr('style', 'display: none !important'); // Force hide
+                }
+            });
+            $('.bank-section').each(function () {
+                const hasVisibleItems = $(this).find('.bank-item-card[style*="display: block"]').length > 0;
+                $(this).toggle(hasVisibleItems);
+            });
+            $('#bankEmptyState').toggleClass('d-none', visibleCount > 0);
+            $('#bankMatchCount').text(visibleCount);
+            $('#selectAllBank').prop('checked', false);
+        }
+        $('#bankSearch').on('input', applyBankFilters);
+        $('#bankTypeFilter, #bankDifficultyFilter').on('change', applyBankFilters);
+
+        $('#selectAllBank').on('change', function () {
+            const isChecked = this.checked;
+            $('.bank-item-card').each(function () {
+                if ($(this).css('display') !== 'none') {
+                    $(this).find('.bank-checkbox').prop('checked', isChecked).trigger('change');
+                }
+            });
+        });
+
+        $(document).on('change', '.bank-checkbox', function () {
+            $(this).closest('.bank-item-card').toggleClass('is-selected', this.checked);
+        });
+
+        $('#bankMatchCount').text($('.bank-item-card').length);
+
+        function performMainFilter() {
+            var searchVal = $('#searchInput').val().toLowerCase(), typeVal = $('#typeFilter').val(), diffVal = $('#difficultyFilter').val();
+            $('.question-card').each(function () {
+                var card = $(this);
+                var matches = (typeVal === '' || card.data('type') === typeVal) && (diffVal === '' || card.data('difficulty') === diffVal) && (searchVal === '' || card.data('text').indexOf(searchVal) > -1);
+                card.toggle(matches);
+            });
+            updateUI();
+        }
+        $('#searchInput').on('keyup', performMainFilter);
+        $('#typeFilter, #difficultyFilter').on('change', performMainFilter);
+        $('#resetFilters').on('click', function () { $('#searchInput, #typeFilter, #difficultyFilter').val(''); performMainFilter(); });
+
+        $('#qTypeSelect').on('change', function () {
+            const val = $(this).val();
+            $('#section_mc, #section_tf, #section_ident').hide();
+            if (val === 'multiple_choice') $('#section_mc').show();
+            else if (val === 'true_false') $('#section_tf').show();
+            else if (val === 'identification') $('#section_ident').show();
+        });
+
+        window.unlinkSingle = function (qId) {
+            if (confirm('Unlink this question from the exam?')) {
+                const f = document.createElement('form');
+                f.method = 'POST';
+                f.action = "{{ url_for('teacher.delete_question', q_id='0', exam_id=exam.exam_id) }}".replace('0', qId);
+                document.body.appendChild(f);
+                f.submit();
+            }
+        };
+
+        $('#bankMatchCount').text($('.bank-item-card').length);
     });
 </script>
 {% endblock %}
