@@ -459,7 +459,7 @@ def resend_otp():
         return jsonify({"message": "New code sent!"}), 200
     return jsonify({"message": "Session expired."}), 400
 
-@auth.route('/logout', methods=['POST', 'GET']) # Allow GET for easier testing
+@auth.route('/logout', methods=['POST', 'GET'])
 def logout():
     user_id = session.get('user_id')
     active_exam_id = session.get('active_exam_id')
@@ -468,7 +468,8 @@ def logout():
         print(f"DEBUG: Student {user_id} is logging out during Exam {active_exam_id}. Auto-submitting...")
         
         connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
+        # FIX: Added buffered=True to handle multiple queries in a single session
+        cursor = connection.cursor(dictionary=True, buffered=True) 
         
         try:
             # 1. Find the attempt
@@ -482,37 +483,48 @@ def logout():
             if attempt:
                 attempt_id = attempt['attempt_id']
                 
-                # 2. Grading (Simplified version to ensure it finishes quickly)
+                # 2. Get list of questions
                 cursor.execute("SELECT question_id FROM exam_questions WHERE exam_id = %s", (active_exam_id,))
                 questions = cursor.fetchall()
-                total_score = 0
                 
+                total_score = 0
                 for q in questions:
                     q_id = q['question_id']
+                    
+                    # Fetch student's last answer
                     cursor.execute("SELECT submitted_answer FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
                     ans_row = cursor.fetchone()
                     
+                    # Fetch the correct option
                     cursor.execute("SELECT option_text FROM options WHERE question_id = %s AND is_correct = 1", (q_id,))
                     corr_row = cursor.fetchone()
 
                     if ans_row and corr_row:
                         if str(ans_row['submitted_answer']).strip().lower() == str(corr_row['option_text']).strip().lower():
                             total_score += 1
+                            # Mark as correct in DB
+                            cursor.execute("UPDATE student_answers SET is_correct = 1 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
 
-                # 3. Update status to finished
+                # 3. Update attempt status to finished
                 cursor.execute("""
                     UPDATE exam_attempts SET status = 'finished', end_time = NOW(), score = %s 
                     WHERE attempt_id = %s
                 """, (total_score, attempt_id))
+                
                 connection.commit()
-                print(f"DEBUG: Exam {active_exam_id} submitted with score {total_score}")
+                print(f"DEBUG: Exam {active_exam_id} auto-submitted with score {total_score}")
 
         except Exception as e:
             print(f"ERROR during auto-submit: {e}")
+            if connection:
+                connection.rollback()
         finally:
-            cursor.close()
-            connection.close()
+            if cursor:
+                cursor.close()
+            if connection:
+                connection.close()
 
+    # Clear session and redirect
     session.clear()
-    flash("Logged out.", "info")
+    flash("You have been logged out. Your exam progress was saved and submitted.", "info")
     return redirect(url_for('auth.login'))

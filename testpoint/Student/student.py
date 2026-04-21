@@ -239,6 +239,7 @@ def take_exam(exam_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
+    # 1. Fetch Exam & Timer Info
     cursor.execute("""
         SELECT *, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(date_time, INTERVAL duration_minutes MINUTE)) as rem 
         FROM exams WHERE exam_id = %s
@@ -247,15 +248,15 @@ def take_exam(exam_id):
     
     if not exam or exam['rem'] <= 0:
         session.pop('active_exam_id', None) 
-        flash("Exam time has expired or exam not found.", "danger")
+        flash("Exam time has expired.", "danger")
         return redirect(url_for('student.student_exams'))
 
+    # 2. Handle Attempt
     cursor.execute("SELECT * FROM exam_attempts WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
     attempt = cursor.fetchone()
 
     if attempt and attempt['status'] == 'finished':
         session.pop('active_exam_id', None)
-        flash("Exam already completed.", "warning")
         return redirect(url_for('student.student_exams'))
 
     if not attempt:
@@ -269,14 +270,19 @@ def take_exam(exam_id):
 
     session['active_exam_id'] = exam_id
 
+    # 3. FETCH QUESTIONS: Grouped by Difficulty + Deterministic Random within groups
+    # Seed RAND() with attempt_id so the order doesn't change on page reload
     cursor.execute("""
         SELECT q.* FROM questions q
         JOIN exam_questions eq ON q.question_id = eq.question_id
         WHERE eq.exam_id = %s
-        ORDER BY FIELD(q.question_type, 'true_false', 'multiple_choice', 'identification')
-    """, (exam_id,))
+        ORDER BY 
+            FIELD(q.difficulty, 'easy', 'medium', 'hard') ASC, 
+            RAND(%s)
+    """, (exam_id, attempt_id))
     questions = cursor.fetchall()
 
+    # 4. Fetch options and saved progress
     for q in questions:
         cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
         q['options'] = cursor.fetchall()
@@ -287,9 +293,13 @@ def take_exam(exam_id):
 
     cursor.close()
     connection.close()
-    return render_template('take_exam.html', exam=exam, questions=questions, 
-                           attempt_id=attempt_id, remaining_seconds=exam['rem'], 
-                           current_q=current_q, tab_switches=attempt['tab_switches'] if attempt else 0)
+    return render_template('take_exam.html', 
+                           exam=exam, 
+                           questions=questions, 
+                           attempt_id=attempt_id, 
+                           remaining_seconds=exam['rem'], 
+                           current_q=current_q, 
+                           tab_switches=attempt['tab_switches'] if attempt else 0)
 
 #! 3. VIOLATION LOGGING
 @student.route('/log_violation', methods=['POST'])
@@ -315,48 +325,87 @@ def log_violation():
 #! 4. FINAL SUBMISSION
 @student.route('/submit_exam/<int:attempt_id>', methods=['POST'])
 def submit_exam(attempt_id):
-    if not user_logged_in(): return redirect(url_for('auth.login'))
+    if not user_logged_in(): 
+        return redirect(url_for('auth.login'))
+    
+    # Remove exam lockdown
     session.pop('active_exam_id', None)
     
     connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
+    # FIX: Added buffered=True to allow multiple queries within the loop
+    cursor = connection.cursor(dictionary=True, buffered=True)
     
     try:
-        # Get attempt details
+        # 1. Get the exam ID associated with this attempt
         cursor.execute("SELECT exam_id FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
-        exam_id = cursor.fetchone()['exam_id']
+        attempt_info = cursor.fetchone()
+        if not attempt_info:
+            return redirect(url_for('student.student_dashboard'))
+            
+        exam_id = attempt_info['exam_id']
         
-        # Get all questions in this exam
+        # 2. Get all questions that belong to this exam
         cursor.execute("SELECT question_id FROM exam_questions WHERE exam_id = %s", (exam_id,))
         questions = cursor.fetchall()
 
         total_score = 0
+        
+        # 3. Loop through each question to check student's answer
         for q in questions:
             q_id = q['question_id']
             
-            # Get student's answer
-            cursor.execute("SELECT submitted_answer FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
+            # Fetch the student's saved answer from the DB
+            cursor.execute("""
+                SELECT submitted_answer FROM student_answers 
+                WHERE attempt_id = %s AND question_id = %s
+            """, (attempt_id, q_id))
             student_row = cursor.fetchone()
             student_ans = str(student_row['submitted_answer']).strip().lower() if student_row else ""
 
-            # Get correct answer
-            cursor.execute("SELECT option_text FROM options WHERE question_id = %s AND is_correct = 1", (q_id,))
+            # Fetch the actual correct answer from the options table
+            cursor.execute("""
+                SELECT option_text FROM options 
+                WHERE question_id = %s AND is_correct = 1
+            """, (q_id,))
             correct_row = cursor.fetchone()
             correct_ans = str(correct_row['option_text']).strip().lower() if correct_row else None
 
+            # 4. Compare and Grade
             if correct_ans and student_ans == correct_ans:
-                cursor.execute("UPDATE student_answers SET is_correct = 1 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
+                # Mark as correct in individual answer row
+                cursor.execute("""
+                    UPDATE student_answers SET is_correct = 1 
+                    WHERE attempt_id = %s AND question_id = %s
+                """, (attempt_id, q_id))
                 total_score += 1
             else:
-                cursor.execute("UPDATE student_answers SET is_correct = 0 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
+                # Explicitly mark as wrong
+                cursor.execute("""
+                    UPDATE student_answers SET is_correct = 0 
+                    WHERE attempt_id = %s AND question_id = %s
+                """, (attempt_id, q_id))
 
-        # Finalize Attempt
-        cursor.execute("UPDATE exam_attempts SET status = 'finished', end_time = NOW(), score = %s WHERE attempt_id = %s", (total_score, attempt_id))
+        # 5. Finalize the main attempt record
+        cursor.execute("""
+            UPDATE exam_attempts 
+            SET status = 'finished', end_time = NOW(), score = %s 
+            WHERE attempt_id = %s
+        """, (total_score, attempt_id))
+        
         connection.commit()
-        flash(f"Exam submitted! Final Score: {total_score}", "success")
+        flash(f"Exam submitted successfully! Final Score: {total_score}", "success")
+        
+    except mysql.connector.Error as err:
+        if connection:
+            connection.rollback()
+        flash(f"Grading Error: {err}", "danger")
+        print(f"ERROR: {err}")
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+    
     return redirect(url_for('student.student_results'))
 
 
