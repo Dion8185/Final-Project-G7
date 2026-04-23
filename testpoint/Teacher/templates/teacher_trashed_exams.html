@@ -2,20 +2,63 @@
 {% block title %}Trash Bin - TestPoint{% endblock %}
 
 {% block content %}
-<div class="animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">Deleted Exams</h1>
+<div class="container-fluid animate__animated animate__fadeIn">
+    
+    <!-- HEADER SECTION -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Deleted Exams</h1>
+            <p class="mb-0 small text-muted">Exams in the trash are not visible to students.</p>
+        </div>
+        <div class="d-flex" style="gap: 10px;">
+            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-outline-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm mr-1"></i> Active Exams
+            </a>
+            <!-- EMPTY TRASH BUTTON -->
+            {% if exams %}
+            <form action="{{ url_for('teacher.empty_exam_trash') }}" method="POST" onsubmit="return confirm('PERMANENT ACTION: Are you sure you want to delete ALL exams in the trash bin? This cannot be undone.')">
+                <button type="submit" class="btn btn-sm btn-danger shadow-sm px-3">
+                    <i class="fas fa-eraser fa-sm mr-1"></i> Empty Trash
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- TRASHED EXAMS LIST -->
     {% for course_name, course_exams in exams|groupby('course_name') %}
-    <div class="mb-4">
-        <h5 class="font-weight-bold text-secondary">{{ course_name }}</h5>
+    <div class="course-group mb-5">
+        <h5 class="font-weight-bold text-secondary text-uppercase small mb-3 border-bottom pb-2">
+            <i class="fas fa-folder-open mr-2"></i>{{ course_name }}
+        </h5>
+        
         <div class="row">
             {% for exam in course_exams %}
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card shadow h-100 border-0">
+                <div class="card shadow h-100 border-left-secondary border-0">
                     <div class="card-body">
-                        <h5>{{ exam.title }}</h5>
-                        <div class="row mt-3">
-                            <div class="col-6"><form action="{{ url_for('teacher.restore_exam', exam_id=exam.exam_id) }}" method="POST"><button class="btn btn-success btn-sm btn-block">Restore</button></form></div>
-                            <div class="col-6"><button class="btn btn-outline-danger btn-sm btn-block" data-toggle="modal" data-target="#permDeleteModal" data-id="{{ exam.exam_id }}">Destroy</button></div>
+                        <h5 class="font-weight-bold text-dark mb-1">{{ exam.title }}</h5>
+                        <div class="small text-muted mb-3">
+                            <i class="fas fa-stopwatch mr-1"></i> {{ exam.duration_minutes }} Mins
+                        </div>
+
+                        <div class="row no-gutters mt-3">
+                            <div class="col-6 pr-1">
+                                <!-- RESTORE BUTTON -->
+                                <form action="{{ url_for('teacher.restore_exam', exam_id=exam.exam_id) }}" method="POST">
+                                    <button type="submit" class="btn btn-success btn-sm btn-block shadow-sm">
+                                        <i class="fas fa-undo-alt mr-1"></i> Restore
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="col-6 pl-1">
+                                <!-- DESTROY BUTTON -->
+                                <button class="btn btn-outline-danger btn-sm btn-block shadow-sm" 
+                                        data-toggle="modal" data-target="#permDeleteModal" 
+                                        data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}">
+                                    <i class="fas fa-times mr-1"></i> Destroy
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -23,6 +66,56 @@
             {% endfor %}
         </div>
     </div>
+    {% else %}
+    <!-- EMPTY STATE -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-trash fa-4x text-gray-200"></i>
+        </div>
+        <h4 class="text-gray-500 font-weight-bold">Trash bin is empty</h4>
+        <p class="text-gray-400">Great job! No deleted exams found.</p>
+        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-primary shadow-sm mt-2">Back to Exams</a>
+    </div>
     {% endfor %}
 </div>
+
+<!-- PERMANENT DELETE CONFIRMATION MODAL -->
+<div class="modal fade" id="permDeleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold">Permanent Deletion</h5>
+                <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form id="permDeleteForm" method="POST">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <p class="font-weight-bold text-dark">Are you sure you want to permanently destroy <br>
+                    <span id="delTitle" class="text-danger"></span>?</p>
+                    <p class="small text-muted">This action is irreversible. All linked questions and student progress data will be wiped from the server.</p>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button class="btn btn-secondary shadow-sm btn-sm px-4" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger shadow-sm btn-sm px-4" type="submit">Yes, Delete Forever</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#permDeleteModal').on('show.bs.modal', function (event) {
+            var btn = $(event.relatedTarget);
+            var examId = btn.data('id');
+            var examTitle = btn.data('title');
+            
+            $('#delTitle').text(examTitle);
+            var actionUrl = "{{ url_for('teacher.delete_exam_permanently', exam_id='0') }}".replace('0', examId);
+            $('#permDeleteForm').attr('action', actionUrl);
+        });
+    });
+</script>
 {% endblock %}
