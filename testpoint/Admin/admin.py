@@ -565,38 +565,33 @@ def oversee_exams():
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))
 
-# @admin.route('/add_exam', methods=['POST'])
-# def add_exam():
-#     if admin_logged_in():
-#         course_id = request.form.get('course_id')
-#         title = request.form.get('title')
-#         duration = request.form.get('duration')
-#         pass_percent = request.form.get('pass_percentage')
-#         created_by = session.get('user_id') 
-
-#         connection = mysql.connector.connect(**db_config)
-#         cursor = connection.cursor()
-#         try:
-#             cursor.execute("""
-#                 INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, created_by) 
-#                 VALUES (%s, %s, %s, %s, %s)
-#             """, (course_id, title, duration, pass_percent, created_by))
-#             connection.commit()
-#             flash('Exam created successfully!', 'success')
-#         except mysql.connector.Error as err:
-#             flash(f'Error: {err}', 'danger')
-#         finally:
-#             cursor.close()
-#             connection.close()
-#         return redirect(url_for('admin.oversee_exams'))
-#     return redirect(url_for('auth.login'))
-
 
 @admin.route('/user_logs')
 def user_logs():
     if admin_logged_in():
-        return render_template('admin_logs.html')
-        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT user_id, email, role, created_at
+            FROM users
+            ORDER BY created_at DESC
+        """)
+
+        users = cursor.fetchall()
+
+        # badge color mapping
+        for user in users:
+            role = (user.get("role") or "").lower()
+
+            user["role_class"] = {
+                "admin": "danger",
+                "teacher": "primary",
+                "student": "success"
+            }.get(role, "secondary")
+
+        return render_template('admin_logs.html', user_logs=users)
+
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))

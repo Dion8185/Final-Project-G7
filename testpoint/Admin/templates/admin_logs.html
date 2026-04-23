@@ -58,12 +58,14 @@
 <body id="page-top">
     <div id="wrapper">
         <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center"
+                href="{{url_for('admin.admin_dashboard')}}">
                 <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
                 <div class="sidebar-brand-text mx-3">System Admin</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System
+            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i
+                        class="fas fa-fw fa-tachometer-alt"></i><span>System
                         Overview</span></a></li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">User Management</div>
@@ -84,7 +86,7 @@
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0"
                     id="sidebarToggle"></button></div>
         </ul>
-        
+
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 <!-- Topbar - Reusing your exact structure -->
@@ -176,61 +178,43 @@
                     <div class="card shadow mb-4">
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
-                                    <thead class="thead-light">
+                                <table class="table table-hover align-middle">
+                                    <thead>
                                         <tr>
-                                            <th>Timestamp</th>
-                                            <th>Category</th>
-                                            <th>User / Actor</th>
-                                            <th>Event Description</th>
-                                            <th>IP Address</th>
+                                            <th>Date Created</th>
+                                            <th>Role</th>
+                                            <th>User ID</th>
+                                            <th>Email</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
-                                        <!-- Placeholder loop for Flask integration -->
-                                        {% for log in logs %}
+                                        {% for log in user_logs %}
                                         <tr>
-                                            <td class="small">{{ log.timestamp }}</td>
+                                            <td class="small text-muted">
+                                                {{ log.created_at }}
+                                            </td>
+
                                             <td>
-                                                <span class="badge badge-{{ log.category_class }} text-uppercase">
-                                                    {{ log.category }}
+                                                <span class="badge bg-{{ log.role_class }} text-uppercase">
+                                                    {{ log.role }}
                                                 </span>
                                             </td>
-                                            <td><strong>{{ log.username }}</strong></td>
-                                            <td>{{ log.message }}</td>
-                                            <td><code>{{ log.ip_address }}</code></td>
-                                            <td><a href="#" class="btn btn-sm btn-circle btn-light"><i
-                                                        class="fas fa-search"></i></a></td>
-                                        </tr>
-                                        {% else %}
-                                        <!-- Static Mockup Data for Preview -->
-                                        <tr>
-                                            <td class="small">2023-10-27 14:32:10</td>
-                                            <td><span class="badge badge-security">Security</span></td>
-                                            <td><strong>Admin_01</strong></td>
-                                            <td>Failed login attempt detected from new IP.</td>
-                                            <td><code>192.168.1.45</code></td>
-                                            <td><button class="btn btn-sm btn-circle btn-light"><i
-                                                        class="fas fa-search text-primary"></i></button></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">2023-10-27 13:15:00</td>
-                                            <td><span class="badge badge-user">User</span></td>
-                                            <td><strong>Prof. Smith</strong></td>
-                                            <td>Created new exam: "CS101 Midterm"</td>
-                                            <td><code>172.16.254.1</code></td>
-                                            <td><button class="btn btn-sm btn-circle btn-light"><i
-                                                        class="fas fa-search text-primary"></i></button></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="small">2023-10-27 12:00:45</td>
-                                            <td><span class="badge badge-exam">Exam</span></td>
-                                            <td><strong>Student_99</strong></td>
-                                            <td>Tab-switch detected during "Data Structures" exam.</td>
-                                            <td><code>10.0.0.8</code></td>
-                                            <td><button class="btn btn-sm btn-circle btn-light"><i
-                                                        class="fas fa-search text-primary"></i></button></td>
+
+                                            <td>
+                                                <strong>{{ log.user_id }}</strong>
+                                            </td>
+
+                                            <td>
+                                                {{ log.email }}
+                                            </td>
+
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-circle btn-light">
+                                                    <i class="fas fa-search"></i>
+                                                </a>
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>

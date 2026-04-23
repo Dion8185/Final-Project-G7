@@ -26,7 +26,8 @@
                                 </div>
                                 <div class="col">
                                     <div class="progress progress-sm mr-2">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ progress_pct }}%"></div>
+                                        <div class="progress-bar bg-primary" role="progressbar"
+                                            style="width: {{ progress_pct }}%"></div>
                                     </div>
                                 </div>
                             </div>
@@ -44,7 +45,8 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tests Finished</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }} / {{ total_count }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }} / {{ total_count
+                                }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div>
                     </div>
@@ -59,7 +61,8 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Instructor</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname
+                                }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-user-tie fa-2x text-gray-300"></i></div>
                     </div>
@@ -74,7 +77,8 @@
             <!-- Course Description -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle mr-2"></i>About this Course</h6>
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle mr-2"></i>About this
+                        Course</h6>
                 </div>
                 <div class="card-body">
                     <p class="text-gray-700">{{ course.description or 'No description available for this course.' }}</p>
@@ -94,43 +98,57 @@
                                     <th>Exam Title</th>
                                     <th>Status</th>
                                     <th>Score</th>
+                                    <th class="text-center">Time</th>
                                     <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% if course_exams %}
-                                    {% for exam in course_exams %}
-                                    <tr>
-                                        <td class="align-middle font-weight-bold">{{ exam.title }}</td>
-                                        <td class="align-middle">
-                                            {% if exam.attempt_status == 'finished' %}
-                                                <span class="badge badge-success">Completed</span>
-                                            {% elif exam.attempt_status == 'in-progress' %}
-                                                <span class="badge badge-warning">In Progress</span>
-                                            {% else %}
-                                                <span class="badge badge-secondary">Pending</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="align-middle">
-                                            {% if exam.attempt_status == 'finished' %}
-                                                {{ exam.score }} / {{ exam.total_q }}
-                                            {% else %}
-                                                --
-                                            {% endif %}
-                                        </td>
-                                        <td class="text-center">
-                                            {% if exam.attempt_status == 'finished' %}
-                                                <a href="{{ url_for('student.student_results') }}" class="btn btn-sm btn-outline-primary">View Review</a>
-                                            {% else %}
-                                                <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}" class="btn btn-sm btn-primary">Start Exam</a>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                                {% for exam in course_exams %}
+                                <tr>
+                                    <td class="align-middle font-weight-bold">{{ exam.title }}</td>
+                                    <td class="align-middle">
+                                        {% if exam.attempt_status == 'finished' %}
+                                        <span class="badge badge-success">Completed</span>
+                                        {% elif exam.attempt_status == 'in-progress' %}
+                                        <span class="badge badge-warning">In Progress</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if exam.attempt_status == 'finished' %}
+                                        {{ exam.score }} / {{ exam.total_q }}
+                                        {% else %}
+                                        --
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ exam.date_time.strftime("%B %d, %Y %I:%M %p") }}</td>
+                                    <td class="text-center">
+                                        {% if exam.attempt_status == 'finished' %}
+                                        <a href="{{ url_for('student.student_results') }}"
+                                            class="btn btn-sm btn-outline-primary">View Review</a>
+                                        {% elif exam.is_active == 0 %}
+                                        <span class="text-muted">Unavailable</span>
+
+                                        {% elif now.date() <= exam.date_time.date() %} <span class="text-warning">
+                                            <i class="fas fa-calendar-day mr-1"></i> Upcoming Exam
+                                            </span>
+                                        {% elif now.date() > exam.date_time.date() and exam.attempt_status != 'in-progress' %}
+                                        <span class="text-danger"><i class="fas fas fa-exclamation mr-1"></i>Exam Expired</span>
+
+                                        {% else %}
+                                            <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}"
+                                                class="btn btn-sm btn-primary">Start Exam</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
                                 {% else %}
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">No exams have been posted for this course yet.</td>
-                                    </tr>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No exams have been posted for
+                                        this course yet.</td>
+                                </tr>
                                 {% endif %}
                             </tbody>
                         </table>
@@ -144,7 +162,8 @@
             <div class="card shadow mb-4 text-center">
                 <div class="card-body">
                     <div class="mb-3">
-                        <img class="img-profile rounded-circle" style="width:80px;" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
+                        <img class="img-profile rounded-circle" style="width:80px;"
+                            src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
                     </div>
                     <h5 class="font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname }}</h5>
                     <p class="small text-muted mb-3">Course Instructor</p>

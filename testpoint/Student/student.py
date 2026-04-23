@@ -64,16 +64,23 @@ def student_dashboard():
             cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s", (student_id,))
             course_count = cursor.fetchone()['count']
 
-            # Stats 2: Completed Exams
-            cursor.execute("SELECT COUNT(*) as count FROM exam_attempts WHERE student_id = %s AND status = 'finished'", (student_id,))
+            # Stats 2: Completed Exams (exclude archived exams)
+            cursor.execute("""
+                SELECT COUNT(*) as count
+                FROM exam_attempts ea
+                JOIN exams e ON ea.exam_id = e.exam_id
+                WHERE ea.student_id = %s
+                AND ea.status = 'finished'
+                AND e.archived = 0
+            """, (student_id,))
             completed_count = cursor.fetchone()['count']
-
+            
             # Stats 3: Available Exams (Active exams in enrolled courses not yet finished)
             cursor.execute("""
                 SELECT COUNT(*) as count FROM exams e
                 JOIN enrollments en ON e.course_id = en.course_id
                 LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-                WHERE en.student_id = %s AND e.is_active = 1 AND (ea.status IS NULL OR ea.status = 'in-progress')
+                WHERE en.student_id = %s AND e.is_active = 1 AND (ea.status IS NULL OR ea.status = 'in-progress') AND e.archived = 0;
             """, (student_id, student_id))
             available_count = cursor.fetchone()['count']
 
@@ -424,7 +431,7 @@ def student_results():
         FROM exam_attempts ea
         JOIN exams e ON ea.exam_id = e.exam_id
         JOIN courses c ON e.course_id = c.course_id
-        WHERE ea.student_id = %s AND ea.status = 'finished'
+        WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
         ORDER BY ea.end_time DESC
     """, (student_id,))
     results = cursor.fetchall()
@@ -455,14 +462,14 @@ def view_course(course_id):
 
         # 2. Fetch Student Progress for this course
         # Count total exams in this course
-        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE course_id = %s AND is_active = 1", (course_id,))
+        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE course_id = %s AND is_active = 1 AND archived = 0", (course_id,))
         total_exams = cursor.fetchone()['total']
 
         # Count completed exams by student
         cursor.execute("""
             SELECT COUNT(*) as completed FROM exam_attempts ea
             JOIN exams e ON ea.exam_id = e.exam_id
-            WHERE e.course_id = %s AND ea.student_id = %s AND ea.status = 'finished'
+            WHERE e.course_id = %s AND ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0;
         """, (course_id, student_id))
         completed_exams = cursor.fetchone()['completed']
 
@@ -475,7 +482,7 @@ def view_course(course_id):
             (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as total_q
             FROM exams e
             LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-            WHERE e.course_id = %s AND e.is_active = 1
+            WHERE e.course_id = %s AND e.archived = 0
         """, (student_id, course_id))
         course_exams = cursor.fetchall()
 
@@ -486,7 +493,8 @@ def view_course(course_id):
                                completed_count=completed_exams,
                                total_count=total_exams,
                                sidebar_active='course_view', 
-                               current_course_id=course_id)
+                               current_course_id=course_id,
+                               now = datetime.now())
     finally:
         cursor.close()
         connection.close()

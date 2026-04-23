@@ -468,7 +468,6 @@ def logout():
         print(f"DEBUG: Student {user_id} is logging out during Exam {active_exam_id}. Auto-submitting...")
         
         connection = mysql.connector.connect(**db_config)
-        # FIX: Added buffered=True to handle multiple queries in a single session
         cursor = connection.cursor(dictionary=True, buffered=True) 
         
         try:
@@ -523,8 +522,7 @@ def logout():
                 cursor.close()
             if connection:
                 connection.close()
-
-    # Clear session and redirect
+                cursor.close()
+                
     session.clear()
-    flash("You have been logged out. Your exam progress was saved and submitted.", "info")
     return redirect(url_for('auth.login'))
