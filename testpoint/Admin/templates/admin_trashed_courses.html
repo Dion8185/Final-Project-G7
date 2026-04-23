@@ -1,351 +1,194 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "admin_base.html" %}
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>TestPoint - Trashed Courses</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <style>
-        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { border: none; }
-        .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
-        .user-row { transition: all 0.2s; }
-    </style>
-</head>
+{% block head %}
+<style>
+    .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
+    .card { border: none; }
+    .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
+    .user-row { transition: all 0.2s; }
+</style>
+{% endblock %}
 
-<body id="page-top">
-    <div id="wrapper">
-        <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
-                <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
-                <div class="sidebar-brand-text mx-3">System Admin</div>
-            </a>
-            <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">User Management</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a></li>
-            <li class="nav-item active"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.oversee_exams')}}"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">System</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.user_logs')}}"><i class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.settings')}}"><i class="fas fa-fw fa-cogs"></i><span>System Settings</span></a></li>
-            <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
-        </ul>
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Courses</h1>
+    <div style="display: flex; gap: 10px;">
+        <a href="{{url_for('admin.manage_courses')}}" class="btn btn-sm btn-dark shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> Back to Manager
+        </a>
+        <button class="btn btn-sm btn-danger shadow-sm" data-toggle="modal" data-target="#emptyTrashModal">
+            <i class="fas fa-eraser fa-sm text-white-50 mr-1"></i> Empty Trash
+        </button>
+    </div>
+</div>
 
-        <div id="content-wrapper" class="d-flex flex-column">
-            <div id="content">
-                <!-- Topbar -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
-                    <ul class="navbar-nav ml-auto">
-                        <!-- Notification Dropdown -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-bell fa-fw text-gray-600"></i><span class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-dark border-dark">System Notifications</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-dark">
-                                            <i class="fas fa-user-plus text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">October 26</div>New teacher registration pending approval.
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View All Alerts</a>
-                            </div>
-                        </li>
-                        <div class="topbar-divider d-none d-sm-block"></div>
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ firstname }}</span>
-                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="{{url_for('admin.profile')}}"><i
-                                        class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit"
-                                        class="dropdown-item border-0 bg-transparent w-100 text-left"><i
-                                            class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                        Logout</button></form>
-                            </div>
-                        </li>
-                    </ul>
-                </nav>
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
-                <div class="container-fluid animate__animated animate__fadeIn">
-                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Courses</h1>
-                        <div style="display: flex; gap: 10px;">
-                            <a href="{{url_for('admin.manage_courses')}}" class="btn btn-sm btn-dark shadow-sm">
-                                <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> Back to Manager
-                            </a>
-                            <button class="btn btn-sm btn-danger shadow-sm" data-toggle="modal" data-target="#emptyTrashModal">
-                                <i class="fas fa-eraser fa-sm text-white-50 mr-1"></i> Empty Trash
-                            </button>
-                        </div>
-                    </div>
+<!-- Filter Card (RETAINED & FIXED) -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-search mr-2"></i>Search Trashed Courses</h6>
+    </div>
+    <div class="card-body">
+        <form id="filterForm" class="row">
+            <div class="col-md-4 mb-2">
+                <select class="form-control" id="roleFilter">
+                    <option value="">All Roles</option>
+                    <option value="student">Students</option>
+                    <option value="teacher">Teachers</option>
+                    <option value="admin">Admins</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-2">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search by name, email, or ID...">
+            </div>
+            <div class="col-md-2 mb-2">
+                <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-                    <!-- Flash Messages -->
-                    {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                    {{ message }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
-
-                    <!-- Filter Card (RETAINED & FIXED) -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-search mr-2"></i>Search Trashed Courses</h6>
-                        </div>
-                        <div class="card-body">
-                            <form id="filterForm" class="row">
-                                <div class="col-md-4 mb-2">
-                                    <select class="form-control" id="roleFilter">
-                                        <option value="">All Roles</option>
-                                        <option value="student">Students</option>
-                                        <option value="teacher">Teachers</option>
-                                        <option value="admin">Admins</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-2">
-                                    <input type="text" class="form-control" id="searchInput" placeholder="Search by name, email, or ID...">
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
-                                </div>
+<!-- Trashed Users Table -->
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+              <table class="table table-hover align-middle" id="courseTable" width="100%">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Course Title</th>
+                        <th>Assigned Teacher</th>
+                        <th>Students</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in trashed_courses %}
+                    <tr class="course-row">
+                        <td><strong>{{ course.course_code }}</strong></td>
+                        <td>{{ course.course_name }}</td>
+                        <td>
+                            {% if course.teacher_id %}
+                                <span class="text-dark">{{ course.teacher_fname }} {{ course.teacher_lname }}</span>
+                            {% else %}
+                                <span class="text-muted italic">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-pill badge-light border">{{ course.student_count }} Student(s)</span></td>
+                        <td class="text-center">
+                            <form  style="display: inline-block;" action="{{ url_for('admin.delete_course_permanently', course_code=course.course_code) }}" method="post">
+                                <button style="border: none; background: none;" type="submit">
+                                    <a class="btn btn-danger btn-circle btn-sm mr-1" title="Permanently Delete Course">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </button>    
                             </form>
-                        </div>
-                    </div>
-
-                    <!-- Trashed Users Table -->
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                  <table class="table table-hover align-middle" id="courseTable" width="100%">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>Code</th>
-                                            <th>Course Title</th>
-                                            <th>Assigned Teacher</th>
-                                            <th>Students</th>
-                                            <th class="text-center">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for course in trashed_courses %}
-                                        <tr class="course-row">
-                                            <td><strong>{{ course.course_code }}</strong></td>
-                                            <td>{{ course.course_name }}</td>
-                                            <td>
-                                                {% if course.teacher_id %}
-                                                    <span class="text-dark">{{ course.teacher_fname }} {{ course.teacher_lname }}</span>
-                                                {% else %}
-                                                    <span class="text-muted italic">Unassigned</span>
-                                                {% endif %}
-                                            </td>
-                                            <td><span class="badge badge-pill badge-light border">{{ course.student_count }} Student(s)</span></td>
-                                            <td class="text-center">
-                                                <form  style="display: inline-block;" action="{{ url_for('admin.delete_course_permanently', course_code=course.course_code) }}" method="post">
-                                                    <button style="border: none; background: none;" type="submit">
-                                                        <a class="btn btn-danger btn-circle btn-sm mr-1" title="Permanently Delete Course">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
-                                                    </button>    
-                                                </form>
-                                            <form  style="display: inline-block;" action="{{ url_for('admin.restore_course', course_code=course.course_code) }}" method="post">
-                                                <button style="border: none; background: none;" type="submit">
-                                                    <a class="btn btn-dark btn-circle btn-sm mr-1" title="Restore Course">
-                                                        <i class="fa fa-undo"></i>
-                                                    </a>
-                                                </button>    
-                                            </form>
-                                            </td>
-                                        </tr>
-                                        {% else %}
-                                        <tr><td colspan="5" class="text-center text-gray-500 py-4">No courses available.</td></tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <footer class="sticky-footer bg-white">
-                <div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div>
-            </footer>
+                        <form  style="display: inline-block;" action="{{ url_for('admin.restore_course', course_code=course.course_code) }}" method="post">
+                            <button style="border: none; background: none;" type="submit">
+                                <a class="btn btn-dark btn-circle btn-sm mr-1" title="Restore Course">
+                                    <i class="fa fa-undo"></i>
+                                </a>
+                            </button>    
+                        </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-gray-500 py-4">No courses available.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- MODALS -->
+{% block scripts %}
+<script>
+(function ($) {
+    "use strict";
 
-    <!-- Restore User Modal -->
-    <div class="modal fade" id="restoreUserModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content border-0 shadow">
-                <form id="restoreForm" method="POST" action="">
-                    <div class="modal-header bg-success text-white">
-                        <h5 class="modal-title font-weight-bold">Restore Account</h5>
-                        <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <i class="fas fa-undo fa-3x text-success mb-3"></i>
-                        <p class="text-dark font-weight-bold">Restore <span id="restoreUserName"></span>?</p>
-                        <p class="small text-muted">The user will be able to log in again immediately.</p>
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-success px-4" type="submit">Yes, Restore</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    /* ══════════════════════════════════════════
+       FILTER & SEARCH LOGIC (FIXED)
+    ══════════════════════════════════════════ */
+    function performFilter() {
+        var searchVal = $('#searchInput').val().toLowerCase();
+        var roleVal = $('#roleFilter').val().toLowerCase();
 
-    <!-- Permanent Delete Modal -->
-    <div class="modal fade" id="permDeleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content border-0 shadow">
-                <form id="permDeleteForm" method="POST" action="">
-                    <div class="modal-header bg-danger text-white">
-                        <h5 class="modal-title font-weight-bold">Permanent Purge</h5>
-                        <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                        <h4 class="text-danger font-weight-bold">IRREVERSIBLE!</h4>
-                        <p class="text-dark">You are about to permanently delete <strong><span id="deleteUserName"></span></strong>.</p>
-                        <p class="small text-muted">All profile details and exam records will be wiped from the server.</p>
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-danger px-4" type="submit">Purge Account</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+        $(".user-row").each(function () {
+            var row = $(this);
+            var rowText = row.find('.search-data').text().toLowerCase();
+            var rowRole = row.attr('data-role').toLowerCase();
 
-    <!-- Empty Trash Confirmation Modal -->
-    <div class="modal fade" id="emptyTrashModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content border-0 shadow">
-                <form action="{{ url_for('admin.empty_course_trash') }}" method="POST">
-                    <div class="modal-header bg-dark text-white">
-                        <h5 class="modal-title font-weight-bold">Empty Trash Bin</h5>
-                        <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                    </div>
-                    <div class="modal-body text-center py-4">
-                        <i class="fas fa-eraser fa-3x text-danger mb-3"></i>
-                        <p class="text-dark font-weight-bold">Delete ALL trashed courses permanently?</p>
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-danger px-4" type="submit">Purge All Trashed Data</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+            var matchesSearch = rowText.indexOf(searchVal) > -1;
+            var matchesRole = roleVal === "" || rowRole === roleVal;
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        (function ($) {
-            "use strict";
-
-            /* ══════════════════════════════════════════
-               FILTER & SEARCH LOGIC (FIXED)
-            ══════════════════════════════════════════ */
-            function performFilter() {
-                var searchVal = $('#searchInput').val().toLowerCase();
-                var roleVal = $('#roleFilter').val().toLowerCase();
-
-                $(".user-row").each(function () {
-                    var row = $(this);
-                    var rowText = row.find('.search-data').text().toLowerCase();
-                    var rowRole = row.attr('data-role').toLowerCase();
-
-                    var matchesSearch = rowText.indexOf(searchVal) > -1;
-                    var matchesRole = roleVal === "" || rowRole === roleVal;
-
-                    if (matchesSearch && matchesRole) {
-                        row.show();
-                    } else {
-                        row.hide();
-                    }
-                });
+            if (matchesSearch && matchesRole) {
+                row.show();
+            } else {
+                row.hide();
             }
+        });
+    }
 
-            $('#searchInput').on('keyup', performFilter);
-            $('#roleFilter').on('change', performFilter);
-            $('#resetFilters').on('click', function () {
-                $('#searchInput').val('');
-                $('#roleFilter').val('');
-                performFilter();
-            });
+    $('#searchInput').on('keyup', performFilter);
+    $('#roleFilter').on('change', performFilter);
+    $('#resetFilters').on('click', function () {
+        $('#searchInput').val('');
+        $('#roleFilter').val('');
+        performFilter();
+    });
 
-            /* ══════════════════════════════════════════
-               MODAL DATA INJECTION
-            ══════════════════════════════════════════ */
+    /* ══════════════════════════════════════════
+       MODAL DATA INJECTION
+    ══════════════════════════════════════════ */
 
-            // Restore Modal
-            $('#restoreUserModal').on('show.bs.modal', function (event) {
-                var btn = $(event.relatedTarget);
-                var userId = btn.data('id');
-                var userName = btn.data('name');
-                $('#restoreUserName').text(userName);
-                var actionUrl = "{{ url_for('admin.restore_account', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
-                $('#restoreForm').attr('action', actionUrl);
-            });
+    // Restore Modal
+    $('#restoreUserModal').on('show.bs.modal', function (event) {
+        var btn = $(event.relatedTarget);
+        var userId = btn.data('id');
+        var userName = btn.data('name');
+        $('#restoreUserName').text(userName);
+        var actionUrl = "{{ url_for('admin.restore_account', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
+        $('#restoreForm').attr('action', actionUrl);
+    });
 
-            // Permanent Delete Modal
-            $('#permDeleteUserModal').on('show.bs.modal', function (event) {
-                var btn = $(event.relatedTarget);
-                var userId = btn.data('id');
-                var userName = btn.data('name');
-                $('#deleteUserName').text(userName);
-                var actionUrl = "{{ url_for('admin.delete_account_permanently', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
-                $('#permDeleteForm').attr('action', actionUrl);
-            });
+    // Permanent Delete Modal
+    $('#permDeleteUserModal').on('show.bs.modal', function (event) {
+        var btn = $(event.relatedTarget);
+        var userId = btn.data('id');
+        var userName = btn.data('name');
+        $('#deleteUserName').text(userName);
+        var actionUrl = "{{ url_for('admin.delete_account_permanently', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
+        $('#permDeleteForm').attr('action', actionUrl);
+    });
 
-            // Empty Trash Modal
-            $('#emptyTrashModal').on('show.bs.modal', function (event) {
-                var btn = $(event.relatedTarget);
-                var actionUrl = "{{ url_for('admin.empty_course_trash') }}";
-                $('#emptyTrashForm').attr('action', actionUrl);
-            });
+    // Empty Trash Modal
+    $('#emptyTrashModal').on('show.bs.modal', function (event) {
+        var btn = $(event.relatedTarget);
+        var actionUrl = "{{ url_for('admin.empty_course_trash') }}";
+        $('#emptyTrashForm').attr('action', actionUrl);
+    });
 
-            
-            // Sidebar toggle
-            $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
-                $("body").toggleClass("sidebar-toggled");
-                $(".sidebar").toggleClass("toggled");
-            });
+    
+    // Sidebar toggle
+    $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
+        $("body").toggleClass("sidebar-toggled");
+        $(".sidebar").toggleClass("toggled");
+    });
 
-        })(jQuery);
-    </script>
-</body>
-</html>
+})(jQuery);
+</script>
+{% endblock %}

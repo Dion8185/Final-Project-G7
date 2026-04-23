@@ -94,11 +94,11 @@
                                 <a class="dropdown-item" href="{{ url_for('student.profile') }}"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
                                 <div class="dropdown-divider"></div>
                                 {% endif %}
-                                <form action="{{ url_for('auth.logout') }}" method="POST">
-                                    <button type="submit" class="dropdown-item text-danger font-weight-bold border-0 bg-transparent w-100 text-left">
-                                        <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i> {% if session.get('active_exam_id') %}Submit & Logout{% else %}Logout{% endif %}
-                                    </button>
-                                </form>
+                                <button type="button" class="dropdown-item text-danger font-weight-bold border-0 bg-transparent w-100 text-left"
+                                    data-toggle="modal" data-target="#logoutModal">
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i>
+                                    {% if session.get('active_exam_id') %}Submit & Logout{% else %}Logout{% endif %}
+                                </button>
                             </div>
                         </li>
                     </ul>
@@ -110,6 +110,42 @@
             <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-gray-800" id="logoutModalLabel">
+                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i>
+                        {% if session.get('active_exam_id') %}Submit &amp; Logout{% else %}Confirm Logout{% endif %}
+                    </h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-gray-600">
+                    {% if session.get('active_exam_id') %}
+                        <p class="mb-0">Your exam will be <strong>submitted</strong> and you will be logged out. Are you sure you want to continue?</p>
+                    {% else %}
+                        <p class="mb-0">Are you sure you want to log out?</p>
+                    {% endif %}
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-dismiss="modal">
+                        Cancel
+                    </button>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-sign-out-alt fa-sm mr-1"></i>
+                            {% if session.get('active_exam_id') %}Submit &amp; Logout{% else %}Logout{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>

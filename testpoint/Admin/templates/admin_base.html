@@ -7,11 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Admin - System Control</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
         .sidebar {
@@ -28,109 +25,77 @@
             box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important;
         }
 
-        .animate-delay-1 {
-            animation-delay: 0.1s;
-        }
-
-        .animate-delay-2 {
-            animation-delay: 0.2s;
-        }
+        .animate-delay-1 { animation-delay: 0.1s; }
+        .animate-delay-2 { animation-delay: 0.2s; }
     </style>
+    {% block head %}{% endblock %}
 </head>
 
 <body id="page-top">
     <div id="wrapper">
-        <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
-                <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
-                <div class="sidebar-brand-text mx-3">System Admin</div>
-            </a>
-            <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System
-                        Overview</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">User Management</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"
-                    data-target="#collapseUsers"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a>
-            </li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i
-                        class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.oversee_exams')}}"><i
-                        class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">System</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.user_logs')}}"><i
-                        class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.settings')}}"><i
-                        class="fas fa-fw fa-cogs"></i><span>System Settings</span></a></li>
-            <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0"
-                    id="sidebarToggle"></button></div>
-        </ul>
 
-        <!-- TOP BAR -->
+        {% include 'admin_sidebar.html' %}
+
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i
-                            class="fa fa-bars"></i></button>
-                    <ul class="navbar-nav ml-auto">
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                                data-toggle="dropdown">
-                                <i class="fas fa-bell fa-fw text-gray-600"></i><span
-                                    class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <!-- NOTIFICATION TAB -->
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-dark border-dark">System Notifications</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="mr-3">
-                                        <div class="icon-circle bg-dark">
-                                            <i class="fas fa-user-plus text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="small text-gray-500">October 26</div>New teacher registration
-                                        pending approval.
-                                    </div>
-                                </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View All Alerts</a>
-                            </div>
-                        </li>
-                        <div class="topbar-divider d-none d-sm-block"></div>
-                        <!-- USER NAME AND USER PROFILE -->
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ firstname }}</span>
-                                <img class="img-profile rounded-circle"
-                                    src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="{{url_for('admin.profile')}}"><i
-                                        class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit"
-                                        class="dropdown-item border-0 bg-transparent w-100 text-left"><i
-                                            class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                        Logout</button></form>
-                            </div>
-                        </li>
-                    </ul>
-                </nav>
+
+                {% include 'admin_navbar.html' %}
+
                 <div class="container-fluid animate__animated animate__fadeInUp">
+                    {% block content %}{% endblock %}
                 </div>
-                <!-- FOOTER -->
+
                 <footer class="sticky-footer bg-white">
                     <div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div>
                 </footer>
+
             </div>
         </div>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-        <script> (function ($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
+
+    </div> <!-- closes #wrapper -->
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-gray-800" id="logoutModalLabel">
+                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i> Confirm Logout
+                    </h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-gray-600">
+                    <p class="mb-0">Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-dismiss="modal">
+                        Cancel
+                    </button>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-sign-out-alt fa-sm mr-1"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+    <script>
+        (function ($) {
+            "use strict";
+            $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
+                $("body").toggleClass("sidebar-toggled");
+                $(".sidebar").toggleClass("toggled");
+            });
+        })(jQuery);
+    </script>
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

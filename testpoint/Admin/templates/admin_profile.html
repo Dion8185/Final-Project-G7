@@ -1,154 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Admin - User Profile</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <style>
-        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .profile-header-img { width: 120px; height: 120px; object-fit: cover; border: 5px solid #fff; }
-    </style>
-</head>
-<body id="page-top">
-    <div id="wrapper">
-        <!-- SIDE BAR -->
-        <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
-                <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
-                <div class="sidebar-brand-text mx-3">System Admin</div>
-            </a>
-            <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.admin_dashboard')}}"><i class="fas fa-fw fa-tachometer-alt"></i><span>System Overview</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">User Management</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_accounts')}}"><i class="fas fa-fw fa-users-cog"></i><span>Manage Users</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.manage_courses')}}"><i class="fas fa-fw fa-university"></i><span>Manage Courses</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.oversee_exams')}}"><i class="fas fa-fw fa-eye"></i><span>Oversee All Exams</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">System</div>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.user_logs')}}"><i class="fas fa-fw fa-history"></i><span>Activity Logs</span></a></li>
-            <li class="nav-item"><a class="nav-link" href="{{url_for('admin.settings')}}"><i class="fas fa-fw fa-cogs"></i><span>System Settings</span></a></li>
-            <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
-        </ul>
+{% extends "admin_base.html" %}
 
-        <div id="content-wrapper" class="d-flex flex-column">
-            <div id="content">
-                <!-- TOP BAR -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
-                    <ul class="navbar-nav ml-auto">
-                        <!-- NOTIFICATION TAB -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-bell fa-fw text-gray-600"></i><span class="badge badge-danger badge-counter">3+</span>
-                            </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-dark border-dark">System Notifications</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#"><div class="mr-3"><div class="icon-circle bg-dark"><i class="fas fa-user-plus text-white"></i></div></div><div><div class="small text-gray-500">October 26</div>New teacher registration pending approval.</div></a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View All Alerts</a>
-                            </div>
-                        </li>
-                        <div class="topbar-divider d-none d-sm-block"></div>
-                        <!-- USER PROFILE DROP DOWN -->
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ user.firstname }}</span>
-                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="{{url_for('admin.profile')}}"><i
-                                        class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit"
-                                        class="dropdown-item border-0 bg-transparent w-100 text-left"><i
-                                            class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                        Logout</button></form>
-                            </div>
-                        </li>
-                    </ul>
-                </nav>
+{% block head %}
+<style>
+    .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
+    .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
+    .profile-header-img { width: 120px; height: 120px; object-fit: cover; border: 5px solid #fff; }
+</style>
+{% endblock %}
 
-                <!-- PAGE CONTENT -->
-                <div class="container-fluid animate__animated animate__fadeInUp">
-                    <h1 class="h3 mb-4 text-gray-800">Account Settings</h1>
-                    
-                    <div class="row">
-                        <!-- Personal Info Card -->
-                        <div class="col-xl-4 col-lg-5">
-                            <div class="card shadow mb-4">
-                                <div class="card-body text-center">
-                                    <img src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg" class="rounded-circle profile-header-img shadow mb-3">
-                                    <h4 class="font-weight-bold text-dark">{{ user.firstname }} {{ user.lastname }}</h4>
-                                    <p class="text-muted small mb-3">ID: {{ user.user_id }} | Role: {{ user.role|upper }}</p>
-                                    <div class="p-2 bg-light rounded text-left">
-                                        <p class="small mb-1"><strong>Email:</strong> {{ user.email }}</p>
-                                        <p class="small mb-1"><strong>Joined:</strong> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
-                                        <p class="small mb-0"><strong>Location:</strong> {{ user.city }}, {{ user.province }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+{% block content %}
+<h1 class="h3 mb-4 text-gray-800">Account Settings</h1>
 
-                        <!-- Update Form -->
-                        <div class="col-xl-8 col-lg-7">
-                            <div class="card shadow mb-4">
-                                <div class="card-header py-3 bg-dark">
-                                    <h6 class="m-0 font-weight-bold text-white">Edit Profile Details</h6>
-                                </div>
-                                <div class="card-body">
-                                    <form action="{{ url_for('admin.profile') }}" method="POST">
-                                        <div class="row">
-                                            <div class="col-md-4 mb-3">
-                                                <label class="small font-weight-bold">First Name</label>
-                                                <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
-                                            </div>
-                                            <div class="col-md-4 mb-3">
-                                                <label class="small font-weight-bold">Middle Name</label>
-                                                <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}">
-                                            </div>
-                                            <div class="col-md-4 mb-3">
-                                                <label class="small font-weight-bold">Last Name</label>
-                                                <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
-                                            </div>
-                                        </div>
-
-                                        <hr class="my-4">
-                                        <h6 class="font-weight-bold text-dark mb-3">Security & Password</h6>
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label class="small font-weight-bold">New Password</label>
-                                                <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current">
-                                            </div>
-                                            <div class="col-md-6 mb-3">
-                                                <label class="small font-weight-bold">Confirm Password</label>
-                                                <input type="password" class="form-control" name="confirm_password">
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mt-4 text-right">
-                                            <button type="submit" class="btn btn-dark shadow-sm px-4">Update Profile</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="row">
+    <!-- Personal Info Card -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-body text-center">
+                <img src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg" class="rounded-circle profile-header-img shadow mb-3">
+                <h4 class="font-weight-bold text-dark">{{ user.firstname }} {{ user.lastname }}</h4>
+                <p class="text-muted small mb-3">ID: {{ user.user_id }} | Role: {{ user.role|upper }}</p>
+                <div class="p-2 bg-light rounded text-left">
+                    <p class="small mb-1"><strong>Email:</strong> {{ user.email }}</p>
+                    <p class="small mb-1"><strong>Joined:</strong> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
+                    <p class="small mb-0"><strong>Location:</strong> {{ user.city }}, {{ user.province }}</p>
                 </div>
             </div>
-            <!-- FOOTER -->
-            <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> (function($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
-</body>
-</html>
+
+    <!-- Update Form -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-dark">
+                <h6 class="m-0 font-weight-bold text-white">Edit Profile Details</h6>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin.profile') }}" method="POST">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="small font-weight-bold">First Name</label>
+                            <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small font-weight-bold">Middle Name</label>
+                            <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small font-weight-bold">Last Name</label>
+                            <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+                    <h6 class="font-weight-bold text-dark mb-3">Security & Password</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold">New Password</label>
+                            <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold">Confirm Password</label>
+                            <input type="password" class="form-control" name="confirm_password">
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-right">
+                        <button type="submit" class="btn btn-dark shadow-sm px-4">Update Profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
