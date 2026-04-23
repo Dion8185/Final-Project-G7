@@ -4,27 +4,52 @@
 {% block content %}
 <div class="animate__animated animate__fadeIn">
     <h1 class="h3 mb-4 text-gray-800">Exam Performance: <span class="text-danger">{{ exam.title }}</span></h1>
-    <div class="card shadow mb-4"><div class="card-body"><div class="table-responsive">
-        <table class="table table-bordered table-hover">
-            <thead class="bg-light"><tr><th>ID</th><th>Name</th><th>Score</th><th>Violations</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody>
-                {% for r in results %}
-                {% set percent = ((r.score / r.total_questions) * 100)|round(1) if r.total_questions > 0 else 0 %}
-                <tr>
-                    <td>{{ r.student_id }}</td>
-                    <td class="font-weight-bold text-dark">{{ r.firstname }} {{ r.lastname }}</td>
-                    <td>{{ r.score }} / {{ r.total_questions }} ({{ percent }}%)</td>
-                    <td class="text-center">{{ r.tab_switches }}</td>
-                    <td><span class="badge {{ 'badge-success' if r.status == 'finished' else 'badge-primary' }}">{{ r.status }}</span></td>
-                    <td class="text-center">
-                        <form action="{{ url_for('teacher.reset_exam', attempt_id=r.attempt_id, exam_id=exam.exam_id) }}" method="POST" onsubmit="return confirm('Reset this student\'s exam?')">
-                            <button type="submit" class="btn btn-danger btn-sm shadow-sm rounded-pill"><i class="fas fa-redo-alt mr-1"></i> Reset</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div></div></div>
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                            <th>Violations</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in results %}
+                        {% set percent = ((r.score / r.total_questions) * 100)|round(1) if r.total_questions > 0 else 0
+                        %}
+                        <tr>
+                            <td>{{ r.student_id }}</td>
+                            <td class="font-weight-bold text-dark">{{ r.firstname }} {{ r.lastname }}</td>
+                            <td>{{ r.score }} / {{ r.total_questions }} ({{ percent }}%)</td>
+                            <td class="text-center">{{ r.tab_switches }}</td>
+                            <td><span
+                                    class="badge {{ 'badge-success' if r.status == 'finished' else 'badge-primary' }}">{{
+                                    r.status }}</span></td>
+                            <td class="text-center d-flex justify-content-center gap-2 flex-wrap">
+                                <form
+                                    action="{{ url_for('teacher.reset_exam', attempt_id=r.attempt_id, exam_id=exam.exam_id) }}"
+                                    method="POST" onsubmit="return confirm('Reset this student\'s exam?')">
+                                    <button type="submit" class="btn btn-danger btn-sm shadow-sm rounded-pill"><i
+                                            class="fas fa-redo-alt mr-1"></i> Reset</button>
+                                </form>
+                                <span class="mx-1">
+                                    <a href="{{ url_for('teacher.review_student_attempt', attempt_id=r.attempt_id) }}"
+                                    class="btn btn-sm btn-info shadow-sm rounded-pill px-3">
+                                    <i class="fas fa-search mr-1"></i> Details
+                                </a>
+                            </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

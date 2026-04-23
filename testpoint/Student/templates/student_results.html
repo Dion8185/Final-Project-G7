@@ -17,25 +17,40 @@
                             <th>Score</th>
                             <th>Percentage</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for r in results %}
-                        {% set percent = (r.score / r.total_questions * 100)|round(2) if r.total_questions > 0 else 0 %}
+                        {% set total = r.total_served %}
+                        {# Percentage is Score / Total Questions Actually Served #}
+                        {% set percent = ((r.score / total) * 100)|round(1) if total > 0 else 0 %}
+
                         <tr>
                             <td>
                                 <div class="font-weight-bold text-dark">{{ r.title }}</div>
-                                <div class="small text-muted">{{ r.course_name }}</div>
+                                <div class="small text-muted">{{ r.course_code }} - {{ r.course_name }}</div>
                             </td>
-                            <td class="small">{{ r.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>{{ r.score|int }} / {{ r.total_questions }}</td>
-                            <td>{{ percent }}%</td>
+                            <td>{{ r.end_time.strftime('%b %d, %Y') }}</td>
+                            <td>{{ r.score }} / {{ total }}</td>
+                            <td>
+                                <span
+                                    class="font-weight-bold {% if percent >= r.pass_percentage %}text-success{% else %}text-danger{% endif %}">
+                                    {{ percent }}%
+                                </span>
+                            </td>
                             <td>
                                 {% if percent >= r.pass_percentage %}
-                                <span class="badge badge-success px-3">PASSED</span>
+                                <span class="badge badge-success px-3 py-2">PASSED</span>
                                 {% else %}
-                                <span class="badge badge-danger px-3">FAILED</span>
+                                <span class="badge badge-danger px-3 py-2">FAILED</span>
                                 {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('student.review_exam', attempt_id=r.attempt_id) }}"
+                                    class="btn btn-sm btn-info shadow-sm">
+                                    <i class="fas fa-search mr-1"></i> Review Answers
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}

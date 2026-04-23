@@ -1,0 +1,176 @@
+{% extends "teacher_base.html" %}
+{% block title %}Review Attempt: {{ attempt.firstname }} - TestPoint{% endblock %}
+
+{% block head %}
+<style>
+    /* ── REVIEW CARD STYLING ── */
+    .review-card {
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 7px solid #858796;
+        transition: 0.3s;
+    }
+
+    .review-card.correct {
+        border-left-color: #1cc88a;
+        background-color: #f6fff9;
+    }
+
+    .review-card.incorrect {
+        border-left-color: #e74a3b;
+        background-color: #fff5f5;
+    }
+
+    /* ── ANSWER BOXES ── */
+    .ans-box {
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+
+    .ans-box.student {
+        background: #ffffff;
+        border: 1px solid #e3e6f0;
+    }
+
+    .ans-box.correct-ref {
+        background: #e6fffa;
+        border: 1px solid #38b2ac;
+        color: #234e52;
+    }
+
+    /* ── STICKY SIDEBAR ── */
+    .sticky-summary {
+        position: sticky;
+        top: 20px;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+
+    <!-- HEADER SECTION -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a href="{{ url_for('teacher.view_results', exam_id=attempt.exam_id) }}"
+                class="btn btn-sm btn-outline-secondary mb-2 shadow-sm">
+                <i class="fas fa-arrow-left fa-sm"></i> Back to Result List
+            </a>
+            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Detailed Review: <span class="text-danger">{{
+                    attempt.title }}</span></h1>
+            <p class="text-muted mb-0">Student: <strong>{{ attempt.firstname }} {{ attempt.lastname }}</strong> ({{
+                attempt.student_id }})</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- LEFT COLUMN: QUESTION BREAKDOWN -->
+        <div class="col-lg-8">
+            <h5 class="font-weight-bold text-dark mb-3">Questions Served ({{ questions|length }})</h5>
+
+            {% for q in questions %}
+            <div class="card shadow review-card {% if q.is_correct %}correct{% else %}incorrect{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="badge badge-dark text-uppercase small">{{ q.question_type.replace('_',' ')
+                                }}</span>
+                            <span class="badge badge-light border text-capitalize ml-1">{{ q.difficulty }}</span>
+                        </div>
+                        {% if q.is_correct %}
+                        <span class="text-success font-weight-bold small"><i class="fas fa-check-circle"></i>
+                            CORRECT</span>
+                        {% else %}
+                        <span class="text-danger font-weight-bold small"><i class="fas fa-times-circle"></i>
+                            INCORRECT</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="font-weight-bold text-dark mt-3 mb-2" style="font-size: 1.1rem;">{{ loop.index }}. {{
+                        q.question_text }}</p>
+                    <hr class="my-2">
+
+                    <!-- Student's Response -->
+                    <div class="ans-box student">
+                        <div class="text-xs font-weight-bold text-uppercase text-muted mb-1">Student's Response:</div>
+                        <div class="{% if q.is_correct %}text-success{% else %}text-danger{% endif %} font-weight-bold">
+                            {{ q.submitted_answer if q.submitted_answer else '[No answer submitted]' }}
+                        </div>
+                    </div>
+
+                    <!-- Correct Answer (Only shown if student was incorrect) -->
+                    {% if not q.is_correct %}
+                    <div class="ans-box correct-ref mt-2">
+                        <div class="text-xs font-weight-bold text-uppercase text-teal-700 mb-1">Correct Answer:</div>
+                        <div class="font-weight-bold">
+                            {% for opt in q.options %}
+                            {% if opt.is_correct %}{{ opt.option_text }}{% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- RIGHT COLUMN: ATTEMPT SUMMARY -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4 sticky-summary border-bottom-danger">
+                <div class="card-header py-3 bg-white">
+                    <h6 class="m-0 font-weight-bold text-danger text-uppercase small">Attempt Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Final Raw Score</div>
+                        <div class="h1 mb-0 font-weight-bold text-gray-800">{{ attempt.score }} / {{ questions|length }}
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Started:</span>
+                            <span class="text-dark font-weight-bold">{{ attempt.start_time.strftime('%I:%M %p')
+                                }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Submitted:</span>
+                            <span class="text-dark font-weight-bold">{{ attempt.end_time.strftime('%I:%M %p') }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Violations:</span>
+                            <span
+                                class="{% if attempt.tab_switches > 2 %}text-danger font-weight-bold{% else %}text-dark{% endif %}">
+                                {{ attempt.tab_switches }} tab switches
+                            </span>
+                        </div>
+                    </div>
+                    <hr>
+                    {% set percent = ((attempt.score / questions|length) * 100)|round(1) if questions|length > 0 else 0
+                    %}
+                    <div
+                        class="alert {% if percent >= attempt.pass_percentage %}alert-success{% else %}alert-danger{% endif %} ...">
+                        <div class="small text-uppercase font-weight-bold mb-1">Performance Status</div>
+                        <h4 class="font-weight-bold m-0">{{ percent }}% - {{ 'PASSED' if percent >=
+                            attempt.pass_percentage else 'FAILED' }}</h4>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-2 text-center">
+                    <small class="text-muted font-italic">Exam passing grade: {{ attempt.pass_percentage }}%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        console.log("Review loaded for attempt #{{ attempt.attempt_id }}");
+    });
+</script>
+{% endblock %}

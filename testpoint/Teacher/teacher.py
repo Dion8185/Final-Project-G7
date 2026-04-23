@@ -14,55 +14,33 @@ teacher = Blueprint('teacher', __name__, template_folder='templates', static_fol
 def teacher_dashboard():
     if teacher_logged_in():
         teacher_id = session.get('user_id')
-        firstname = session.get('firstname')
-        lastname = session.get('lastname')
-        
         connection = mysql.connector.connect(**db_config)
+        # FIX: Added dictionary=True
         cursor = connection.cursor(dictionary=True)
-        
         try:
             cursor.execute("SELECT COUNT(*) as count FROM courses WHERE teacher_id = %s", (teacher_id,))
             course_count = cursor.fetchone()['count']
             
-            cursor.execute("""
-                SELECT COUNT(*) as count FROM exams e 
-                JOIN courses c ON e.course_id = c.course_id 
-                WHERE c.teacher_id = %s
-            """, (teacher_id,))
+            cursor.execute("SELECT COUNT(*) as count FROM exams e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s", (teacher_id,))
             exam_count = cursor.fetchone()['count']
             
-            cursor.execute("""
-                SELECT COUNT(DISTINCT e.student_id) as count FROM enrollments e
-                JOIN courses c ON e.course_id = c.course_id
-                WHERE c.teacher_id = %s
-            """, (teacher_id,))
+            cursor.execute("SELECT COUNT(DISTINCT e.student_id) as count FROM enrollments e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s", (teacher_id,))
             student_count = cursor.fetchone()['count']
 
-            cursor.execute("""
-                SELECT COUNT(*) as count FROM exam_attempts ea
-                JOIN exams ex ON ea.exam_id = ex.exam_id
-                JOIN courses c ON ex.course_id = c.course_id
-                WHERE c.teacher_id = %s AND ea.status = 'in-progress'
-            """, (teacher_id,))
+            cursor.execute("SELECT COUNT(*) as count FROM exam_attempts ea JOIN exams ex ON ea.exam_id = ex.exam_id JOIN courses c ON ex.course_id = c.course_id WHERE c.teacher_id = %s AND ea.status = 'in-progress'", (teacher_id,))
             active_examinees = cursor.fetchone()['count']
-
-        except mysql.connector.Error as err:
-            flash(f"Error loading stats: {err}", "danger")
-            course_count = exam_count = student_count = active_examinees = 0
+            
+            return render_template('teacher_dashboard.html',
+                                   firstname=session.get('firstname'), 
+                                   lastname=session.get('lastname'), 
+                                   course_count=course_count, 
+                                   exam_count=exam_count, 
+                                   student_count=student_count, 
+                                   active_examinees=active_examinees)
         finally:
             cursor.close()
             connection.close()
-        
-        return render_template('teacher_dashboard.html', 
-                               firstname=firstname, 
-                               lastname=lastname,
-                               course_count=course_count,
-                               exam_count=exam_count,
-                               student_count=student_count,
-                               active_examinees=active_examinees)
-    else:
-        flash('Please log in to access the teacher dashboard.', 'danger')
-        return redirect(url_for('auth.login'))
+    return redirect(url_for('auth.login'))
 
 #! 2. QUESTION BANK (Grouping by Course)
 @teacher.route('/question_bank')
@@ -270,15 +248,25 @@ def manage_exams():
         teacher_id = session.get('user_id')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT e.*, c.course_name, c.course_code, e.date_time FROM exams e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s AND e.archived = 0;", (teacher_id,))
+   
+        cursor.execute("""
+            SELECT e.*, c.course_name, c.course_code, e.date_time,
+            (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as q_count
+            FROM exams e 
+            JOIN courses c ON e.course_id = c.course_id 
+            WHERE c.teacher_id = %s AND e.archived = 0
+        """, (teacher_id,))
         exams = cursor.fetchall()
+
         cursor.execute("SELECT course_id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
         courses = cursor.fetchall()
+        
         cursor.close()
         connection.close()
         return render_template('teacher_exams.html', exams=exams, courses=courses, now=datetime.now())
     return redirect(url_for('auth.login'))
 
+#! 4. EXAMS (Modified for Question Limit)
 @teacher.route('/add_exam', methods=['POST'])
 def add_exam():
     if teacher_logged_in():
@@ -287,24 +275,22 @@ def add_exam():
         duration = request.form.get('duration')
         pass_percent = request.form.get('pass_percentage')
         schedule = request.form.get('schedule')
+        q_limit = request.form.get('question_limit', 50)
         teacher_id = session.get('user_id')
 
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
         try:
             cursor.execute("""
-                INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, date_time, created_by, is_active) 
-                VALUES (%s, %s, %s, %s, %s, %s, 0)
-            """, (course_id, title, duration, pass_percent, schedule, teacher_id))
-            new_exam_id = cursor.lastrowid
+                INSERT INTO exams (course_id, title, duration_minutes, pass_percentage, date_time, created_by, question_limit, is_active) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 1)
+            """, (course_id, title, duration, pass_percent, schedule, teacher_id, q_limit))
+            new_id = cursor.lastrowid
             connection.commit()
-            
-            flash('Exam Header Created! Now add your questions via Manual Entry or Excel Import.', 'success')
-
-            return redirect(url_for('teacher.manage_questions', exam_id=new_exam_id))
-            
+            flash('Exam initialized! Now add questions to the pool.', 'success')
+            return redirect(url_for('teacher.manage_questions', exam_id=new_id))
         except mysql.connector.Error as err:
-            flash(f'Database Error: {err}', 'danger')
+            flash(f'Error: {err}', 'danger')
             return redirect(url_for('teacher.manage_exams'))
         finally:
             cursor.close()
@@ -314,13 +300,34 @@ def add_exam():
 @teacher.route('/update_exam', methods=['POST'])
 def update_exam():
     if teacher_logged_in():
-        exam_id = request.form.get('exam_id'); title = request.form.get('title'); duration = request.form.get('duration'); pass_percent = request.form.get('pass_percentage'); status = request.form.get('status'); schedule = request.form.get('schedule')
-        status_int = 1 if status and status.lower() == 'active' else 0
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        exam_id = request.form.get('exam_id')
+        status = request.form.get('status')
+        title = request.form.get('title')
+        duration = request.form.get('duration')
+        pass_percent = request.form.get('pass_percentage')
+        schedule = request.form.get('schedule')
+        q_limit = request.form.get('question_limit')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        
         try:
-            cursor.execute("UPDATE exams SET title = %s, duration_minutes = %s, pass_percentage = %s, is_active = %s, date_time = %s WHERE exam_id = %s", (title, duration, pass_percent, status_int, schedule, exam_id))
-            connection.commit(); flash('Exam configuration updated!', 'success')
-        finally: cursor.close(); connection.close()
+            if status == 'active':
+                cursor.execute("SELECT COUNT(*) as count FROM exam_questions WHERE exam_id = %s", (exam_id,))
+                if cursor.fetchone()['count'] == 0:
+                    flash("Cannot activate an empty exam. Link questions to the pool first.", "danger")
+                    return redirect(url_for('teacher.manage_exams'))
+            
+            status_int = 1 if status == 'active' else 0
+            cursor.execute("""
+                UPDATE exams SET title = %s, duration_minutes = %s, pass_percentage = %s,
+                is_active = %s, date_time = %s, question_limit = %s WHERE exam_id = %s
+            """, (title, duration, pass_percent, status_int, schedule, q_limit, exam_id))
+            connection.commit()
+            flash('Exam updated successfully!', 'success')
+        finally:
+            cursor.close()
+            connection.close()
         return redirect(url_for('teacher.manage_exams'))
     return redirect(url_for('auth.login'))
 
@@ -339,22 +346,19 @@ def delete_exam(exam_id):
 #! 9. TRASH BIN LOGIC (Using 'archived' column)
 @teacher.route('/trashed_exams')
 def trashed_exams():
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    teacher_id = session.get('user_id')
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
-    
-    cursor.execute("""
-        SELECT e.*, c.course_name, c.course_code
-        FROM exams e 
-        JOIN courses c ON e.course_id = c.course_id 
-        WHERE e.created_by = %s AND e.archived = 1
-    """, (teacher_id,))
-    exams = cursor.fetchall()
-    
-    cursor.close()
-    connection.close()
-    return render_template('teacher_trashed_exams.html', exams=exams)
+    if teacher_logged_in():
+        teacher_id = session.get('user_id')
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT e.*, c.course_name, c.course_code FROM exams e 
+            JOIN courses c ON e.course_id = c.course_id 
+            WHERE e.created_by = %s AND e.archived = 1
+        """, (teacher_id,))
+        exams = cursor.fetchall()
+        cursor.close(); connection.close()
+        return render_template('teacher_trashed_exams.html', exams=exams)
+    return redirect(url_for('auth.login'))
 
 @teacher.route('/soft_delete_exam/<int:exam_id>', methods=['POST'])
 def soft_delete_exam(exam_id):
@@ -418,6 +422,84 @@ def empty_exam_trash():
         connection.close()
     return redirect(url_for('teacher.trashed_exams'))
 
+@teacher.route('/teacher_review/<int:attempt_id>')
+def teacher_review(attempt_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True, buffered=True)
+
+    # Fetch questions Served during this specific attempt
+    cursor.execute("""
+        SELECT q.*, sa.submitted_answer, sa.is_correct
+        FROM questions q
+        JOIN attempt_questions aq ON q.question_id = aq.question_id
+        LEFT JOIN student_answers sa ON q.question_id = sa.question_id AND sa.attempt_id = %s
+        WHERE aq.attempt_id = %s
+    """, (attempt_id, attempt_id))
+    review_data = cursor.fetchall()
+
+    for q in review_data:
+        # Load options and identify which one was correct
+        cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
+        q['options'] = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+    return render_template('teacher_review_attempt.html', review_data=review_data)
+
+@teacher.route('/review_student_attempt/<int:attempt_id>')
+def review_student_attempt(attempt_id):
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    # Ensure buffered=True is used to prevent "Unread result" errors
+    cursor = connection.cursor(dictionary=True, buffered=True)
+
+    try:
+        # 1. FETCH ATTEMPT, STUDENT, AND EXAM DATA (Added e.pass_percentage)
+        cursor.execute("""
+            SELECT 
+                ea.*, 
+                s.firstname, s.lastname, 
+                e.title, e.pass_percentage, 
+                c.course_name
+            FROM exam_attempts ea
+            JOIN students s ON ea.student_id = s.student_id
+            JOIN exams e ON ea.exam_id = e.exam_id
+            JOIN courses c ON e.course_id = c.course_id
+            WHERE ea.attempt_id = %s
+        """, (attempt_id,))
+        attempt = cursor.fetchone()
+
+        if not attempt:
+            flash("Attempt records not found.", "danger")
+            return redirect(url_for('teacher.manage_exams'))
+
+        # 2. FETCH THE QUESTIONS SERVED
+        cursor.execute("""
+            SELECT q.*, sa.submitted_answer, sa.is_correct
+            FROM questions q
+            JOIN attempt_questions aq ON q.question_id = aq.question_id
+            LEFT JOIN student_answers sa ON q.question_id = sa.question_id AND sa.attempt_id = %s
+            WHERE aq.attempt_id = %s
+        """, (attempt_id, attempt_id))
+        review_questions = cursor.fetchall()
+
+        # 3. FETCH OPTIONS FOR EACH QUESTION
+        for q in review_questions:
+            cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
+            q['options'] = cursor.fetchall()
+
+    except mysql.connector.Error as err:
+        flash(f"Database Error: {err}", "danger")
+        return redirect(url_for('teacher.manage_exams'))
+    finally:
+        cursor.close()
+        connection.close()
+
+    return render_template('teacher_review_attempt.html', attempt=attempt, questions=review_questions)
 
 #! MANAGE QUESTIONS
 @teacher.route('/manage_questions/<int:exam_id>')
@@ -641,14 +723,28 @@ def bulk_unlink_questions(exam_id):
         
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
+#! 5. QUESTIONS - DELETE/UNLINK
 @teacher.route('/delete_question/<int:q_id>/<int:exam_id>', methods=['POST'])
 def delete_question(q_id, exam_id):
     if teacher_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        
         cursor.execute("DELETE FROM exam_questions WHERE question_id = %s AND exam_id = %s", (q_id, exam_id))
-        connection.commit(); cursor.close(); connection.close(); flash('Unlinked from exam.', 'success')
-        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+        
+        cursor.execute("SELECT COUNT(*) as count FROM exam_questions WHERE exam_id = %s", (exam_id,))
+        if cursor.fetchone()['count'] == 0:
 
+            cursor.execute("UPDATE exams SET is_active = 0 WHERE exam_id = %s", (exam_id,))
+            flash('Question unlinked. Exam set to INACTIVE because it is now empty.', 'warning')
+        else:
+            flash('Question unlinked.', 'success')
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+    
 @teacher.route('/student_monitor')
 def student_monitor():
     if not teacher_logged_in(): return redirect(url_for('auth.login'))

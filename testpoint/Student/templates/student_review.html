@@ -1,0 +1,58 @@
+{% extends 'student_base.html' %}
+{% block title %}Review: {{ attempt.title }}{% endblock %}
+
+{% block head %}
+<style>
+    .review-card { border-radius: 12px; margin-bottom: 20px; border-left: 8px solid #ddd; }
+    .review-card.correct { border-left-color: #1cc88a; background-color: #f6fff9; }
+    .review-card.incorrect { border-left-color: #e74a3b; background-color: #fff5f5; }
+    .correct-ans-box { background: #d4edda; color: #155724; padding: 10px; border-radius: 8px; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a href="{{ url_for('student.student_results') }}" class="btn btn-sm btn-secondary mb-2"><i class="fas fa-arrow-left"></i> Back to Results</a>
+            <h1 class="h3 mb-0 text-gray-800">Review: {{ attempt.title }}</h1>
+        </div>
+        <div class="text-right">
+            <h4 class="m-0 font-weight-bold {% if attempt.score >= (questions|length * (attempt.pass_percentage/100)) %}text-success{% else %}text-danger{% endif %}">
+                Score: {{ attempt.score }} / {{ questions|length }}
+            </h4>
+        </div>
+    </div>
+
+    {% for q in questions %}
+    <div class="card shadow review-card {% if q.is_correct %}correct{% else %}incorrect{% endif %}">
+        <div class="card-body">
+            <div class="d-flex justify-content-between">
+                <span class="badge badge-dark text-uppercase mb-2">{{ q.question_type.replace('_',' ') }}</span>
+                {% if q.is_correct %}
+                    <span class="text-success font-weight-bold"><i class="fas fa-check-circle"></i> Correct</span>
+                {% else %}
+                    <span class="text-danger font-weight-bold"><i class="fas fa-times-circle"></i> Incorrect</span>
+                {% endif %}
+            </div>
+            <p class="font-weight-bold text-dark h5">{{ loop.index }}. {{ q.question_text }}</p>
+            <hr>
+
+            <div class="mb-3">
+                <small class="text-muted font-weight-bold uppercase">Your Answer:</small>
+                <div class="{% if q.is_correct %}text-success{% else %}text-danger{% endif %} font-weight-bold">
+                    {{ q.submitted_answer if q.submitted_answer else '(No Answer Provided)' }}
+                </div>
+            </div>
+
+            {% if not q.is_correct %}
+            <div class="correct-ans-box small">
+                <i class="fas fa-info-circle mr-1"></i> Correct Answer: 
+                {% for opt in q.options %}{% if opt.is_correct %}{{ opt.option_text }}{% endif %}{% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

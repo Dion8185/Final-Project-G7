@@ -18,8 +18,10 @@
     <div class="card shadow mb-4">
         <div class="card-body py-3">
             <div class="input-group">
-                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span></div>
-                <input type="text" id="searchInput" class="form-control border-left-0" placeholder="Quick find exam or course subject...">
+                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i
+                            class="fas fa-search text-gray-400"></i></span></div>
+                <input type="text" id="searchInput" class="form-control border-left-0"
+                    placeholder="Quick find exam or course subject...">
             </div>
         </div>
     </div>
@@ -37,32 +39,52 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h5 class="font-weight-bold text-danger m-0">{{ exam.title }}</h5>
-                            <span class="badge {{ 'badge-success' if exam.is_active else 'badge-warning' }}">
-                                {{ 'Active' if exam.is_active else 'Inactive' }}
-                            </span>
+                            
+                            <!-- DYNAMIC STATUS LOGIC -->
+                            {% if exam.q_count == 0 %}
+                                <span class="badge badge-secondary shadow-sm" title="Add questions to enable this exam">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> No Questions
+                                </span>
+                            {% else %}
+                                <span class="badge {{ 'badge-success' if exam.is_active else 'badge-warning' }} shadow-sm">
+                                    {{ 'Active' if exam.is_active else 'Inactive' }}
+                                </span>
+                            {% endif %}
                         </div>
                         <hr>
                         <div class="small text-muted mb-4">
-                            <!-- FIXED: DATE VISIBILITY ON CARD -->
+                            <!-- ADDED: QUESTION POOL COUNT -->
                             <div class="mb-1">
-                                <i class="fas fa-calendar-alt mr-2 text-danger"></i> 
-                                <strong>Schedule:</strong> {{ exam.date_time.strftime('%b %d, %Y | %I:%M %p') if exam.date_time else 'Unscheduled' }}
+                                <i class="fas fa-database mr-2 text-danger"></i>
+                                <strong>Question Pool:</strong> {{ exam.q_count }} questions
                             </div>
                             <div class="mb-1">
-                                <i class="fas fa-stopwatch mr-2 text-danger"></i> 
+                                <i class="fas fa-calendar-alt mr-2 text-danger"></i>
+                                <strong>Schedule:</strong> {{ exam.date_time.strftime('%b %d, %Y | %I:%M %p') if
+                                exam.date_time else 'Unscheduled' }}
+                            </div>
+                            <div class="mb-1">
+                                <i class="fas fa-stopwatch mr-2 text-danger"></i>
                                 <strong>Duration:</strong> {{ exam.duration_minutes }} Minutes
                             </div>
                             <div>
-                                <i class="fas fa-check-circle mr-2 text-danger"></i> 
+                                <i class="fas fa-check-circle mr-2 text-danger"></i>
                                 <strong>Passing:</strong> {{ exam.pass_percentage }}%
                             </div>
                         </div>
                         <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}" class="btn btn-sm btn-info shadow-sm font-weight-bold">Questions</a>
+                            <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}"
+                                class="btn btn-sm btn-info shadow-sm font-weight-bold">Questions</a>
                             <div>
-                                <a href="{{ url_for('teacher.view_results', exam_id=exam.exam_id) }}" class="btn btn-sm btn-circle btn-primary" title="Scores"><i class="fas fa-list-ol"></i></a>
-                                <button class="btn btn-sm btn-circle btn-secondary mx-1" data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}" title="Edit"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-circle btn-danger" data-toggle="modal" data-target="#deleteExamModal" data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}" title="Delete"><i class="fas fa-trash"></i></button>
+                                <a href="{{ url_for('teacher.view_results', exam_id=exam.exam_id) }}"
+                                    class="btn btn-sm btn-circle btn-primary" title="Scores"><i
+                                        class="fas fa-list-ol"></i></a>
+                                <button class="btn btn-sm btn-circle btn-secondary mx-1" data-toggle="modal"
+                                    data-target="#editExamModal{{ exam.exam_id }}" title="Edit"><i
+                                        class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-circle btn-danger" data-toggle="modal"
+                                    data-target="#deleteExamModal" data-id="{{ exam.exam_id }}"
+                                    data-title="{{ exam.title }}" title="Delete"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -79,23 +101,32 @@
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title font-weight-bold">Step 1: Exam Initialization</h5>
-                <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                <h5 class="modal-title font-weight-bold">Initialize New Exam</h5>
+                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('teacher.add_exam') }}" method="POST">
-                <div class="modal-body">
-                    <div class="form-group"><label class="small font-weight-bold">Exam Title</label><input type="text" name="title" class="form-control" required placeholder="e.g. Prelim Exam"></div>
-                    <div class="form-group"><label class="small font-weight-bold">Assign to Subject</label>
+                <div class="modal-body bg-light">
+                    <div class="form-group"><label class="small font-weight-bold">Exam Title</label><input type="text" name="title" class="form-control" required></div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Assign to Subject</label>
                         <select name="course_id" class="form-control" required>
                             <option value="">-- Select Course --</option>
                             {% for course in courses %}<option value="{{ course.course_id }}">{{ course.course_name }}</option>{% endfor %}
                         </select>
                     </div>
                     <div class="row">
-                        <div class="col-6"><label class="small font-weight-bold">Schedule</label><input type="datetime-local" name="schedule" class="form-control" required></div>
-                        <div class="col-3"><label class="small font-weight-bold">Mins</label><input type="number" name="duration" class="form-control" value="60"></div>
-                        <div class="col-3"><label class="small font-weight-bold">Pass %</label><input type="number" name="pass_percentage" class="form-control" value="75"></div>
+                        <div class="col-12 mb-3">
+                            <label class="small font-weight-bold">Schedule</label>
+                            <input type="datetime-local" name="schedule" class="form-control" required>
+                        </div>
+                        <div class="col-4"><label class="small font-weight-bold">Mins</label><input type="number" name="duration" class="form-control" value="60"></div>
+                        <div class="col-4"><label class="small font-weight-bold">Pass %</label><input type="number" name="pass_percentage" class="form-control" value="75"></div>
+                        <div class="col-4">
+                            <label class="small font-weight-bold text-danger">Serve Qty</label>
+                            <input type="number" name="question_limit" class="form-control" value="50" min="1">
+                        </div>
                     </div>
+                    <small class="text-muted mt-2 d-block italic"><i class="fas fa-info-circle mr-1"></i> Initially, exams with 0 questions will be <strong>Inactive</strong>.</small>
                 </div>
                 <div class="modal-footer"><button class="btn btn-danger btn-block shadow" type="submit">Create & Add Questions <i class="fas fa-arrow-right ml-2"></i></button></div>
             </form>
@@ -108,48 +139,36 @@
 <div class="modal fade" id="editExamModal{{ exam.exam_id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title font-weight-bold">Edit Exam Configuration</h5>
-                <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
-            </div>
+            <div class="modal-header bg-info text-white"><h5 class="modal-title">Edit: {{ exam.title }}</h5><button class="close text-white" data-dismiss="modal"><span>×</span></button></div>
             <form action="{{ url_for('teacher.update_exam') }}" method="POST">
                 <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
                 <div class="modal-body bg-light">
-                    <div class="form-group">
-                        <label class="small font-weight-bold">Exam Title</label>
-                        <input type="text" name="title" class="form-control" value="{{ exam.title }}" required>
-                    </div>
                     
-                    <!-- FIXED: ADDED SCHEDULE TO EDIT MODAL -->
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-primary">Update Schedule</label>
-                        <input type="datetime-local" name="schedule" class="form-control" 
-                               value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}" required>
+                    <!-- ALERT IF EMPTY -->
+                    {% if exam.q_count == 0 %}
+                    <div class="alert alert-warning py-2 small">
+                        <i class="fas fa-exclamation-circle mr-1"></i> You cannot set this exam to <strong>Active</strong> until questions are added.
                     </div>
+                    {% endif %}
 
+                    <div class="form-group"><label class="small font-weight-bold">Title</label><input type="text" name="title" class="form-control" value="{{ exam.title }}" required></div>
                     <div class="row">
-                        <div class="col-6">
-                            <label class="small font-weight-bold">Duration (Mins)</label>
-                            <input type="number" name="duration" class="form-control" value="{{ exam.duration_minutes }}">
-                        </div>
-                        <div class="col-6">
-                            <label class="small font-weight-bold">Passing Grade (%)</label>
-                            <input type="number" name="pass_percentage" class="form-control" value="{{ exam.pass_percentage }}">
-                        </div>
+                        <div class="col-4"><label class="small font-weight-bold">Mins</label><input type="number" name="duration" class="form-control" value="{{ exam.duration_minutes }}"></div>
+                        <div class="col-4"><label class="small font-weight-bold">Pass %</label><input type="number" name="pass_percentage" class="form-control" value="{{ exam.pass_percentage }}"></div>
+                        <div class="col-4"><label class="small font-weight-bold">Serve Qty</label><input type="number" name="question_limit" class="form-control" value="{{ exam.question_limit }}"></div>
                     </div>
-                    
-                    <div class="form-group mt-3">
-                        <label class="small font-weight-bold text-muted">Availability Status</label>
-                        <select name="status" class="form-control">
+                    <div class="form-group mt-3"><label class="small font-weight-bold">Status</label>
+                        <select name="status" class="form-control" {% if exam.q_count == 0 %}disabled{% endif %}>
+                            <option value="inactive" {% if not exam.is_active or exam.q_count == 0 %}selected{% endif %}>Inactive</option>
+                            {% if exam.q_count > 0 %}
                             <option value="active" {% if exam.is_active %}selected{% endif %}>Active</option>
-                            <option value="inactive" {% if not exam.is_active %}selected{% endif %}>Inactive</option>
+                            {% endif %}
                         </select>
+                        {% if exam.q_count == 0 %}<input type="hidden" name="status" value="inactive">{% endif %}
                     </div>
+                    <div class="form-group"><label class="small font-weight-bold">Schedule</label><input type="datetime-local" name="schedule" class="form-control" value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}"></div>
                 </div>
-                <div class="modal-footer border-0">
-                    <button class="btn btn-secondary shadow-sm" data-dismiss="modal" type="button">Cancel</button>
-                    <button class="btn btn-info shadow-sm px-4" type="submit">Save Changes</button>
-                </div>
+                <div class="modal-footer"><button class="btn btn-info btn-block shadow-sm" type="submit">Update Configuration</button></div>
             </form>
         </div>
     </div>
@@ -158,30 +177,33 @@
 
 <!-- DELETE MODAL -->
 <div class="modal fade" id="deleteExamModal" tabindex="-1">
-    <div class="modal-dialog"><div class="modal-content shadow border-0">
-        <form id="deleteExamForm" method="POST">
-            <div class="modal-body text-center py-5">
-                <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
-                <h4 class="font-weight-bold">Move to Trash?</h4>
-                <p class="text-muted">You are moving <span id="delExamTitle" class="font-weight-bold text-dark"></span> to the trashed exams bin.</p>
-            </div>
-            <div class="modal-footer bg-light">
-                <button class="btn btn-secondary" data-dismiss="modal" type="button">Cancel</button>
-                <button class="btn btn-danger px-4" type="submit">Move to Trash</button>
-            </div>
-        </form>
-    </div></div>
+    <div class="modal-dialog">
+        <div class="modal-content shadow border-0">
+            <form id="deleteExamForm" method="POST">
+                <div class="modal-body text-center py-5">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <h4 class="font-weight-bold">Move to Trash?</h4>
+                    <p class="text-muted">You are moving <span id="delExamTitle"
+                            class="font-weight-bold text-dark"></span> to the trashed exams bin.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" data-dismiss="modal" type="button">Cancel</button>
+                    <button class="btn btn-danger px-4" type="submit">Move to Trash</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Search Filter
         $('#searchInput').on('keyup', function () {
             var val = $(this).val().toLowerCase();
-            $('.exam-item').each(function () { 
-                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1); 
+            $('.exam-item').each(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
             });
         });
 
