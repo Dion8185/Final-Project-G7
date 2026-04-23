@@ -18,7 +18,7 @@
         <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addCourseModal">
             <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Course
         </button>
-         <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-dark shadow-sm">
+         <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-danger shadow-sm">
             <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Courses
         </a>
     </div>
@@ -29,7 +29,12 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-6">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search by course code, title, or teacher...">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                    </div>
+                    <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search by course code, title, or teacher...">
+                </div>
             </div>
         </div>
     </div>
@@ -38,7 +43,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                 {{ message }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -71,7 +76,7 @@
                             {% if course.teacher_id %}
                                 <span class="text-dark">{{ course.teacher_fname }} {{ course.teacher_lname }}</span>
                             {% else %}
-                                <span class="text-muted italic">Unassigned</span>
+                                <span class="text-muted font-italic">Unassigned</span>
                             {% endif %}
                         </td>
                         <td><span class="badge badge-pill badge-light border">{{ course.student_count }} Student(s)</span></td>
@@ -89,15 +94,16 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center text-gray-500 py-4">No courses available.</td></tr>
+                    <tr><td colspan="5" class="text-center text-gray-500 py-5">No courses found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Modals -->
+{% block modals %}
 <!-- Add Course Modal -->
 <div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
@@ -145,7 +151,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title font-weight-bold">Edit Course</h5>
+                <h5 class="modal-title font-weight-bold">Edit Course: {{ course.course_code }}</h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.update_course', course_id=course.course_id) }}" method="POST">
@@ -184,19 +190,19 @@
 </div>
 {% endfor %}
 
-<!-- Delete Confirmation Modal -->
+<!-- Deactivation Modal -->
 <div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title">Confirm Deactivation</h5>
+                <h5 class="modal-title font-weight-bold">Confirm Deactivation</h5>
                 <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form id="deleteCourseForm" method="POST">
                 <div class="modal-body text-center py-4">
                     <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
                     <p class="font-weight-bold">Deactivate course <span id="delCode"></span>?</p>
-                    <p class="small text-muted">The course will be moved to trash and can be restored later.</p>
+                    <p class="small text-muted">The course will be moved to trash and unassigned from the current teacher.</p>
                 </div>
                 <div class="modal-footer bg-light">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
@@ -212,11 +218,8 @@
 <script>
     (function ($) {
         "use strict";
-        $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
-            $("body").toggleClass("sidebar-toggled");
-            $(".sidebar").toggleClass("toggled");
-        });
 
+        // Course Filter Search
         $('#searchInput').on('keyup', function() {
             var value = $(this).val().toLowerCase();
             $(".course-row").filter(function() {
@@ -224,13 +227,16 @@
             });
         });
 
+        // Delete Modal Action Injection
         $('#deleteCourseModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
-            var id = btn.data('id');
+            var id = btn.data('id'); // This gets the ID from the button
             $('#delCode').text(btn.data('name'));
+            
+            // This builds the URL. Ensure 'admin' is the blueprint and 'deactivate_course' is the function name
             var action = "{{ url_for('admin.deactivate_course', course_id='0') }}".replace('0', id);
             $('#deleteCourseForm').attr('action', action);
         });
     })(jQuery);
 </script>
-{% endblock %}
+{% endblock %}  

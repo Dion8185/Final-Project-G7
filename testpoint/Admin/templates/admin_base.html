@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -11,36 +10,20 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
-        .sidebar {
-            transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important;
-        }
-
-        .card {
-            transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
-            border: none;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important;
-        }
-
-        .animate-delay-1 { animation-delay: 0.1s; }
-        .animate-delay-2 { animation-delay: 0.2s; }
+        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
+        .card { transition: all 0.3s cubic-bezier(.25, .8, .25, 1); border: none; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important; }
     </style>
     {% block head %}{% endblock %}
 </head>
-
 <body id="page-top">
     <div id="wrapper">
-
         {% include 'admin_sidebar.html' %}
-
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
-
                 {% include 'admin_navbar.html' %}
-
+                
+                <!-- CONTENT BLOCK: Animated -->
                 <div class="container-fluid animate__animated animate__fadeInUp">
                     {% block content %}{% endblock %}
                 </div>
@@ -48,39 +31,31 @@
                 <footer class="sticky-footer bg-white">
                     <div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div>
                 </footer>
-
             </div>
         </div>
+    </div>
 
-    </div> <!-- closes #wrapper -->
-
-    <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-0">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold text-gray-800" id="logoutModalLabel">
-                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i> Confirm Logout
-                    </h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body text-gray-600">
-                    <p class="mb-0">Are you sure you want to log out?</p>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-dismiss="modal">
-                        Cancel
-                    </button>
-                    <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="fas fa-sign-out-alt fa-sm mr-1"></i> Logout
-                        </button>
-                    </form>
+    <!-- MODAL BLOCK: Outside animation to fix gray-screen freeze -->
+    <div id="global-modals">
+        <!-- Logout Modal -->
+        <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content shadow-lg border-0">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-gray-800"><i class="fas fa-sign-out-alt mr-2 text-danger"></i> Confirm Logout</h5>
+                        <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
+                    </div>
+                    <div class="modal-body text-gray-600">Are you sure you want to log out?</div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                        <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-danger btn-sm">Logout</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
+        {% block modals %}{% endblock %}
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -97,5 +72,4 @@
     </script>
     {% block scripts %}{% endblock %}
 </body>
-
 </html>

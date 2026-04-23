@@ -43,115 +43,108 @@
 {% endblock %}
 
 {% block content %}
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">System Activity Logs</h1>
-    <button class="d-none d-sm-inline-block btn btn-sm btn-dark shadow-sm"><i
-            class="fas fa-download fa-sm text-white-50"></i> Export CSV</button>
-</div>
+<body id="page-top">
+    <div id="wrapper">
 
-<!-- Filter Options -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-filter mr-2"></i>Filter Logs
-        </h6>
-    </div>
-    <div class="card-body">
-        <form action="" method="GET" class="row">
-            <div class="col-md-3 mb-2">
-                <select class="form-control" name="category">
-                    <option value="">All Categories</option>
-                    <option value="Security">Security Alerts</option>
-                    <option value="User">User Actions</option>
-                    <option value="Exam">Exam Activity</option>
-                    <option value="System">System Updates</option>
-                </select>
-            </div>
-            <div class="col-md-3 mb-2">
-                <input type="date" class="form-control" name="date">
-            </div>
-            <div class="col-md-4 mb-2">
-                <input type="text" class="form-control" placeholder="Search by username or IP...">
-            </div>
-            <div class="col-md-2 mb-2">
-                <button type="submit" class="btn btn-dark btn-block">Apply</button>
-            </div>
-        </form>
-    </div>
-</div>
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                        <h1 class="h3 mb-0 text-gray-800">System Activity Logs</h1>
+                        <button class="d-none d-sm-inline-block btn btn-sm btn-dark shadow-sm"><i
+                                class="fas fa-download fa-sm text-white-50"></i> Export CSV</button>
+                    </div>
 
-<!-- Logs Table -->
-<div class="card shadow mb-4">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover" id="dataTable" width="100%" cellspacing="0">
-                <thead class="thead-light">
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Category</th>
-                        <th>User / Actor</th>
-                        <th>Event Description</th>
-                        <th>IP Address</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Placeholder loop for Flask integration -->
-                    {% for log in logs %}
-                    <tr>
-                        <td class="small">{{ log.timestamp }}</td>
-                        <td>
-                            <span class="badge badge-{{ log.category_class }} text-uppercase">
-                                {{ log.category }}
-                            </span>
-                        </td>
-                        <td><strong>{{ log.username }}</strong></td>
-                        <td>{{ log.message }}</td>
-                        <td><code>{{ log.ip_address }}</code></td>
-                        <td><a href="#" class="btn btn-sm btn-circle btn-light"><i
-                                    class="fas fa-search"></i></a></td>
-                    </tr>
-                    {% else %}
-                    <!-- Static Mockup Data for Preview -->
-                    <tr>
-                        <td class="small">2023-10-27 14:32:10</td>
-                        <td><span class="badge badge-security">Security</span></td>
-                        <td><strong>Admin_01</strong></td>
-                        <td>Failed login attempt detected from new IP.</td>
-                        <td><code>192.168.1.45</code></td>
-                        <td><button class="btn btn-sm btn-circle btn-light"><i
-                                    class="fas fa-search text-primary"></i></button></td>
-                    </tr>
-                    <tr>
-                        <td class="small">2023-10-27 13:15:00</td>
-                        <td><span class="badge badge-user">User</span></td>
-                        <td><strong>Prof. Smith</strong></td>
-                        <td>Created new exam: "CS101 Midterm"</td>
-                        <td><code>172.16.254.1</code></td>
-                        <td><button class="btn btn-sm btn-circle btn-light"><i
-                                    class="fas fa-search text-primary"></i></button></td>
-                    </tr>
-                    <tr>
-                        <td class="small">2023-10-27 12:00:45</td>
-                        <td><span class="badge badge-exam">Exam</span></td>
-                        <td><strong>Student_99</strong></td>
-                        <td>Tab-switch detected during "Data Structures" exam.</td>
-                        <td><code>10.0.0.8</code></td>
-                        <td><button class="btn btn-sm btn-circle btn-light"><i
-                                    class="fas fa-search text-primary"></i></button></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    <!-- Filter Options -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-filter mr-2"></i>Filter Logs
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form action="" method="GET" class="row">
+                                <div class="col-md-3 mb-2">
+                                    <select class="form-control" name="category">
+                                        <option value="">All Categories</option>
+                                        <option value="Security">Student Accounts</option>
+                                        <option value="User">Teacher Accounts</option>
+                                        <option value="Exam"></option>
+                                        <option value="System">System Updates</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <input type="date" class="form-control" name="date">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" class="form-control" placeholder="Search by username or IP...">
+                                </div>
+                                <div class="col-md-2 mb-2">
+                                    <button type="submit" class="btn btn-dark btn-block">Apply</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Logs Table -->
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Date Created</th>
+                                            <th>Role</th>
+                                            <th>User ID</th>
+                                            <th>Email</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {% for log in user_logs %}
+                                        <tr>
+                                            <td class="small text-muted">
+                                                {{ log.created_at }}
+                                            </td>
+
+                                            <td>
+                                                <span class="badge bg-{{ log.role_class }} text-uppercase">
+                                                    {{ log.role }}
+                                                </span>
+                                            </td>
+
+                                            <td>
+                                                <strong>{{ log.user_id }}</strong>
+                                            </td>
+
+                                            <td>
+                                                {{ log.email }}
+                                            </td>
+
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-circle btn-light">
+                                                    <i class="fas fa-search"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Pagination -->
+                            <nav class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <!-- Pagination -->
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">Next</a></li>
-            </ul>
-        </nav>
     </div>
 </div>
 {% endblock %}

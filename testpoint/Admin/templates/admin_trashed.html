@@ -22,21 +22,18 @@
     </div>
 </div>
 
-<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                 {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="close" data-dismiss="alert"><span>×</span></button>
             </div>
         {% endfor %}
     {% endif %}
 {% endwith %}
 
-<!-- Filter Card (RETAINED & FIXED) -->
+<!-- Filter Card -->
 <div class="card shadow mb-4">
     <div class="card-header py-3">
         <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-search mr-2"></i>Filter Trashed Users</h6>
@@ -80,7 +77,7 @@
                     {% for trashed_user in trashed_users %}
                     <tr class="user-row" data-role="{{ trashed_user[5] }}">
                         <td><span class="font-weight-bold text-dark search-data">{{ trashed_user[0] }}</span></td>
-                        <td class="text-capitalize search-data">{{ trashed_user[1] }} {{ trashed_user[2] }} {{ trashed_user[3] }}</td>
+                        <td class="text-capitalize search-data">{{ trashed_user[1] }} {{ trashed_user[3] }}</td>
                         <td class="search-data">{{ trashed_user[4] }}</td>
                         <td>
                             {% if trashed_user[5] == 'teacher' %} <span class="badge badge-danger">Teacher</span>
@@ -89,19 +86,26 @@
                         </td>
                         <td class="small">{{ trashed_user[7] }}</td>
                         <td class="text-center">
-                            <!-- Restore Action -->
+                            <!-- Restore Button -->
                             <button type="button" class="btn btn-success btn-circle btn-sm" 
                                     title="Restore Account" data-toggle="modal" data-target="#restoreUserModal"
                                     data-id="{{ trashed_user[0] }}" data-name="{{ trashed_user[1] }} {{ trashed_user[3] }}">
                                 <i class="fas fa-undo"></i>
                             </button>
 
-                            <!-- Permanent Delete Action -->
+                            <!-- Permanent Delete Button -->
                             <button type="button" class="btn btn-danger btn-circle btn-sm" 
                                     title="Delete Permanently" data-toggle="modal" data-target="#permDeleteUserModal"
                                     data-id="{{ trashed_user[0] }}" data-name="{{ trashed_user[1] }} {{ trashed_user[3] }}">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <i class="fas fa-trash-restore fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">Trash bin is empty.</p>
                         </td>
                     </tr>
                     {% endfor %}
@@ -112,14 +116,82 @@
 </div>
 {% endblock %}
 
+{% block modals %}
+<!-- 1. RESTORE MODAL -->
+<div class="modal fade" id="restoreUserModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-undo mr-2"></i>Restore Account</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form id="restoreForm" method="POST" action="">
+                <div class="modal-body text-center py-4">
+                    <p class="text-dark">Are you sure you want to restore the account of <span id="restoreUserName" class="font-weight-bold"></span>?</p>
+                    <p class="small text-muted">This will make the user active again.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success px-4" type="submit">Yes, Restore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. PERMANENT DELETE MODAL -->
+<div class="modal fade" id="permDeleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Destroy Account</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form id="permDeleteForm" method="POST" action="">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-bomb fa-3x text-danger mb-3"></i>
+                    <p class="text-dark font-weight-bold">Destroy account: <span id="deleteUserName"></span>?</p>
+                    <p class="text-danger small mb-0 font-weight-bold">WARNING: This action is irreversible. All data will be wiped.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4" type="submit">Destroy Forever</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 3. EMPTY TRASH MODAL -->
+<div class="modal fade" id="emptyTrashModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-eraser mr-2"></i>Confirm Wipe</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form action="{{ url_for('admin.empty_trash') }}" method="POST">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-dumpster-fire fa-3x text-danger mb-3"></i>
+                    <h5 class="font-weight-bold">Empty the Trash?</h5>
+                    <p class="text-muted">You are about to permanently delete all accounts currently in the trash bin.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" type="submit">Confirm Empty Trash</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
 <script>
 (function ($) {
     "use strict";
 
-    /* ══════════════════════════════════════════
-       FILTER & SEARCH LOGIC (FIXED)
-    ══════════════════════════════════════════ */
+    /* Filtering Logic */
     function performFilter() {
         var searchVal = $('#searchInput').val().toLowerCase();
         var roleVal = $('#roleFilter').val().toLowerCase();
@@ -132,50 +204,33 @@
             var matchesSearch = rowText.indexOf(searchVal) > -1;
             var matchesRole = roleVal === "" || rowRole === roleVal;
 
-            if (matchesSearch && matchesRole) {
-                row.show();
-            } else {
-                row.hide();
-            }
+            row.toggle(matchesSearch && matchesRole);
         });
     }
 
     $('#searchInput').on('keyup', performFilter);
     $('#roleFilter').on('change', performFilter);
     $('#resetFilters').on('click', function () {
-        $('#searchInput').val('');
-        $('#roleFilter').val('');
+        $('#searchInput, #roleFilter').val('');
         performFilter();
     });
 
-    /* ══════════════════════════════════════════
-       MODAL DATA INJECTION
-    ══════════════════════════════════════════ */
-
-    // Restore Modal
+    /* Data injection for Restore Modal */
     $('#restoreUserModal').on('show.bs.modal', function (event) {
         var btn = $(event.relatedTarget);
         var userId = btn.data('id');
-        var userName = btn.data('name');
-        $('#restoreUserName').text(userName);
-        var actionUrl = "{{ url_for('admin.restore_account', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
+        $('#restoreUserName').text(btn.data('name'));
+        var actionUrl = "{{ url_for('admin.restore_account', user_id='0') }}".replace('0', userId);
         $('#restoreForm').attr('action', actionUrl);
     });
 
-    // Permanent Delete Modal
+    /* Data injection for Permanent Delete Modal */
     $('#permDeleteUserModal').on('show.bs.modal', function (event) {
         var btn = $(event.relatedTarget);
         var userId = btn.data('id');
-        var userName = btn.data('name');
-        $('#deleteUserName').text(userName);
-        var actionUrl = "{{ url_for('admin.delete_account_permanently', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
+        $('#deleteUserName').text(btn.data('name'));
+        var actionUrl = "{{ url_for('admin.delete_account_permanently', user_id='0') }}".replace('0', userId);
         $('#permDeleteForm').attr('action', actionUrl);
-    });
-
-    // Sidebar toggle
-    $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
-        $("body").toggleClass("sidebar-toggled");
-        $(".sidebar").toggleClass("toggled");
     });
 
 })(jQuery);

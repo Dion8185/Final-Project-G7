@@ -5,7 +5,7 @@
     .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
     .card { border: none; }
     .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
-    .user-row { transition: all 0.2s; }
+    .course-row { transition: all 0.2s; }
 </style>
 {% endblock %}
 
@@ -22,91 +22,84 @@
     </div>
 </div>
 
-<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                 {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="close" data-dismiss="alert"><span>×</span></button>
             </div>
         {% endfor %}
     {% endif %}
 {% endwith %}
 
-<!-- Filter Card (RETAINED & FIXED) -->
+<!-- Filter/Search Card -->
 <div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-search mr-2"></i>Search Trashed Courses</h6>
-    </div>
     <div class="card-body">
-        <form id="filterForm" class="row">
-            <div class="col-md-4 mb-2">
-                <select class="form-control" id="roleFilter">
-                    <option value="">All Roles</option>
-                    <option value="student">Students</option>
-                    <option value="teacher">Teachers</option>
-                    <option value="admin">Admins</option>
-                </select>
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                    </div>
+                    <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search by course code or title...">
+                </div>
             </div>
-            <div class="col-md-6 mb-2">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search by name, email, or ID...">
+            <div class="col-md-4 text-right">
+                <button type="button" id="resetFilters" class="btn btn-secondary shadow-sm">Reset View</button>
             </div>
-            <div class="col-md-2 mb-2">
-                <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<!-- Trashed Users Table -->
+<!-- Trashed Courses Table -->
 <div class="card shadow mb-4">
     <div class="card-body">
         <div class="table-responsive">
-              <table class="table table-hover align-middle" id="courseTable" width="100%">
+            <table class="table table-hover align-middle" id="courseTable" width="100%">
                 <thead class="thead-light">
                     <tr>
                         <th>Code</th>
                         <th>Course Title</th>
-                        <th>Assigned Teacher</th>
-                        <th>Students</th>
+                        <th>Former Teacher</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in trashed_courses %}
                     <tr class="course-row">
-                        <td><strong>{{ course.course_code }}</strong></td>
+                        <td><span class="font-weight-bold text-dark">{{ course.course_code }}</span></td>
                         <td>{{ course.course_name }}</td>
-                        <td>
-                            {% if course.teacher_id %}
-                                <span class="text-dark">{{ course.teacher_fname }} {{ course.teacher_lname }}</span>
+                        <td class="text-muted">
+                            {% if course.teacher_fname %}
+                                {{ course.teacher_fname }} {{ course.teacher_lname }}
                             {% else %}
-                                <span class="text-muted italic">Unassigned</span>
+                                <i>None assigned</i>
                             {% endif %}
                         </td>
-                        <td><span class="badge badge-pill badge-light border">{{ course.student_count }} Student(s)</span></td>
                         <td class="text-center">
-                            <form  style="display: inline-block;" action="{{ url_for('admin.delete_course_permanently', course_code=course.course_code) }}" method="post">
-                                <button style="border: none; background: none;" type="submit">
-                                    <a class="btn btn-danger btn-circle btn-sm mr-1" title="Permanently Delete Course">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </button>    
-                            </form>
-                        <form  style="display: inline-block;" action="{{ url_for('admin.restore_course', course_code=course.course_code) }}" method="post">
-                            <button style="border: none; background: none;" type="submit">
-                                <a class="btn btn-dark btn-circle btn-sm mr-1" title="Restore Course">
-                                    <i class="fa fa-undo"></i>
-                                </a>
-                            </button>    
-                        </form>
+                            <!-- Restore Action -->
+                            <button type="button" class="btn btn-success btn-circle btn-sm mr-1" 
+                                    title="Restore Course" data-toggle="modal" data-target="#restoreCourseModal"
+                                    data-id="{{ course.course_id }}" data-name="{{ course.course_code }}">
+                                <i class="fas fa-undo"></i>
+                            </button>
+
+                            <!-- Permanent Delete Action -->
+                            <button type="button" class="btn btn-danger btn-circle btn-sm" 
+                                    title="Delete Permanently" data-toggle="modal" data-target="#permDeleteCourseModal"
+                                    data-id="{{ course.course_id }}" data-name="{{ course.course_code }}">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center text-gray-500 py-4">No courses available.</td></tr>
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i>
+                            <p class="text-gray-500 italic">Course trash bin is empty.</p>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -115,80 +108,113 @@
 </div>
 {% endblock %}
 
+{% block modals %}
+<!-- Restore Confirmation Modal -->
+<div class="modal fade" id="restoreCourseModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-undo mr-2"></i>Restore Course</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form id="restoreForm" method="POST">
+                <div class="modal-body text-center py-4">
+                    <p class="text-dark">Restore course <span id="restoreCourseName" class="font-weight-bold"></span>?</p>
+                    <p class="small text-muted">This will move the course back to the active Course Management list.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success px-4" type="submit">Yes, Restore</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Permanent Delete Modal -->
+<div class="modal fade" id="permDeleteCourseModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-bomb mr-2"></i>Final Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form id="permDeleteForm" method="POST">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                    <p class="text-dark font-weight-bold">Destroy <span id="deleteCourseName"></span> permanently?</p>
+                    <p class="text-danger small font-weight-bold">This action cannot be undone. All data related to this course will be lost.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4" type="submit">Destroy Forever</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Empty Trash Modal -->
+<div class="modal fade" id="emptyTrashModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title font-weight-bold">Empty Course Trash</h5>
+            </div>
+            <form action="{{ url_for('admin.empty_course_trash') }}" method="POST">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-dumpster-fire fa-3x text-danger mb-3"></i>
+                    <h5 class="font-weight-bold">Are you sure?</h5>
+                    <p class="text-muted">You are about to permanently delete all courses in the trash.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" type="submit">Wipe Everything</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
 <script>
-(function ($) {
-    "use strict";
+    (function ($) {
+        "use strict";
 
-    /* ══════════════════════════════════════════
-       FILTER & SEARCH LOGIC (FIXED)
-    ══════════════════════════════════════════ */
-    function performFilter() {
-        var searchVal = $('#searchInput').val().toLowerCase();
-        var roleVal = $('#roleFilter').val().toLowerCase();
-
-        $(".user-row").each(function () {
-            var row = $(this);
-            var rowText = row.find('.search-data').text().toLowerCase();
-            var rowRole = row.attr('data-role').toLowerCase();
-
-            var matchesSearch = rowText.indexOf(searchVal) > -1;
-            var matchesRole = roleVal === "" || rowRole === roleVal;
-
-            if (matchesSearch && matchesRole) {
-                row.show();
-            } else {
-                row.hide();
-            }
+        // Search Filter
+        $('#searchInput').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $(".course-row").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
         });
-    }
 
-    $('#searchInput').on('keyup', performFilter);
-    $('#roleFilter').on('change', performFilter);
-    $('#resetFilters').on('click', function () {
-        $('#searchInput').val('');
-        $('#roleFilter').val('');
-        performFilter();
-    });
+        $('#resetFilters').on('click', function () {
+            $('#searchInput').val('');
+            $(".course-row").show();
+        });
 
-    /* ══════════════════════════════════════════
-       MODAL DATA INJECTION
-    ══════════════════════════════════════════ */
+        // Modal Action Injection: Restore
+        $('#restoreCourseModal').on('show.bs.modal', function (event) {
+            var btn = $(event.relatedTarget);
+            var id = btn.data('id');
+            $('#restoreCourseName').text(btn.data('name'));
+            // Ensure this matches the backend: restore_course takes course_id
+            var action = "{{ url_for('admin.restore_course', course_id='0') }}".replace('0', id);
+            $('#restoreForm').attr('action', action);
+        });
 
-    // Restore Modal
-    $('#restoreUserModal').on('show.bs.modal', function (event) {
-        var btn = $(event.relatedTarget);
-        var userId = btn.data('id');
-        var userName = btn.data('name');
-        $('#restoreUserName').text(userName);
-        var actionUrl = "{{ url_for('admin.restore_account', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
-        $('#restoreForm').attr('action', actionUrl);
-    });
+        // Modal Action Injection: Permanent Delete
+        $('#permDeleteCourseModal').on('show.bs.modal', function (event) {
+            var btn = $(event.relatedTarget);
+            var id = btn.data('id');
+            $('#deleteCourseName').text(btn.data('name'));
+            
+            var action = "{{ url_for('admin.delete_course_permanently', course_id='0') }}".replace('0', id);
+            $('#permDeleteForm').attr('action', action);
+        });
 
-    // Permanent Delete Modal
-    $('#permDeleteUserModal').on('show.bs.modal', function (event) {
-        var btn = $(event.relatedTarget);
-        var userId = btn.data('id');
-        var userName = btn.data('name');
-        $('#deleteUserName').text(userName);
-        var actionUrl = "{{ url_for('admin.delete_account_permanently', user_id='PLACEHOLDER') }}".replace('PLACEHOLDER', userId);
-        $('#permDeleteForm').attr('action', actionUrl);
-    });
-
-    // Empty Trash Modal
-    $('#emptyTrashModal').on('show.bs.modal', function (event) {
-        var btn = $(event.relatedTarget);
-        var actionUrl = "{{ url_for('admin.empty_course_trash') }}";
-        $('#emptyTrashForm').attr('action', actionUrl);
-    });
-
-    
-    // Sidebar toggle
-    $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
-        $("body").toggleClass("sidebar-toggled");
-        $(".sidebar").toggleClass("toggled");
-    });
-
-})(jQuery);
+    })(jQuery);
 </script>
 {% endblock %}

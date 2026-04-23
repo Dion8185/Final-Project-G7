@@ -48,7 +48,7 @@
         <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addUserModal">
             <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Add New User
         </button>
-        <a href="{{ url_for('admin.trashed_accounts') }}" class="btn btn-sm btn-dark shadow-sm">
+        <a href="{{ url_for('admin.trashed_accounts') }}" class="btn btn-sm btn-danger shadow-sm">
             <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Accounts
         </a>
     </div>
@@ -131,6 +131,14 @@
                         </td>
                         <td class="small">{{ user[7] }}</td>
                         <td class="text-center">
+                            <!-- UNIFORM SUCCESS BUTTON -->
+                            <button class="btn btn-success btn-circle btn-sm view-details-btn" 
+                                title="View Assignments"
+                                data-id="{{ user[0] }}" 
+                                data-name="{{ user[1] }} {{ user[3] }}">
+                                <i class="fas fa-university"></i>
+                            </button>                            
+
                             <button class="btn btn-info btn-circle btn-sm" title="Edit" data-toggle="modal" data-target="#editUserModal{{ user[0] }}">
                                 <i class="fas fa-edit"></i>
                             </button>
@@ -146,8 +154,26 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- ── MODALS SECTION ── -->
+{% block modals %}
+<!-- Uniform Details Modal (AJAX Powered) -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-info-circle mr-2"></i><span id="modalLabel">Details</span></h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">Account: <span id="detailUserName" class="font-weight-bold text-dark"></span></p>
+                <ul id="detailList" class="list-group list-group-flush">
+                    <!-- Dynamic Content will be injected here -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% for user in users %}
 <!-- Edit User Modal -->
@@ -216,7 +242,7 @@
 </div>
 {% endfor %}
 
-<!-- Add New User Modal (WITH ADDRESS & PASSWORD VALIDATION) -->
+<!-- Add New User Modal -->
 <div class="modal fade validate-modal" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow">
@@ -362,28 +388,9 @@
         </div>
     </div>
 </div>
-
-<!-- Validation Error Modal -->
-<div class="modal fade" id="validationErrorModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-circle mr-2"></i>Validation Error</h5>
-                <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
-            </div>
-            <div class="modal-body">
-                <p class="mb-0"><i class="fas fa-info-circle mr-2 text-warning"></i>Please fix all validation errors before proceeding.</p>
-            </div>
-            <div class="modal-footer bg-light">
-                <button class="btn btn-warning" type="button" data-dismiss="modal">Dismiss</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
-<!-- Address Selector Script (Assumes you have this in your project) -->
 <script src="{{ url_for('auth.static', filename='js/ph-address-selector.js') }}"></script>
 
 <script>
@@ -391,13 +398,8 @@
         "use strict";
 
         /* ══════════════════════════════════════════
-           UI HELPERS
+           UI HELPERS & FILTERING
         ══════════════════════════════════════════ */
-        $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
-            $("body").toggleClass("sidebar-toggled");
-            $(".sidebar").toggleClass("toggled");
-        });
-
         function performFilter() {
             var searchVal = $('#searchInput').val().toLowerCase();
             var roleVal = $('#roleFilter').val().toLowerCase();
@@ -426,6 +428,33 @@
             $('#deleteUserName').text(btn.data('name'));
             var actionUrl = "{{ url_for('admin.delete_account', user_id='0') }}".replace('0', userId);
             $('#deleteUserForm').attr('action', actionUrl);
+        });
+
+        /* ── Dynamic Details Logic (AJAX) ── */
+        $('.view-details-btn').on('click', function() {
+            var userId = $(this).data('id');
+            var userName = $(this).data('name');
+            var list = $('#detailList');
+            
+            $('#detailUserName').text(userName);
+            list.html('<li class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</li>');
+            $('#userDetailsModal').modal('show');
+
+            $.getJSON('/admin/get_user_courses/' + userId, function(data) {
+                $('#modalLabel').text(data.label);
+                list.empty();
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(function(item) {
+                        list.append('<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                            '<span><strong>' + item.course_code + '</strong> - ' + item.course_name + '</span>' +
+                            '</li>');
+                    });
+                } else {
+                    list.append('<li class="list-group-item text-muted text-center">No active assignments/enrollments found.</li>');
+                }
+            }).fail(function() {
+                list.html('<li class="list-group-item text-danger text-center">Error loading data.</li>');
+            });
         });
 
         /* ══════════════════════════════════════════
@@ -509,391 +538,22 @@
         // Submission Guard
         $(document).on('submit', '.validate-modal form', function(e) {
             const form = $(this);
-            // Trigger validation for all fields
             form.find('input[required], select[required], input[name="email"]').trigger('blur');
-            
+
             if (form.find('.is-invalid').length > 0) {
                 e.preventDefault();
-                $('#validationErrorModal').modal('show');
+                form.find('.inline-validation-error').remove();
+                const alert = $(
+                    '<div class="alert alert-warning alert-dismissible fade show inline-validation-error mt-2 mb-0" role="alert">' +
+                    '<i class="fas fa-exclamation-circle mr-2"></i>Please fix all validation errors before proceeding.' +
+                    '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
+                    '</div>'
+                );
+                form.find('.modal-footer').before(alert);
+                setTimeout(function() { alert.alert('close'); }, 4000);
             }
         });
 
     })(jQuery);
 </script>
 {% endblock %}
-
-    {% for user in users %}
-    <!-- Edit User Modal -->
-    <div class="modal fade validate-modal" id="editUserModal{{ user[0] }}" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-user-edit mr-2"></i>Edit Account: {{ user[0] }}</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                </div>
-                <form action="{{ url_for('admin.update_account', user_id=user[0]) }}" method="POST" novalidate>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Firstname</label>
-                            <input type="text" class="form-control" name="firstname" value="{{ user[1] }}" required>
-                            <span class="field-feedback"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Middlename</label>
-                            <input type="text" class="form-control" name="middlename" value="{{ user[2] }}">
-                            <span class="field-feedback"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Lastname</label>
-                            <input type="text" class="form-control" name="lastname" value="{{ user[3] }}" required>
-                            <span class="field-feedback"></span>
-                        </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Email Address</label>
-                            <input type="email" class="form-control" name="email" value="{{ user[4] }}" required>
-                            <span class="field-feedback"></span>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">New Password</label>
-                                    <input type="password" class="form-control" name="password" id="edit_pwd_{{user[0]}}" placeholder="Leave blank to keep current">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Confirm Password</label>
-                                    <input type="password" class="form-control" name="confirm_password" data-match="edit_pwd_{{user[0]}}">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Account Status</label>
-                            <select class="form-control" name="status">
-                                <option value="1" {% if user[6] == 1 %}selected{% endif %}>Verified</option>
-                                <option value="0" {% if user[6] == 0 %}selected{% endif %}>Pending</option>
-                            </select>
-                        </div>
-                        <input type="hidden" name="role" value="{{ user[5] }}">
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-info" type="submit">Save Changes</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-
-    <!-- Add New User Modal (WITH ADDRESS & PASSWORD VALIDATION) -->
-    <div class="modal fade validate-modal" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i>Create New Account</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                </div>
-                <form action="{{ url_for('admin.add_user') }}" method="POST" novalidate id="addUserForm">
-                    <div class="modal-body px-4">
-                        
-                        <div class="section-header mt-2">Personal Information</div>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Firstname</label>
-                                    <input type="text" class="form-control" name="firstname" required>
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Middlename</label>
-                                    <input type="text" class="form-control" name="middlename">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Lastname</label>
-                                    <input type="text" class="form-control" name="lastname" required>
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Email Address</label>
-                                    <input type="email" class="form-control" name="email" required>
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Role</label>
-                                    <select class="form-control" name="role">
-                                        <option value="student">Student</option>
-                                        <option value="teacher">Teacher</option>
-                                        <option value="admin">Admin</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Initial Password</label>
-                                    <input type="password" class="form-control" name="password" id="add_pwd" required>
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label class="small font-weight-bold text-dark">Confirm Password</label>
-                                    <input type="password" class="form-control" name="confirm_password" data-match="add_pwd" required>
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section-header mt-3">Additional User Information (Address)</div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <select name="region" class="form-control" id="region" required>
-                                        <option value="">— Region —</option>
-                                    </select>
-                                    <input type="hidden" name="region_text" id="region-text">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <select name="province" class="form-control" id="province" required>
-                                        <option value="">— Province —</option>
-                                    </select>
-                                    <input type="hidden" name="province_text" id="province-text">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <select name="city" class="form-control" id="city" required>
-                                        <option value="">— City / Municipality —</option>
-                                    </select>
-                                    <input type="hidden" name="city_text" id="city-text">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <select name="barangay" class="form-control" id="barangay" required>
-                                        <option value="">— Barangay —</option>
-                                    </select>
-                                    <input type="hidden" name="barangay_text" id="barangay-text">
-                                    <span class="field-feedback"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-primary" type="submit">Create User</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-trash-alt mr-2"></i>Delete Account</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                </div>
-                <form id="deleteUserForm" method="POST" action="">
-                    <div class="modal-body text-center py-4">
-                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                        <p class="text-dark font-weight-bold">Are you sure you want to delete <span id="deleteUserName"></span>?</p>
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-danger px-4" type="submit">Yes, Delete</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Validation Error Modal -->
-    <div class="modal fade" id="validationErrorModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-circle mr-2"></i>Validation Error</h5>
-                    <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-0"><i class="fas fa-info-circle mr-2 text-warning"></i>Please fix all validation errors before proceeding.</p>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-warning" type="button" data-dismiss="modal">Dismiss</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SCRIPTS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Address Selector Script (Assumes you have this in your project) -->
-    <script src="{{ url_for('auth.static', filename='js/ph-address-selector.js') }}"></script>
-    
-    <script>
-        (function ($) {
-            "use strict";
-
-            /* ══════════════════════════════════════════
-               UI HELPERS
-            ══════════════════════════════════════════ */
-            $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) {
-                $("body").toggleClass("sidebar-toggled");
-                $(".sidebar").toggleClass("toggled");
-            });
-
-            function performFilter() {
-                var searchVal = $('#searchInput').val().toLowerCase();
-                var roleVal = $('#roleFilter').val().toLowerCase();
-                var statusVal = $('#statusFilter').val().toLowerCase();
-
-                $(".user-row").each(function () {
-                    var row = $(this);
-                    var rowText = row.find('.search-data').text().toLowerCase();
-                    var matchesSearch = rowText.indexOf(searchVal) > -1;
-                    var matchesRole = roleVal === "" || row.attr('data-role').toLowerCase() === roleVal;
-                    var matchesStatus = statusVal === "" || row.attr('data-status').toLowerCase() === statusVal;
-                    row.toggle(matchesSearch && matchesRole && matchesStatus);
-                });
-            }
-
-            $('#searchInput').on('keyup', performFilter);
-            $('#roleFilter, #statusFilter').on('change', performFilter);
-            $('#resetFilters').on('click', function () {
-                $('#searchInput, #roleFilter, #statusFilter').val('');
-                performFilter();
-            });
-
-            $('#deleteUserModal').on('show.bs.modal', function (event) {
-                var btn = $(event.relatedTarget);
-                var userId = btn.data('id');
-                $('#deleteUserName').text(btn.data('name'));
-                var actionUrl = "{{ url_for('admin.delete_account', user_id='0') }}".replace('0', userId);
-                $('#deleteUserForm').attr('action', actionUrl);
-            });
-
-            /* ══════════════════════════════════════════
-               VALIDATION CORE LOGIC
-            ══════════════════════════════════════════ */
-
-            function setValid(el, msg) {
-                $(el).removeClass('is-invalid').addClass('is-valid');
-                $(el).siblings('.field-feedback').text(msg || '✓ Looks good!').removeClass('invalid-msg').addClass('valid-msg');
-            }
-
-            function setInvalid(el, msg) {
-                $(el).removeClass('is-valid').addClass('is-invalid');
-                $(el).siblings('.field-feedback').text(msg || '').removeClass('valid-msg').addClass('invalid-msg');
-            }
-
-            function clearState(el) {
-                $(el).removeClass('is-valid is-invalid');
-                $(el).siblings('.field-feedback').text('').removeClass('valid-msg invalid-msg');
-            }
-
-            function checkNameField(v, label, required) {
-                if (!v) return required ? { ok: false, msg: label + ' is required.' } : { ok: true, msg: '' };
-                if (v.length < 2) return { ok: false, msg: label + ' must be 2+ chars.' };
-                if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]+$/.test(v)) return { ok: false, msg: 'Only letters and spaces allowed.' };
-                return { ok: true, msg: '✓ Valid' };
-            }
-
-            function checkEmail(v) {
-                if (!v) return { ok: false, msg: 'Email is required.' };
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return { ok: false, msg: 'Invalid email format.' };
-                return { ok: true, msg: '✓ Valid email.' };
-            }
-
-            function checkPassword(v, isOptional = false) {
-                if (!v && isOptional) return { ok: true, msg: '' };
-                if (!v) return { ok: false, msg: 'Password is required.' };
-                if (v.length < 8) return { ok: false, msg: 'Min. 8 characters.' };
-                if (!/[A-Z]/.test(v) || !/[0-9]/.test(v) || !/[!@#$%^&*]/.test(v)) 
-                    return { ok: false, msg: 'Add Uppercase, Digit, and Special char.' };
-                return { ok: true, msg: '✓ Strong password!' };
-            }
-
-            /* ── Dynamic Validation Logic ── */
-            $(document).on('input blur change', '.validate-modal input, .validate-modal select', function() {
-                const input = $(this);
-                const name = input.attr('name');
-                const val = input.val() ? input.val().trim() : '';
-                const isEdit = input.closest('form').attr('action').includes('update_account');
-                let res = { ok: true, msg: '' };
-
-                if (['firstname', 'lastname', 'middlename'].includes(name)) {
-                    res = checkNameField(val, name, name !== 'middlename');
-                    if (val === '' && name === 'middlename') clearState(input);
-                    else res.ok ? setValid(input) : setInvalid(input, res.msg);
-                }
-                else if (name === 'email') {
-                    res = checkEmail(val);
-                    res.ok ? setValid(input, res.msg) : setInvalid(input, res.msg);
-                }
-                else if (name === 'password') {
-                    res = checkPassword(val, isEdit);
-                    if (val === '' && isEdit) clearState(input);
-                    else res.ok ? setValid(input, res.msg) : setInvalid(input, res.msg);
-                    // Force confirm check
-                    input.closest('form').find('input[name="confirm_password"]').trigger('input');
-                }
-                else if (name === 'confirm_password') {
-                    const matchId = input.data('match');
-                    const targetPwd = $('#' + matchId).val();
-                    if (!val && !isEdit) setInvalid(input, 'Confirm password.');
-                    else if (val !== targetPwd) setInvalid(input, 'Passwords do not match.');
-                    else if (val === '' && isEdit && targetPwd === '') clearState(input);
-                    else setValid(input, '✓ Match!');
-                }
-                else if (['region', 'province', 'city', 'barangay'].includes(name)) {
-                    val ? setValid(input, '✓ Selected') : setInvalid(input, 'Selection required.');
-                }
-            });
-
-            // Submission Guard
-            $(document).on('submit', '.validate-modal form', function(e) {
-                const form = $(this);
-                // Trigger validation for all fields
-                form.find('input[required], select[required], input[name="email"]').trigger('blur');
-                
-                if (form.find('.is-invalid').length > 0) {
-                    e.preventDefault();
-                    $('#validationErrorModal').modal('show');
-                }
-            });
-
-        })(jQuery);
-    </script>
-</body>
-</html>
