@@ -546,15 +546,13 @@ def oversee_exams():
         firstname = session.get('firstname')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor()
-        # Fetch exams joined with course names for the table
         cursor.execute("""
             SELECT e.exam_id, e.title, c.course_name, e.duration_minutes, e.pass_percentage, e.is_active 
             FROM exams e 
             JOIN courses c ON e.course_id = c.course_id
         """)
         exams = cursor.fetchall()
-        
-        # Fetch courses to populate the "Select Course" dropdown in the Add Exam modal
+
         cursor.execute("SELECT course_id, course_name FROM courses")
         courses = cursor.fetchall()
         
@@ -580,7 +578,6 @@ def user_logs():
 
         users = cursor.fetchall()
 
-        # badge color mapping
         for user in users:
             role = (user.get("role") or "").lower()
 
