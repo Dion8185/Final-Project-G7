@@ -1,4 +1,5 @@
 import random
+import string
 import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -458,6 +459,130 @@ def resend_otp():
         send_otp_email(email, fname, otp)
         return jsonify({"message": "New code sent!"}), 200
     return jsonify({"message": "Session expired."}), 400
+
+@auth.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    email = request.form.get('email')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    # 1. Check if user exists
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    
+    if user:
+        # 2. Generate 6-digit OTP
+        otp_code = ''.join(random.choices(string.digits, k=6))
+        expiry = datetime.now() + timedelta(minutes=10)
+        
+        # 3. Store OTP in database
+        cursor.execute("""
+            INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) 
+            VALUES (%s, %s, %s, 0)
+        """, (user['user_id'], otp_code, expiry))
+        connection.commit()
+        
+        # 4. Send Email
+        try:
+            msg = Message("Password Reset OTP - TestPoint", 
+                          sender="noreply@testpoint.com", 
+                          recipients=[email])
+            msg.body = f"Hello,\n\nYour OTP for password reset is: {otp_code}\n\nThis code will expire in 10 minutes."
+            mail.send(msg)
+            
+            session['reset_email'] = email
+            session['reset_user_id'] = user['user_id']
+            # Store the unix timestamp for the JS timer to be accurate
+            session['otp_expiry_timestamp'] = expiry.timestamp()
+            
+            flash("A verification code has been sent to your email.", "info")
+            return redirect(url_for('auth.verify_reset_otp'))
+        except Exception as e:
+            flash(f"Email service error: {str(e)}", "danger")
+            return redirect(url_for('auth.login'))
+    else:
+        flash("No account found with that email address.", "warning")
+        return redirect(url_for('auth.login'))
+
+@auth.route('/verify-reset-otp', methods=['GET', 'POST'])
+def verify_reset_otp():
+    if 'reset_email' not in session:
+        return redirect(url_for('auth.login'))
+
+    # Calculate remaining seconds for the JS Timer
+    now = datetime.now().timestamp()
+    expiry = session.get('otp_expiry_timestamp', 0)
+    remaining_seconds = int(expiry - now)
+
+    if request.method == 'POST':
+        # Concatenate the 6 PIN inputs from the reference style
+        otp_input = "".join([
+            request.form.get('pin1'), request.form.get('pin2'), 
+            request.form.get('pin3'), request.form.get('pin4'), 
+            request.form.get('pin5'), request.form.get('pin6')
+        ])
+        
+        user_id = session.get('reset_user_id')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT * FROM otp_table 
+            WHERE user_id = %s AND otp_code = %s AND is_used = 0 
+            AND expires_at > NOW()
+            ORDER BY created_at DESC LIMIT 1
+        """, (user_id, otp_input))
+        otp_record = cursor.fetchone()
+        
+        if otp_record:
+            cursor.execute("UPDATE otp_table SET is_used = 1 WHERE otp_id = %s", (otp_record['otp_id'],))
+            connection.commit()
+            session['otp_verified'] = True
+            cursor.close()
+            connection.close()
+            return redirect(url_for('auth.reset_password'))
+        else:
+            flash("Invalid or expired code. Please try again.", "danger")
+            cursor.close()
+            connection.close()
+            
+    return render_template('verify_reset_otp.html', remaining_seconds=remaining_seconds)
+
+@auth.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if not session.get('otp_verified'):
+        flash("Please verify your email first.", "warning")
+        return redirect(url_for('auth.login'))
+
+    if request.method == 'POST':
+        new_pw = request.form.get('password')
+        user_id = session.get('reset_user_id')
+
+        hashed_pw = generate_password_hash(new_pw)
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        
+        try:
+            cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (hashed_pw, user_id))
+            connection.commit()
+            
+            # CLEAR ALL RESET SESSION DATA
+            session.pop('reset_email', None)
+            session.pop('reset_user_id', None)
+            session.pop('otp_verified', None)
+            session.pop('otp_expiry_timestamp', None)
+            
+            flash("Password updated successfully! Please log in with your new password.", "success")
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            flash(f"Database error: {e}", "danger")
+        finally:
+            cursor.close()
+            connection.close()
+
+    return render_template('reset_password.html')
 
 @auth.route('/logout', methods=['POST', 'GET'])
 def logout():
