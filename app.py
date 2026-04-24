@@ -1,7 +1,15 @@
 from flask import Flask, redirect, url_for
 from testpoint.__init__ import create_app
+import os
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = 'testpoint/static/uploads/verifications'
+ALLOWED_EXTENSIONS = {'pdf'}
 
 app = create_app()
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def home():
