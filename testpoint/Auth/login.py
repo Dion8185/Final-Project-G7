@@ -568,7 +568,6 @@ def reset_password():
             cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (hashed_pw, user_id))
             connection.commit()
             
-            # CLEAR ALL RESET SESSION DATA
             session.pop('reset_email', None)
             session.pop('reset_user_id', None)
             session.pop('otp_verified', None)

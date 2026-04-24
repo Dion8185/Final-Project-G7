@@ -558,10 +558,14 @@ def view_course(course_id):
             WHERE c.course_id = %s
         """, (course_id,))
         course = cursor.fetchone()
-
+    
         # 2. Fetch Student Progress stats for the header
-        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE course_id = %s AND is_active = 1 AND archived = 0", (course_id,))
+        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE course_id = %s AND archived = 0", (course_id,))
         total_exams = cursor.fetchone()['total']
+
+        # 3. Fetch how many of those active exams the student has completed
+        cursor.execute("SELECT COUNT(*) as completed FROM exam_attempts WHERE student_id = %s AND status = 'finished'", (student_id,))
+        completed_exams = cursor.fetchone()['completed']
 
         cursor.execute("""
             SELECT COUNT(*) as completed FROM exam_attempts ea
@@ -602,6 +606,8 @@ def view_course(course_id):
                                course=course, 
                                course_exams=course_exams,
                                progress_pct=progress_pct,
+                               total_exams=total_exams,
+                               completed_exams=completed_exams,
                                now=now) # Ensure 'now' is passed
     finally:
         cursor.close()
