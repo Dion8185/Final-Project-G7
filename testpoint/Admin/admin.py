@@ -792,7 +792,7 @@ def manage_enrollments(course_id):
             SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id, e.enrolled_at
             FROM students s
             JOIN enrollments e ON s.student_id = e.student_id
-            WHERE e.course_id = %s
+            WHERE e.course_id = %s AND s.student_id IN (SELECT user_id FROM users WHERE is_verified = 1 AND is_active = 1)
         """, (course['course_id'],))
         enrollees = cursor.fetchall()
         
@@ -803,7 +803,8 @@ def manage_enrollments(course_id):
             LEFT JOIN enrollments e 
                 ON s.student_id = e.student_id AND e.course_id = %s
             WHERE u.is_verified = 1
-            AND e.student_id IS NULL;
+            AND e.student_id IS NULL
+            AND u.user_id IN (SELECT user_id FROM users WHERE is_verified = 1 AND is_active = 1)
         """, (course['course_id'],))
         
         all_students = cursor.fetchall()
