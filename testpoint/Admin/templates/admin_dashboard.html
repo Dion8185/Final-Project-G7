@@ -1,90 +1,174 @@
 {% extends "admin_base.html" %}
 
 {% block content %}
-                    <h1 class="h3 mb-4 text-gray-800">System Oversight</h1>
-                    <div class="row">
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Users
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Live Sessions
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">14</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-info shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Server Load
-                                    </div>
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col-auto">
-                                            <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">24%</div>
-                                        </div>
-                                        <div class="col">
-                                            <div class="progress progress-sm mr-2">
-                                                <div class="progress-bar bg-info" style="width: 24%"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Storage Usage
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">62 GB</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="container-fluid animate__animated animate__fadeIn">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">System Oversight Dashboard</h1>
+        <span class="badge badge-dark p-2"><i class="fas fa-calendar-alt mr-1"></i> Academic Year 2026</span>
+    </div>
 
-                    <div class="row">
-                        <div class="col-lg-7 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-1">
-                                <div class="card-header py-3">Global Course Completion Rate</div>
-                                <div class="card-body">
-                                    <h4 class="small font-weight-bold">Web Development <span
-                                            class="float-right">80%</span></h4>
-                                    <div class="progress mb-4">
-                                        <div class="progress-bar bg-danger" style="width: 80%"></div>
-                                    </div>
-                                    <h4 class="small font-weight-bold">Computer Science <span
-                                            class="float-right">40%</span></h4>
-                                    <div class="progress mb-4">
-                                        <div class="progress-bar bg-warning" style="width: 40%"></div>
-                                    </div>
-                                    <h4 class="small font-weight-bold">Data Structures <span
-                                            class="float-right">Complete!</span></h4>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success" style="width: 100%"></div>
-                                    </div>
-                                </div>
-                            </div>
+    <!-- Summary Cards -->
+    <div class="row">
+        <!-- Total Users -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Registered Accounts</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users }}</div>
                         </div>
-                        <div class="col-lg-5 mb-4">
-                            <div class="card shadow mb-4 animate__animated animate__fadeInUp animate-delay-2">
-                                <div class="card-header py-3">System Health Log</div>
-                                <div class="card-body">
-                                    <div class="mb-3 p-2 bg-light border-left-success"><strong>Backup:</strong>
-                                        Successful <span class="float-right small">3h ago</span></div>
-                                    <div class="mb-3 p-2 bg-light border-left-warning"><strong>Database:</strong>
-                                        Optimization Recommended <span class="float-right small">5h ago</span></div>
-                                    <div class="p-2 bg-light border-left-info"><strong>Security:</strong> SSL
-                                        Certificate valid.</div>
-                                </div>
-                            </div>
+                        <div class="col-auto"><i class="fas fa-users fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Sessions -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Live Exam Sessions</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ live_sessions }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="spinner-grow spinner-grow-sm text-success" role="status"></div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Courses -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Active Courses</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_courses }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-book-open fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Violations (Anti-Cheat Metric) -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Cheating Alerts (Global)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ global_violations }}</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Pie Chart: Account Distribution -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Account Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="userDistPie"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        {% for label in pie_labels %}
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-{% if label == 'Admin' %}dark{% elif label == 'Teacher' %}danger{% else %}primary{% endif %}"></i> {{ label }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Popularity Progress Bars -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Enrolled Courses</h6>
+                </div>
+                <div class="card-body">
+                    {% for course in top_courses %}
+                    <h4 class="small font-weight-bold">{{ course.course_name }} <span class="float-right">{{ course.student_count }} Students</span></h4>
+                    <div class="progress mb-4">
+                        <!-- We calculate a rough percentage based on total users for the bar width -->
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ (course.student_count / total_users * 100)|int if total_users > 0 else 0 }}%"></div>
+                    </div>
+                    {% endfor %}
+                    <hr>
+                    <div class="text-center">
+                        <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-sm btn-dark">View Detailed Global Oversight</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load Chart.js 2.9.4 specifically -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+
+<script>
+    // Set default styling to match SB Admin 2
+    Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    Chart.defaults.global.defaultFontColor = '#858796';
+
+    // Debugging: View this in your browser console (F12) to see if data exists
+    console.log("Labels:", {{ pie_labels|tojson }});
+    console.log("Values:", {{ pie_values|tojson }});
+
+    var ctx = document.getElementById("userDistPie");
+    
+    // Check if data actually exists before rendering
+    if ({{ pie_values|sum }} > 0) {
+        var myPieChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ pie_labels|tojson }},
+                datasets: [{
+                    data: {{ pie_values|tojson }},
+                    backgroundColor: ['#5a5c69', '#4e73df', '#e74a3b'], // Admin(Dark), Student(Blue), Teacher(Red)
+                    hoverBackgroundColor: ['#373840', '#2e59d9', '#be2617'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+                legend: {
+                    display: false
+                },
+                cutoutPercentage: 80,
+            },
+        });
+    } else {
+        // If no data, show a message in the canvas
+        ctx.getContext("2d").font = "14px Nunito";
+        ctx.getContext("2d").fillText("No account data available", 50, 100);
+    }
+</script>
 {% endblock %}

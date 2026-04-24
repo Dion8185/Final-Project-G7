@@ -8,26 +8,64 @@ from werkzeug.security import generate_password_hash
 admin = Blueprint('admin', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/admin/static')
 
-@admin.route('/')
+@admin.route('/admin_dashboard')
 def admin_dashboard():
-    
     if admin_logged_in():
-        user_id = session.get('user_id')
-        email = session.get('email')
-        role = session.get('role')
-        firstname = session.get('firstname') 
-        
+        firstname = session.get('firstname')
         connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-        cursor.execute("SELECT COUNT(*) FROM users")
-        total_users = cursor.fetchone()[0]
-        cursor.close()
-        connection.close()
-        return render_template('admin_dashboard.html', user_id=user_id, email=email, role=role, firstname=firstname, total_users=total_users )
-    
-    else:
-        flash('Please log in as admin to access the dashboard.', 'danger')
-        return redirect(url_for('auth.login'))
+        cursor = connection.cursor(dictionary=True)
+
+        try:
+            # 1. Summary Card Data
+            cursor.execute("SELECT COUNT(*) as count FROM users WHERE is_active = 1")
+            total_users = cursor.fetchone()['count']
+
+            cursor.execute("SELECT COUNT(*) as count FROM courses WHERE is_active = 1")
+            total_courses = cursor.fetchone()['count']
+
+            cursor.execute("SELECT COUNT(*) as count FROM exams")
+            total_exams = cursor.fetchone()['count']
+
+            # Live Data: Students currently taking an exam
+            cursor.execute("SELECT COUNT(*) as count FROM exam_attempts WHERE status = 'in-progress'")
+            live_sessions = cursor.fetchone()['count']
+
+            # System Integrity: Total cheating violations detected across all time
+            cursor.execute("SELECT SUM(tab_switches) as total FROM exam_attempts")
+            global_violations = cursor.fetchone()['total'] or 0
+
+            # 2. Pie Chart: User Distribution
+            cursor.execute("SELECT role, COUNT(*) as count FROM users WHERE is_active = 1 GROUP BY role")
+            role_data = cursor.fetchall()
+            # Format for Chart.js: labels=['admin', 'student'], values=[2, 50]
+            pie_labels = [r['role'].capitalize() for r in role_data]
+            pie_values = [r['count'] for r in role_data]
+
+            # 3. Dynamic Progress Bars: Course Popularity (Top 3 Courses by Enrollment)
+            cursor.execute("""
+                SELECT c.course_name, COUNT(e.enrollment_id) as student_count 
+                FROM courses c 
+                LEFT JOIN enrollments e ON c.course_id = e.course_id 
+                GROUP BY c.course_id 
+                ORDER BY student_count DESC LIMIT 3
+            """)
+            top_courses = cursor.fetchall()
+
+        finally:
+            cursor.close()
+            connection.close()
+
+        return render_template('admin_dashboard.html', 
+                               firstname=firstname,
+                               total_users=total_users,
+                               total_courses=total_courses,
+                               total_exams=total_exams,
+                               live_sessions=live_sessions,
+                               global_violations=global_violations,
+                               pie_labels=pie_labels,
+                               pie_values=pie_values,
+                               top_courses=top_courses)
+    return redirect(url_for('auth.login'))
 
 
 #! MANAGE ACCOUNTS
@@ -596,20 +634,47 @@ def oversee_exams():
     if admin_logged_in():
         firstname = session.get('firstname')
         connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
+        # Using dictionary=True makes it easier to work with in Jinja2
+        cursor = connection.cursor(dictionary=True)
+        
+        # This query gets exam info, course code, teacher name, and sums up violations
         cursor.execute("""
-            SELECT e.exam_id, e.title, c.course_name, e.duration_minutes, e.pass_percentage, e.is_active 
+            SELECT 
+                e.exam_id, 
+                e.title, 
+                c.course_code, 
+                c.course_name,
+                t.firstname as teacher_fname, 
+                t.lastname as teacher_lname,
+                e.is_active,
+                e.date_time,
+                e.duration_minutes,
+                (SELECT SUM(tab_switches) FROM exam_attempts WHERE exam_id = e.exam_id) as total_violations,
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_id = e.exam_id AND status = 'in-progress') as active_count
             FROM exams e 
             JOIN courses c ON e.course_id = c.course_id
+            JOIN teachers t ON c.teacher_id = t.teacher_id
+            ORDER BY e.date_time DESC
         """)
         exams = cursor.fetchall()
-
-        cursor.execute("SELECT course_id, course_name FROM courses")
-        courses = cursor.fetchall()
         
+        # Logic to determine status for the UI
+        now = datetime.now()
+        for exam in exams:
+            # We consider it "Live" if it's marked active AND there are students currently taking it
+            # OR if it is within the scheduled time window.
+            exam['is_live'] = exam['is_active'] == 1 and exam['active_count'] > 0
+            
+            # Formatting teacher name
+            exam['teacher_full_name'] = f"{exam['teacher_fname']} {exam['teacher_lname']}"
+            
+            # Handle Null violations
+            if exam['total_violations'] is None:
+                exam['total_violations'] = 0
+
         cursor.close()
         connection.close()
-        return render_template('admin_exams.html', exams=exams, courses=courses, firstname=firstname)
+        return render_template('admin_exams.html', exams=exams, firstname=firstname)
     else:
         flash('Please log in as admin to access the dashboard.', 'danger')
         return redirect(url_for('auth.login'))

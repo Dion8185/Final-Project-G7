@@ -45,18 +45,19 @@
 <!-- Filters -->
 <div class="card shadow mb-4">
     <div class="card-body">
-        <form class="row">
+        <form class="row" id="filterForm">
             <div class="col-md-4 mb-2">
-                <select class="form-control">
-                    <option>All Statuses</option>
-                    <option>Live</option>
-                    <option>Scheduled</option>
-                    <option>Completed</option>
+                <select class="form-control" id="statusFilter">
+                    <option value="all">All Statuses</option>
+                    <option value="live">Live</option>
+                    <option value="active">Active / Scheduled</option>
+                    <option value="inactive">Inactive</option>
                 </select>
             </div>
-            <div class="col-md-6 mb-2"><input type="text" class="form-control"
-                    placeholder="Search by Teacher or Exam Title..."></div>
-            <div class="col-md-2 mb-2"><button class="btn btn-dark btn-block">Filter</button></div>
+            <div class="col-md-8 mb-2">
+                <input type="text" class="form-control" id="examSearch" 
+                    placeholder="Search by Teacher, Exam Title, or Course Code...">
+            </div>
         </form>
     </div>
 </div>
@@ -65,12 +66,12 @@
 <div class="card shadow mb-4">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle" id="examTable">
                 <thead class="thead-light">
                     <tr>
                         <th>Exam Title</th>
                         <th>Teacher</th>
-                        <th>Course</th>
+                        <th>Course Code</th>
                         <th>Status</th>
                         <th>Violations</th>
                         <th>Actions</th>
@@ -78,38 +79,90 @@
                 </thead>
                 <tbody>
                     {% for exam in exams %}
-                    <tr>
+                    <!-- Added class 'exam-row' and data attributes for filtering -->
+                    <tr class="exam-row" 
+                        data-status="{{ 'live' if exam.is_live else 'active' if exam.is_active == 1 else 'inactive' }}"
+                        data-search="{{ exam.title|lower }} {{ exam.teacher_full_name|lower }} {{ exam.course_code|lower }}">
+                        
                         <td><strong>{{ exam.title }}</strong></td>
-                        <td>{{ exam.teacher_name }}</td>
-                        <td>{{ exam.course_code }}</td>
+                        <td>{{ exam.teacher_full_name }}</td>
+                        <td><span class="badge badge-light border">{{ exam.course_code }}</span></td>
                         <td>
                             {% if exam.is_live %}
-                            <span class="text-danger font-weight-bold">
-                                <div class="pulse-live"></div> LIVE
-                            </span>
+                                <span class="text-danger font-weight-bold status-label" data-val="live">
+                                    <div class="pulse-live"></div> LIVE ({{ exam.active_count }} Testing)
+                                </span>
+                            {% elif exam.is_active == 1 %}
+                                <span class="badge badge-success status-label" data-val="active">Active / Scheduled</span>
                             {% else %}
-                            <span class="badge badge-secondary">Scheduled</span>
+                                <span class="badge badge-secondary status-label" data-val="inactive">Inactive</span>
                             {% endif %}
                         </td>
-                        <td><span class="text-danger font-weight-bold">{{ exam.violation_count
-                                }}</span></td>
-                        <td><button class="btn btn-sm btn-dark">View Details</button></td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td><strong>Midterm: Data Structures</strong></td>
-                        <td>Prof. Robert Fox</td>
-                        <td>CS-101</td>
-                        <td><span class="text-danger font-weight-bold">
-                                <div class="pulse-live"></div> LIVE
-                            </span></td>
-                        <td><span class="text-danger font-weight-bold">12</span></td>
-                        <td><button class="btn btn-sm btn-dark">View Details</button></td>
+                        <td>
+                            <span class="{% if exam.total_violations > 5 %}text-danger{% else %}text-warning{% endif %} font-weight-bold">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> {{ exam.total_violations }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-dark">View Details</button>
+                        </td>
                     </tr>
                     {% endfor %}
+                    
+                    <!-- This row shows only if no results match the filter -->
+                    <tr id="noResultsRow" style="display: none;">
+                        <td colspan="6" class="text-center py-4 text-muted">No exams match your filter criteria.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Function to perform filtering
+    function performFilter() {
+        const searchText = $('#examSearch').val().toLowerCase();
+        const statusValue = $('#statusFilter').val();
+        let visibleCount = 0;
+
+        $('.exam-row').each(function() {
+            const row = $(this);
+            const rowSearchText = row.data('search');
+            const rowStatus = row.data('status');
+
+            // Logic: Match Search AND Match Status
+            const matchesSearch = rowSearchText.includes(searchText);
+            const matchesStatus = (statusValue === 'all' || rowStatus === statusValue);
+
+            if (matchesSearch && matchesStatus) {
+                row.show();
+                visibleCount++;
+            } else {
+                row.hide();
+            }
+        });
+
+        // Show "No Results" row if everything is hidden
+        if (visibleCount === 0) {
+            $('#noResultsRow').show();
+        } else {
+            $('#noResultsRow').hide();
+        }
+    }
+
+    // Trigger filter on typing
+    $('#examSearch').on('keyup', function() {
+        performFilter();
+    });
+
+    // Trigger filter on dropdown change
+    $('#statusFilter').on('change', function() {
+        performFilter();
+    });
+});
+</script>
 {% endblock %}
