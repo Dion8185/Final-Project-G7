@@ -25,22 +25,16 @@
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb bg-light small shadow-sm">
-            <li class="breadcrumb-item"><a href="{{ url_for('teacher.question_bank') }}">Question Bank</a></li>
-            <li class="breadcrumb-item active">{{ course.course_code }} Bank Details</li>
-        </ol>
-    </nav>
-
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Bank: {{ course.course_name }}</h1>
-        <div>
+        <h1 class="h3 mb-0 text-gray-800">Bank: {{ course.course_name }}</h1>
+        <div style="display: flex; gap: 10px;">
             <button class="btn btn-success btn-sm shadow-sm mr-2" data-toggle="modal" data-target="#excelImportModal">
                 <i class="fas fa-file-excel mr-1"></i> Import Excel
             </button>
             <button class="btn btn-danger btn-sm shadow-sm" data-toggle="modal" data-target="#addBankModal">
                 <i class="fas fa-plus mr-1"></i> Add New Entry
             </button>
+            <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>
         </div>
     </div>
 

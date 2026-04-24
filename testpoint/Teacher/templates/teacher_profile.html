@@ -1,0 +1,83 @@
+{% extends 'teacher_base.html' %}
+{% block title %}Teacher Profile - TestPoint{% endblock %}
+{% set sidebar_active = 'profile' %}
+
+{% block head %}
+<style>
+    .profile-header-img { width: 120px; height: 120px; object-fit: cover; border: 5px solid #fff; }
+    .border-left-danger-thick { border-left: 0.25rem solid #e74a3b !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid animate__animated animate__fadeIn">
+    <h1 class="h3 mb-4 text-gray-800">My Profile</h1>
+    
+    <div class="row">
+        <!-- Profile Card -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-body text-center">
+                    <img src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_3.svg" class="rounded-circle profile-header-img shadow mb-3">
+                    <h4 class="font-weight-bold text-dark">{{ user.firstname }} {{ user.lastname }}</h4>
+                    <p class="text-danger font-weight-bold small mb-3"><i class="fas fa-chalkboard-teacher mr-1"></i> FACULTY MEMBER</p>
+                    
+                    <div class="p-3 bg-light rounded text-left border-left-danger-thick">
+                        <p class="small mb-2"><strong>Teacher ID:</strong> <span class="text-dark ml-1">{{ user.user_id }}</span></p>
+                        <p class="small mb-2"><strong>Email:</strong> <span class="text-dark ml-1">{{ user.email }}</span></p>
+                        <p class="small mb-2"><strong>Member Since:</strong> <span class="text-dark ml-1">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</span></p>
+                        <p class="small mb-0"><strong>Station:</strong> <span class="text-dark ml-1">{{ user.city }}, {{ user.province }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger">
+                    <h6 class="m-0 font-weight-bold text-white">Edit Profile Details</h6>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('teacher.profile') }}" method="POST">
+                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-3">Personal Information</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="small font-weight-bold">First Name</label>
+                                <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="small font-weight-bold">Middle Name</label>
+                                <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="small font-weight-bold">Last Name</label>
+                                <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h6 class="text-xs font-weight-bold text-danger text-uppercase mb-3">Security & Password</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="small font-weight-bold">New Password</label>
+                                <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="small font-weight-bold">Confirm New Password</label>
+                                <input type="password" class="form-control" name="confirm_password" placeholder="Confirm new password">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-right">
+                            <button type="submit" class="btn btn-danger shadow-sm px-4">
+                                <i class="fas fa-save mr-1"></i> Save Profile Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

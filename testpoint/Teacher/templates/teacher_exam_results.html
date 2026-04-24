@@ -3,7 +3,13 @@
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">Exam Performance: <span class="text-danger">{{ exam.title }}</span></h1>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-4 text-gray-800">Exam Performance: <span class="text-danger">{{ exam.title }}</span></h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>
+        </div>
+    </div>
+
     <div class="card shadow mb-4">
         <div class="card-body">
             <div class="table-responsive">

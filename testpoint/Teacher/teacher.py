@@ -5,6 +5,8 @@ import mysql.connector
 import pandas as pd 
 import io
 from datetime import datetime
+from werkzeug.security import generate_password_hash
+
 
 teacher = Blueprint('teacher', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/teacher/static')
@@ -16,26 +18,85 @@ def teacher_dashboard():
         teacher_id = session.get('user_id')
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
+        
         try:
+            # 1. Summary Card Stats
             cursor.execute("SELECT COUNT(*) as count FROM courses WHERE teacher_id = %s", (teacher_id,))
             course_count = cursor.fetchone()['count']
             
-            cursor.execute("SELECT COUNT(*) as count FROM exams e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s", (teacher_id,))
-            exam_count = cursor.fetchone()['count']
-            
-            cursor.execute("SELECT COUNT(DISTINCT e.student_id) as count FROM enrollments e JOIN courses c ON e.course_id = c.course_id WHERE c.teacher_id = %s", (teacher_id,))
-            student_count = cursor.fetchone()['count']
-
-            cursor.execute("SELECT COUNT(*) as count FROM exam_attempts ea JOIN exams ex ON ea.exam_id = ex.exam_id JOIN courses c ON ex.course_id = c.course_id WHERE c.teacher_id = %s AND ea.status = 'in-progress'", (teacher_id,))
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM exam_attempts ea 
+                JOIN exams ex ON ea.exam_id = ex.exam_id 
+                JOIN courses c ON ex.course_id = c.course_id 
+                WHERE c.teacher_id = %s AND ea.status = 'in-progress'
+            """, (teacher_id,))
             active_examinees = cursor.fetchone()['count']
+
+            cursor.execute("""
+                SELECT COUNT(*) as count FROM questions q 
+                JOIN courses c ON q.course_id = c.course_id 
+                WHERE c.teacher_id = %s
+            """, (teacher_id,))
+            bank_count = cursor.fetchone()['count']
+
+            cursor.execute("""
+                SELECT SUM(ea.tab_switches) as total FROM exam_attempts ea 
+                JOIN exams ex ON ea.exam_id = ex.exam_id 
+                JOIN courses c ON ex.course_id = c.course_id 
+                WHERE c.teacher_id = %s
+            """, (teacher_id,))
+            total_violations = cursor.fetchone()['total'] or 0
+
+            # 2. Performance Metric
+            cursor.execute("""
+                SELECT AVG((ea.score / (SELECT COUNT(*) FROM exam_questions WHERE exam_id = ea.exam_id)) * 100) as avg_score
+                FROM exam_attempts ea
+                JOIN exams ex ON ea.exam_id = ex.exam_id
+                JOIN courses c ON ex.course_id = c.course_id
+                WHERE c.teacher_id = %s AND ea.status = 'finished'
+            """, (teacher_id,))
+            class_avg = cursor.fetchone()['avg_score'] or 0
+
+            # 3. Question Bank Distribution (FOR THE CHART)
+            cursor.execute("""
+                SELECT question_type, COUNT(*) as count FROM questions q 
+                JOIN courses c ON q.course_id = c.course_id 
+                WHERE c.teacher_id = %s GROUP BY question_type
+            """, (teacher_id,))
+            dist_data = cursor.fetchall()
             
+            # Map database keys to human-readable labels
+            type_mapping = {
+                'multiple_choice': 'MCQ',
+                'true_false': 'T/F',
+                'identification': 'Ident.',
+                'essay': 'Essay'
+            }
+            dist_labels = [type_mapping.get(d['question_type'], d['question_type']) for d in dist_data]
+            dist_values = [int(d['count']) for d in dist_data]
+
+            # 4. REPLACEMENT: Recent Exam Activity (Last 5 finished exams)
+            cursor.execute("""
+                SELECT ea.score, s.firstname, s.lastname, ex.title, ea.end_time,
+                (SELECT COUNT(*) FROM exam_questions WHERE exam_id = ex.exam_id) as total_q
+                FROM exam_attempts ea
+                JOIN students s ON ea.student_id = s.student_id
+                JOIN exams ex ON ea.exam_id = ex.exam_id
+                JOIN courses c ON ex.course_id = c.course_id
+                WHERE c.teacher_id = %s AND ea.status = 'finished'
+                ORDER BY ea.end_time DESC LIMIT 5
+            """, (teacher_id,))
+            recent_submissions = cursor.fetchall()
+
             return render_template('teacher_dashboard.html',
                                    firstname=session.get('firstname'), 
-                                   lastname=session.get('lastname'), 
-                                   course_count=course_count, 
-                                   exam_count=exam_count, 
-                                   student_count=student_count, 
-                                   active_examinees=active_examinees)
+                                   active_examinees=active_examinees,
+                                   bank_count=bank_count,
+                                   total_violations=total_violations,
+                                   class_avg=round(class_avg, 1),
+                                   dist_labels=dist_labels,
+                                   dist_values=dist_values,
+                                   recent_submissions=recent_submissions)
         finally:
             cursor.close()
             connection.close()
@@ -822,4 +883,70 @@ def exam_analysis():
     exams = cursor.fetchall(); cursor.close(); connection.close()
     return render_template('teacher_analysis.html', exams=exams)
 
+#! 6. TEACHER PROFILE MANAGEMENT
+@teacher.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if not teacher_logged_in():
+        flash('Please log in as a teacher to access the profile.', 'danger')
+        return redirect(url_for('auth.login'))
 
+    user_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        if request.method == 'POST':
+            firstname = request.form.get('firstname')
+            middlename = request.form.get('middlename')
+            lastname = request.form.get('lastname')
+            new_password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+
+            # Update Teacher specific info
+            cursor.execute("""
+                UPDATE teachers 
+                SET firstname = %s, middlename = %s, lastname = %s 
+                WHERE teacher_id = %s
+            """, (firstname, middlename, lastname, user_id))
+
+            # Handle Password Update
+            if new_password:
+                if new_password == confirm_password:
+                    hashed_pw = generate_password_hash(new_password)
+                    cursor.execute(
+                        "UPDATE users SET password = %s WHERE user_id = %s",
+                        (hashed_pw, user_id)
+                    )
+                    # Sync session names
+                    session['firstname'] = firstname
+                    session['lastname'] = lastname
+                else:
+                    connection.rollback()
+                    flash('Passwords do not match.', 'warning')
+                    return redirect(url_for('teacher.profile'))
+
+            connection.commit()
+            flash('Profile updated successfully.', 'success')
+            return redirect(url_for('teacher.profile'))
+
+        # GET: Fetch Teacher Data
+        cursor.execute("""
+            SELECT u.user_id, u.email, u.role, u.created_at,
+                   t.firstname, t.middlename, t.lastname,
+                   t.region, t.province, t.city, t.barangay
+            FROM users u
+            JOIN teachers t ON u.user_id = t.teacher_id
+            WHERE u.user_id = %s
+        """, (user_id,))
+        user_data = cursor.fetchone()
+
+        return render_template('teacher_profile.html', user=user_data)
+
+    except mysql.connector.Error as err:
+        connection.rollback()
+        flash(f'Database Error: {err}', 'danger')
+        return redirect(url_for('teacher.profile'))
+
+    finally:
+        cursor.close()
+        connection.close()
