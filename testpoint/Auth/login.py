@@ -1,17 +1,29 @@
 import random
 import string
 import re
+import os
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from testpoint import db_config, mail
 import mysql.connector
 from datetime import datetime, timedelta
 from flask_mail import Message
 
-
 auth = Blueprint('auth', __name__, template_folder='templates', static_folder='static', 
                  static_url_path='/auth/static')
 
+# ── CONFIGURATION ──
+UPLOAD_FOLDER = 'testpoint/static/uploads/verifications'
+ALLOWED_EXTENSIONS = {'pdf'}
+
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# ── LOGGED IN CHECKS ──
 def user_logged_in(): 
     return session.get('user_logged_in', False)
 def admin_logged_in(): 
@@ -19,6 +31,7 @@ def admin_logged_in():
 def teacher_logged_in(): 
     return session.get('teacher_logged_in', False)
 
+# ── VALIDATION LOGIC ──
 NAME_REGEX = re.compile(r"^[A-Za-zñÑ]+([ '-][A-Za-zñÑ]+)*$") 
 EMAIL_REGEX = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
@@ -35,6 +48,7 @@ def validate_email(email):
         return False
     return True
 
+# ── UTILITY FUNCTIONS ──
 def generate_id(role_prefix):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
@@ -48,14 +62,13 @@ def generate_id(role_prefix):
     return f"{role_prefix}{year_suffix}-{str(new_num).zfill(4)}"
 
 def generate_unique_otp():
-    """Generates a random 6-digit OTP."""
     return str(random.randint(100000, 999999))
 
 def send_otp_email(recipient_email, recipient_name, otp_code):
     try:
-        msg = Message(subject='Test Point - Account Verification Code', sender='verify@gmail.com', recipients=[recipient_email])
+        msg = Message(subject='Test Point - Verification Code', sender='verify@testpoint.com', recipients=[recipient_email])
         msg.html = f"""
-<!DOCTYPE html>
+       <!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -128,7 +141,7 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
                                 Need help? <a href="#" style="color: #2d58d1; text-decoration: none; font-weight: 600;">Contact Support</a>
                             </p>
                             <p style="margin: 0; font-size: 11px; color: #94a3b8; letter-spacing: 1px;">
-                                © 2026 · All rights reserved
+                                © TestPoint 2026 · All rights reserved
                             </p>
                         </td>
                     </tr>
@@ -140,21 +153,20 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
 </body>
 
 </html>
-"""
-    
-        mail.send(msg)
-        print("📧 Generated OTP for account: " + otp_code)
+        """
+        print(f"Sending OTP email to {recipient_email} with code {otp_code}")
+        mail.send(f"📑: {msg}" )
     except Exception as e:
         print(f"Error sending email: {e}")
 
-
+#! 1. LOGIN ROUTE
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
-    if user_logged_in():
+    if user_logged_in(): 
         return redirect(url_for('student.student_dashboard'))
-    if admin_logged_in():
+    if admin_logged_in(): 
         return redirect(url_for('admin.admin_dashboard'))
-    if teacher_logged_in():
+    if teacher_logged_in(): 
         return redirect(url_for('teacher.teacher_dashboard'))
     
     if request.method == 'POST':
@@ -164,489 +176,245 @@ def login():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
-        query_fetch_user = "SELECT * FROM users WHERE email = %s;"
-        cursor.execute(query_fetch_user, (email_input,))
-        
+        # A. Check Active Users Table
+        cursor.execute("SELECT * FROM users WHERE email = %s AND is_active = 1", (email_input,))
         user = cursor.fetchone()
 
-        if not user:
-            cursor.close()
-            connection.close()
-            flash('Invalid email or password!', 'danger')
-            return render_template('login.html')
-    
-        if user['is_verified'] == 0:
-            cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
-            student_data = cursor.fetchone()
-            fname = student_data['firstname'] if student_data else "User"
-            lname = student_data['lastname'] if student_data else ""
-            session['pending_user_id'] = user['user_id']
-            session['email'] = user['email']
-            session['firstname'] = fname
-            session['lastname'] = lname
+        if user and check_password_hash(user['password'], password_input):
+            if user['role'] == 'admin':
+                cursor.execute("SELECT firstname FROM admins WHERE email = %s", (email_input,))
+                admin_data = cursor.fetchone()
+                session.update({'admin_logged_in': True, 'user_id': user['user_id'], 'email': user['email'], 'firstname': admin_data['firstname'], 'role': 'admin'})
+                cursor.close(); connection.close(); return redirect(url_for('admin.admin_dashboard'))
+            elif user['role'] == 'student':
+                cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
+                s_data = cursor.fetchone()
+                session.update({'user_logged_in': True, 'user_id': user['user_id'], 'email': user['email'], 'role': 'student', 'firstname': s_data['firstname'], 'lastname': s_data['lastname']})
+                cursor.close(); connection.close(); return redirect(url_for('student.student_dashboard'))
+            elif user['role'] == 'teacher':
+                cursor.execute("SELECT firstname, lastname FROM teachers WHERE email = %s", (email_input,))
+                t_data = cursor.fetchone()
+                session.update({'teacher_logged_in': True, 'user_id': user['user_id'], 'email': user['email'], 'role': 'teacher', 'firstname': t_data['firstname'], 'lastname': t_data['lastname']})
+                cursor.close(); connection.close(); return redirect(url_for('teacher.teacher_dashboard'))
+
+        # B. Check Pending Users Table
+        cursor.execute("SELECT * FROM pending_users WHERE email = %s", (email_input,))
+        pending = cursor.fetchone()
+
+        if pending and check_password_hash(pending['password'], password_input):
+            session['pending_email'] = pending['email']
+            session['pending_role'] = pending['role']
+            session['firstname'] = pending['firstname']
             
-            cursor.close()
-            connection.close()
-            flash('Your account is not verified yet. Please verify your email.', 'warning')
-            return redirect(url_for('auth.verify_register'))
+            if not pending['is_otp_verified']:
+                flash('Please verify your email OTP.', 'warning')
+                cursor.close(); connection.close(); return redirect(url_for('auth.verify_register'))
+            if pending['verification_status'] == 'pending_upload' or pending['verification_status'] == 'rejected':
+                flash('Please upload verification documents.', 'info')
+                cursor.close(); connection.close(); return redirect(url_for('auth.upload_verification'))
+            if pending['verification_status'] == 'pending_approval':
+                cursor.close(); connection.close(); return render_template('waiting_approval.html', role=pending['role'])
 
-        if user['role'] == 'admin' and (user['password'] == password_input or check_password_hash(user['password'], password_input)):
-            query_fetch_admin = "SELECT firstname FROM admins WHERE email = %s;"
-            cursor.execute(query_fetch_admin, (email_input,))
-            admin_data = cursor.fetchone()
-
-            session['admin_logged_in'] = True
-            session['user_id'] = user['user_id']
-            session['email'] = user['email']
-            session['firstname'] = admin_data['firstname']
-            cursor.close()
-            connection.close()
-            return redirect(url_for('admin.admin_dashboard'))
-        
-        if not check_password_hash(user['password'], password_input):
-            cursor.close()
-            connection.close()
-            flash('Invalid username or password!', 'danger')
-            return render_template('login.html')
-
-        elif user['role'] == 'student':
-            query_fetch_student = "SELECT firstname, lastname FROM students WHERE email = %s;"
-            cursor.execute(query_fetch_student, (email_input,))
-            student_data = cursor.fetchone()
-            
-            session['user_logged_in'] = True
-            session['user_id'] = user['user_id']
-            session['email'] = user['email']
-            session['role'] = 'student'
-
-            if student_data:
-                session['firstname'] = student_data['firstname']
-                session['lastname'] = student_data['lastname']
-            cursor.close()
-            connection.close()
-            return redirect(url_for('student.student_dashboard'))
-
-        elif user['role'] == 'teacher':
-            query_fetch_teacher = "SELECT firstname, lastname FROM teachers WHERE email = %s;"
-            cursor.execute(query_fetch_teacher, (email_input,))
-            teacher_data = cursor.fetchone()
-            session['teacher_logged_in'] = True
-            session['user_id'] = user['user_id']
-            session['email'] = user['email']
-            session['role'] = 'teacher'
-            
-            if teacher_data:
-                session['firstname'] = teacher_data.get('firstname', '')
-                session['lastname'] = teacher_data.get('lastname', '')
-            cursor.close()
-            connection.close()
-            return redirect(url_for('teacher.teacher_dashboard'))
+        flash('Invalid email or password!', 'danger')
+        cursor.close(); connection.close()
 
     return render_template('login.html')
 
+#! 2. REGISTER STUDENT
 @auth.route('/register/student', methods=['GET', 'POST'])
 def register_student():
-    if user_logged_in():
-        return redirect(url_for('student.student_dashboard'))
-    
-    if admin_logged_in():
-        return redirect(url_for('admin.admin_dashboard'))
-    
-    if teacher_logged_in():
-        return redirect(url_for('teacher.teacher_dashboard'))
-    
     if request.method == 'POST':
-        email = request.form.get('email')
-        fname = request.form.get('firstname')
-        lname = request.form.get('lastname')
-        mname = request.form.get('middlename')
-        password = request.form.get('password')
-        
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
-        
-        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-        existing_user = cursor.fetchone()
-        
-        if existing_user:
-            if existing_user['is_verified'] == 0:
-                session['pending_user_id'] = existing_user['user_id']
-                session['email'] = email
-                session['firstname'] = fname
-                flash("This email is already registered but unverified. Redirecting to verification.", "info")
-                return redirect(url_for('auth.verify_register'))
-            else:
-                flash("Email already in use. Please log in.", "danger")
-                return render_template('register.html')
+        email = request.form.get('email'); fname = request.form.get('firstname'); lname = request.form.get('lastname'); password = request.form.get('password')
+        if not (validate_name('First Name', fname) and validate_name('Last Name', lname) and validate_email(email)):
+            return render_template('register.html')
 
-        hashed_pw = generate_password_hash(password)
-        student_id = generate_id('S')
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT email COLLATE utf8mb4_general_ci FROM users WHERE email = %s 
+            UNION 
+            SELECT email COLLATE utf8mb4_general_ci FROM pending_users WHERE email = %s
+        """, (email, email))
+        
+        if cursor.fetchone():
+            flash("Email already in use.", "danger"); return render_template('register.html')
 
+        hashed_pw = generate_password_hash(password); otp = generate_unique_otp(); expiry = datetime.now() + timedelta(minutes=10)
         try:
-            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, 'student', 0)", 
-                           (student_id, email, hashed_pw))
-            
-            cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                           (student_id, email, fname, lname, mname, request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text')))
-
-            otp = generate_unique_otp()
-            expires = datetime.now() + timedelta(minutes=10)
-            cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at) VALUES (%s, %s, %s)", (student_id, otp, expires))
-            
-            connection.commit()
-            send_otp_email(email, fname, otp)
-            
-            session['pending_user_id'] = student_id
-            session['email'] = email
-            session['firstname'] = fname
-            
+            cursor.execute("""
+                INSERT INTO pending_users (email, password, role, firstname, lastname, middlename, region, province, city, barangay, otp_code, otp_expires_at) 
+                VALUES (%s, %s, 'student', %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (email, hashed_pw, fname, lname, request.form.get('middlename'), request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text'), otp, expiry))
+            connection.commit(); send_otp_email(email, fname, otp); session['pending_email'] = email; session['firstname'] = fname; session['pending_role'] = 'student'
             return redirect(url_for('auth.verify_register'))
-        
         except Exception as e:
-            connection.rollback()
-            flash(f"Error: {str(e)}", "danger")
+            connection.rollback(); flash(f"Error: {e}", "danger")
         finally:
-            cursor.close()
-            connection.close()
-            
+            cursor.close(); connection.close()
     return render_template('register.html')
 
+#! 3. REGISTER TEACHER
 @auth.route('/register/teacher', methods=['GET', 'POST'])
 def register_teacher():
-    if user_logged_in():
-        return redirect(url_for('student.student_dashboard'))
-    
-    if admin_logged_in():
-        return redirect(url_for('admin.admin_dashboard'))
-    
-    if teacher_logged_in():
-        return redirect(url_for('teacher.teacher_dashboard'))
-    
     if request.method == 'POST':
-        email = request.form.get('email')
-        fname = request.form.get('firstname')
-        lname = request.form.get('lastname')
-        mname = request.form.get('middlename')
-        password = request.form.get('password')
-        
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
-        
-        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-        existing_user = cursor.fetchone()
-        
-        if existing_user:
-           
-            if existing_user['is_verified'] == 0:
-                session['pending_user_id'] = existing_user['user_id']
-                session['email'] = email
-                session['firstname'] = fname
-                flash("This email is already registered but unverified. Redirecting to verification.", "info")
-                return redirect(url_for('auth.verify_register'))
-            else:
-                flash("Email already in use. Please log in.", "danger")
-                return render_template('register_teacher.html')
+        email = request.form.get('email'); fname = request.form.get('firstname'); lname = request.form.get('lastname'); password = request.form.get('password')
+        if not (validate_name('First Name', fname) and validate_name('Last Name', lname) and validate_email(email)):
+            return render_template('register_teacher.html')
 
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT email COLLATE utf8mb4_general_ci FROM users WHERE email = %s 
+            UNION 
+            SELECT email COLLATE utf8mb4_general_ci FROM pending_users WHERE email = %s
+        """, (email, email))
+        
+        if cursor.fetchone():
+            flash("Email already in use.", "danger"); return render_template('register_teacher.html')
 
-        hashed_pw = generate_password_hash(password)
-        teacher_id = generate_id('T')
-
+        hashed_pw = generate_password_hash(password); otp = generate_unique_otp(); expiry = datetime.now() + timedelta(minutes=10)
         try:
-            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, 'teacher', 0)", 
-                           (teacher_id, email, hashed_pw))
-            
-            cursor.execute("INSERT INTO teachers (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                           (teacher_id, email, fname, lname, mname, request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text')))
-
-            otp = generate_unique_otp()
-            expires = datetime.now() + timedelta(minutes=10)
-            cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at) VALUES (%s, %s, %s)", (teacher_id, otp, expires))
-            
-            connection.commit()
-            send_otp_email(email, fname, otp)
-            
-            session['pending_user_id'] = teacher_id
-            session['email'] = email
-            session['firstname'] = fname
-            
+            cursor.execute("""
+                INSERT INTO pending_users (email, password, role, firstname, lastname, middlename, region, province, city, barangay, otp_code, otp_expires_at) 
+                VALUES (%s, %s, 'teacher', %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (email, hashed_pw, fname, lname, request.form.get('middlename'), request.form.get('region_text'), request.form.get('province_text'), request.form.get('city_text'), request.form.get('barangay_text'), otp, expiry))
+            connection.commit(); send_otp_email(email, fname, otp); session['pending_email'] = email; session['firstname'] = fname; session['pending_role'] = 'teacher'
             return redirect(url_for('auth.verify_register'))
-        
         except Exception as e:
-            connection.rollback()
-            flash(f"Error: {str(e)}", "danger")
+            connection.rollback(); flash(f"Error: {e}", "danger")
         finally:
-            cursor.close()
-            connection.close()
-            
+            cursor.close(); connection.close()
     return render_template('register_teacher.html')
 
+#! 4. VERIFY REGISTRATION (OTP)
 @auth.route('/verify_register', methods=['GET', 'POST'])
 def verify_register():
-    
-    user_id = session.get('pending_user_id')
-    if not user_id:
-        flash("No pending registration found. Please register or log in.", "warning")
-        return redirect(url_for('auth.login'))
-
-    ConnectionAbortedError 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor()
-
+    email = session.get('pending_email')
+    if not email: return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM pending_users WHERE email = %s", (email,))
+    p_user = cursor.fetchone()
+    if not p_user: cursor.close(); connection.close(); return redirect(url_for('auth.login'))
+    remaining_seconds = max(0, int((p_user['otp_expires_at'] - datetime.now()).total_seconds()))
     if request.method == 'POST':
-        pin_submitted = "".join([request.form.get(f'pin{i}', '') for i in range(1, 7)]).strip()
-
-        cursor.execute("""
-            SELECT otp_code, expires_at 
-            FROM otp_table 
-            WHERE user_id = %s AND is_used = 0 
-            ORDER BY created_at DESC LIMIT 1
-        """, (user_id,))
-        result = cursor.fetchone()
-
-        if result:
-            db_otp, expires_at = result
-            
-            if datetime.now() > expires_at:
-                flash("The verification code has expired. Please request a new one.", "danger")
-            elif pin_submitted == db_otp:
-                try:
-                    cursor.execute("UPDATE users SET is_verified = 1 WHERE user_id = %s", (user_id,))
-                    cursor.execute("UPDATE otp_table SET is_used = 1 WHERE user_id = %s", (user_id,))
-                    connection.commit()
-                    
-                    session.pop('pending_user_id', None)
-                    session.pop('email', None)
-                    session.pop('firstname', None)
-
-                    flash("Account verified successfully! You can now log in.", "success")
-                    return redirect(url_for('auth.login'))
-                except mysql.connector.Error as err:
-                    connection.rollback()
-                    flash(f"Database error: {err}", "danger")
-            else:
-                flash("Invalid verification code.", "danger")
-        else:
-            flash("No active code found. Please resend.", "danger")
-
-    cursor.execute("SELECT expires_at FROM otp_table WHERE user_id = %s AND is_used = 0 ORDER BY created_at DESC LIMIT 1", (user_id,))
-    timer_result = cursor.fetchone()
-    remaining_seconds = max(0, int((timer_result[0] - datetime.now()).total_seconds())) if timer_result else 0
-
-    cursor.close()
-    connection.close()
+        pin = "".join([request.form.get(f'pin{i}', '') for i in range(1, 7)]).strip()
+        if p_user['otp_code'] == pin and datetime.now() < p_user['otp_expires_at']:
+            cursor.execute("UPDATE pending_users SET is_otp_verified = 1 WHERE email = %s", (email,))
+            connection.commit(); flash("OTP Verified. Please upload documents.", "success")
+            cursor.close(); connection.close(); return redirect(url_for('auth.upload_verification'))
+        else: flash("Invalid or expired code.", "danger")
+    cursor.close(); connection.close()
     return render_template('verify.html', remaining_seconds=remaining_seconds)
 
+#! 5. DOCUMENT UPLOAD
+@auth.route('/upload_verification', methods=['GET', 'POST'])
+def upload_verification():
+    email = session.get('pending_email')
+    if not email: return redirect(url_for('auth.login'))
+    if request.method == 'POST':
+        file = request.files.get('document')
+        if file and allowed_file(file.filename):
+            filename = secure_filename(f"VERIFY_{int(datetime.now().timestamp())}_{email.split('@')[0]}.pdf")
+            file.save(os.path.join(UPLOAD_FOLDER, filename))
+            connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+            cursor.execute("UPDATE pending_users SET document_path = %s, verification_status = 'pending_approval' WHERE email = %s", (filename, email))
+            connection.commit(); cursor.close(); connection.close()
+            return render_template('waiting_approval.html', role=session.get('pending_role'))
+        else: flash("Please upload a valid PDF file.", "danger")
+    return render_template('upload_verification.html')
+
+#! 6. RESEND OTP (For Pending Users)
 @auth.route('/resend_otp', methods=['POST'])
 def resend_otp():
-    user_id = session.get('pending_user_id')
-    email = session.get('email')
-    fname = session.get('firstname', 'User')
-
-    if user_id and email:
-        otp = generate_unique_otp()
-        expires = datetime.now() + timedelta(minutes=10)
-        
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-        
-        cursor.execute("UPDATE otp_table SET is_used = 1 WHERE user_id = %s", (user_id,))
-        
-        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at) VALUES (%s, %s, %s)", (user_id, otp, expires))
-        connection.commit()
-        cursor.close()
-        connection.close()
-        
-        send_otp_email(email, fname, otp)
+    email = session.get('pending_email'); fname = session.get('firstname', 'User')
+    if email:
+        otp = generate_unique_otp(); expiry = datetime.now() + timedelta(minutes=10)
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("UPDATE pending_users SET otp_code = %s, otp_expires_at = %s WHERE email = %s", (otp, expiry, email))
+        connection.commit(); cursor.close(); connection.close(); send_otp_email(email, fname, otp)
         return jsonify({"message": "New code sent!"}), 200
     return jsonify({"message": "Session expired."}), 400
 
+#! 7. FORGOT PASSWORD ROUTES (Using otp_table for existing users)
 @auth.route('/forgot-password', methods=['POST'])
 def forgot_password():
-    email = request.form.get('email')
-    
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
-    
-    # 1. Check if user exists
-    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
-    
+    email = request.form.get('email'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,)); user = cursor.fetchone()
     if user:
-        # 2. Generate 6-digit OTP
-        otp_code = ''.join(random.choices(string.digits, k=6))
-        expiry = datetime.now() + timedelta(minutes=10)
-        
-        # 3. Store OTP in database
-        cursor.execute("""
-            INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) 
-            VALUES (%s, %s, %s, 0)
-        """, (user['user_id'], otp_code, expiry))
-        connection.commit()
-        
-        # 4. Send Email
-        try:
-            msg = Message("Password Reset OTP - TestPoint", 
-                          sender="noreply@testpoint.com", 
-                          recipients=[email])
-            msg.body = f"Hello,\n\nYour OTP for password reset is: {otp_code}\n\nThis code will expire in 10 minutes."
-            mail.send(msg)
-            
-            session['reset_email'] = email
-            session['reset_user_id'] = user['user_id']
-            # Store the unix timestamp for the JS timer to be accurate
-            session['otp_expiry_timestamp'] = expiry.timestamp()
-            
-            flash("A verification code has been sent to your email.", "info")
-            return redirect(url_for('auth.verify_reset_otp'))
-        except Exception as e:
-            flash(f"Email service error: {str(e)}", "danger")
-            return redirect(url_for('auth.login'))
-    else:
-        flash("No account found with that email address.", "warning")
-        return redirect(url_for('auth.login'))
+        otp = generate_unique_otp(); expiry = datetime.now() + timedelta(minutes=10)
+        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", (user['user_id'], otp, expiry))
+        connection.commit(); msg = Message("Password Reset OTP", sender="verify@testpoint.com", recipients=[email])
+        msg.body = f"Your code: {otp}"; mail.send(msg); session.update({'reset_email': email, 'reset_user_id': user['user_id'], 'otp_expiry_timestamp': expiry.timestamp()})
+        cursor.close(); connection.close(); return redirect(url_for('auth.verify_reset_otp'))
+    flash("Email not found.", "warning"); cursor.close(); connection.close(); return redirect(url_for('auth.login'))
 
 @auth.route('/verify-reset-otp', methods=['GET', 'POST'])
 def verify_reset_otp():
-    if 'reset_email' not in session:
-        return redirect(url_for('auth.login'))
-
-    # Calculate remaining seconds for the JS Timer
-    now = datetime.now().timestamp()
-    expiry = session.get('otp_expiry_timestamp', 0)
-    remaining_seconds = int(expiry - now)
-
+    if 'reset_email' not in session: return redirect(url_for('auth.login'))
+    rem = int(session.get('otp_expiry_timestamp', 0) - datetime.now().timestamp())
     if request.method == 'POST':
-        # Concatenate the 6 PIN inputs from the reference style
-        otp_input = "".join([
-            request.form.get('pin1'), request.form.get('pin2'), 
-            request.form.get('pin3'), request.form.get('pin4'), 
-            request.form.get('pin5'), request.form.get('pin6')
-        ])
-        
-        user_id = session.get('reset_user_id')
-        
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
-        
-        cursor.execute("""
-            SELECT * FROM otp_table 
-            WHERE user_id = %s AND otp_code = %s AND is_used = 0 
-            AND expires_at > NOW()
-            ORDER BY created_at DESC LIMIT 1
-        """, (user_id, otp_input))
-        otp_record = cursor.fetchone()
-        
-        if otp_record:
-            cursor.execute("UPDATE otp_table SET is_used = 1 WHERE otp_id = %s", (otp_record['otp_id'],))
-            connection.commit()
-            session['otp_verified'] = True
-            cursor.close()
-            connection.close()
-            return redirect(url_for('auth.reset_password'))
-        else:
-            flash("Invalid or expired code. Please try again.", "danger")
-            cursor.close()
-            connection.close()
-            
-    return render_template('verify_reset_otp.html', remaining_seconds=remaining_seconds)
+        pin = "".join([request.form.get(f'pin{i}') for i in range(1, 7)])
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM otp_table WHERE user_id = %s AND otp_code = %s AND is_used = 0 AND expires_at > NOW()", (session.get('reset_user_id'), pin))
+        if cursor.fetchone():
+            cursor.execute("UPDATE otp_table SET is_used = 1 WHERE user_id = %s AND otp_code = %s", (session.get('reset_user_id'), pin))
+            connection.commit(); session['otp_verified'] = True; cursor.close(); connection.close(); return redirect(url_for('auth.reset_password'))
+        else: flash("Invalid code.", "danger")
+        cursor.close(); connection.close()
+    return render_template('verify_reset_otp.html', remaining_seconds=rem)
 
 @auth.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
-    if not session.get('otp_verified'):
-        flash("Please verify your email first.", "warning")
-        return redirect(url_for('auth.login'))
-
+    if not session.get('otp_verified'): return redirect(url_for('auth.login'))
     if request.method == 'POST':
-        new_pw = request.form.get('password')
-        user_id = session.get('reset_user_id')
-
-        hashed_pw = generate_password_hash(new_pw)
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor()
-        
-        try:
-            cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (hashed_pw, user_id))
-            connection.commit()
-            
-            session.pop('reset_email', None)
-            session.pop('reset_user_id', None)
-            session.pop('otp_verified', None)
-            session.pop('otp_expiry_timestamp', None)
-            
-            flash("Password updated successfully! Please log in with your new password.", "success")
-            return redirect(url_for('auth.login'))
-        except Exception as e:
-            flash(f"Database error: {e}", "danger")
-        finally:
-            cursor.close()
-            connection.close()
-
+        pw = request.form.get('password'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (generate_password_hash(pw), session.get('reset_user_id')))
+        connection.commit(); session.clear(); flash("Password updated!", "success"); cursor.close(); connection.close()
+        return redirect(url_for('auth.login'))
     return render_template('reset_password.html')
 
+#! 8. LOGOUT & AUTO-SUBMIT GRADING
 @auth.route('/logout', methods=['POST', 'GET'])
 def logout():
-    user_id = session.get('user_id')
-    active_exam_id = session.get('active_exam_id')
-
+    user_id = session.get('user_id'); active_exam_id = session.get('active_exam_id')
     if active_exam_id and user_id:
-        print(f"DEBUG: Student {user_id} is logging out during Exam {active_exam_id}. Auto-submitting...")
-        
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True, buffered=True) 
-        
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True, buffered=True) 
         try:
-            # 1. Find the attempt
-            cursor.execute("""
-                SELECT attempt_id FROM exam_attempts 
-                WHERE student_id = %s AND exam_id = %s AND status = 'in-progress'
-                ORDER BY start_time DESC LIMIT 1
-            """, (user_id, active_exam_id))
+            cursor.execute("SELECT attempt_id FROM exam_attempts WHERE student_id = %s AND exam_id = %s AND status = 'in-progress' ORDER BY start_time DESC LIMIT 1", (user_id, active_exam_id))
             attempt = cursor.fetchone()
-
             if attempt:
-                attempt_id = attempt['attempt_id']
-                
-                # 2. Get list of questions
                 cursor.execute("SELECT question_id FROM exam_questions WHERE exam_id = %s", (active_exam_id,))
-                questions = cursor.fetchall()
-                
-                total_score = 0
+                questions = cursor.fetchall(); total_score = 0
                 for q in questions:
-                    q_id = q['question_id']
-                    
-                    # Fetch student's last answer
-                    cursor.execute("SELECT submitted_answer FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
-                    ans_row = cursor.fetchone()
-                    
-                    # Fetch the correct option
-                    cursor.execute("SELECT option_text FROM options WHERE question_id = %s AND is_correct = 1", (q_id,))
-                    corr_row = cursor.fetchone()
-
-                    if ans_row and corr_row:
-                        if str(ans_row['submitted_answer']).strip().lower() == str(corr_row['option_text']).strip().lower():
-                            total_score += 1
-                            # Mark as correct in DB
-                            cursor.execute("UPDATE student_answers SET is_correct = 1 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
-
-                # 3. Update attempt status to finished
-                cursor.execute("""
-                    UPDATE exam_attempts SET status = 'finished', end_time = NOW(), score = %s 
-                    WHERE attempt_id = %s
-                """, (total_score, attempt_id))
-                
+                    cursor.execute("SELECT submitted_answer FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt['attempt_id'], q['question_id']))
+                    ans = cursor.fetchone()
+                    cursor.execute("SELECT option_text FROM options WHERE question_id = %s AND is_correct = 1", (q['question_id'],))
+                    corr = cursor.fetchone()
+                    if ans and corr and str(ans['submitted_answer']).strip().lower() == str(corr['option_text']).strip().lower():
+                        total_score += 1
+                        cursor.execute("UPDATE student_answers SET is_correct = 1 WHERE attempt_id = %s AND question_id = %s", (attempt['attempt_id'], q['question_id']))
+                cursor.execute("UPDATE exam_attempts SET status = 'finished', end_time = NOW(), score = %s WHERE attempt_id = %s", (total_score, attempt['attempt_id']))
                 connection.commit()
-                print(f"DEBUG: Exam {active_exam_id} auto-submitted with score {total_score}")
-
-        except Exception as e:
-            print(f"ERROR during auto-submit: {e}")
-            if connection:
-                connection.rollback()
         finally:
-            if cursor:
-                cursor.close()
-            if connection:
-                connection.close()
-                cursor.close()
-                
+            if cursor: cursor.close()
+            if connection: connection.close()
     session.clear()
     return redirect(url_for('auth.login'))
+
+#! 9. ADMIN APPROVAL (Used by admin.py)
+@auth.route('/admin/approve_user/<int:pending_id>', methods=['POST'])
+def approve_user(pending_id):
+    if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM pending_users WHERE pending_id = %s", (pending_id,)); p = cursor.fetchone()
+    if p:
+        new_id = generate_id('S' if p['role'] == 'student' else 'T')
+        try:
+            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, %s, 1)", (new_id, p['email'], p['password'], p['role']))
+            if p['role'] == 'student':
+                cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
+            else:
+                cursor.execute("INSERT INTO teachers (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
+            cursor.execute("DELETE FROM pending_users WHERE pending_id = %s", (pending_id,))
+            connection.commit(); return jsonify({"message": "User approved"}), 200
+        except Exception as e: connection.rollback(); return jsonify({"error": str(e)}), 500
+        finally: cursor.close(); connection.close()
+    return jsonify({"error": "Not found"}), 404

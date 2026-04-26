@@ -1,0 +1,105 @@
+{% extends "admin_base.html" %}
+
+{% block title %}User Verifications - Admin{% endblock %}
+
+{% block head %}
+<style>
+    .doc-preview { font-size: 0.8rem; padding: 5px 10px; border-radius: 5px; background: #f8f9fc; border: 1px solid #e3e6f0; text-decoration: none !important; color: #4e73df; }
+    .doc-preview:hover { background: #eaecf4; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Verification Requests</h1>
+    <span class="badge badge-primary px-3 py-2 shadow-sm">{{ pending_list|length }} Pending Approval</span>
+</div>
+
+<!-- Data Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Pending Users Queue</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="verificationTable" width="100%">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Role</th>
+                        <th>Full Name</th>
+                        <th>Email Address</th>
+                        <th>Documents</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pending_list %}
+                    <tr>
+                        <td>
+                            {% if p.role == 'student' %}
+                                <span class="badge badge-primary">Student</span>
+                            {% else %}
+                                <span class="badge badge-danger">Teacher</span>
+                            {% endif %}
+                        </td>
+                        <td class="font-weight-bold text-dark">{{ p.firstname }} {{ p.lastname }}</td>
+                        <td>{{ p.email }}</td>
+                        <td>
+                            <a href="/static/uploads/verifications/{{ p.document_path }}" target="_blank" class="doc-preview shadow-sm">
+                                <i class="fas fa-file-pdf mr-1 text-danger"></i> View PDF
+                            </a>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-success btn-sm btn-circle mr-2" 
+                                    title="Approve" 
+                                    onclick="approveUser('{{ p.pending_id }}', '{{ p.firstname }}')">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm btn-circle" 
+                                    title="Reject"
+                                    onclick="rejectUser('{{ p.pending_id }}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <i class="fas fa-check-double fa-3x text-gray-200 mb-3"></i>
+                            <p class="text-gray-500 italic">No pending verification requests.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function approveUser(id, name) {
+        if (confirm("Are you sure you want to approve " + name + "? Data will be transferred to active users.")) {
+            fetch("{{ url_for('auth.approve_user', pending_id=0) }}".replace('0', id), {
+                method: "POST"
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    location.reload();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            });
+        }
+    }
+
+    function rejectUser(id) {
+        if (confirm("Reject this application? The user will be notified to re-upload documents.")) {
+            alert("Rejection logic triggered for ID: " + id);
+        }
+    }
+</script>
+{% endblock %}

@@ -847,3 +847,15 @@ def unenroll_student(enrollment_id, course_id):
         return redirect(url_for('admin.manage_enrollments', course_id=course_id))
     return redirect(url_for('auth.login'))
 
+@admin.route('/verifications')
+def view_verifications():
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM pending_users WHERE verification_status = 'pending_approval' ORDER BY created_at DESC")
+    pending_list = cursor.fetchall()
+    
+    cursor.close()
+    connection.close()
+    return render_template('admin_verifications.html', pending_list=pending_list, firstname=session.get('firstname'))

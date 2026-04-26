@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Review in Progress - TestPoint</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+</head>
+<body class="bg-light">
+    <div class="container vh-100 d-flex align-items-center justify-content-center">
+        <div class="col-md-7 text-center animate__animated animate__fadeIn">
+            <div class="card shadow-lg border-0 p-5" style="border-radius: 20px;">
+                <div class="mb-4">
+                    <i class="fas fa-user-shield fa-5x text-warning"></i>
+                </div>
+                <h2 class="font-weight-bold text-gray-800">Verification Pending</h2>
+                <p class="lead text-gray-600">Hello, <strong>{{ session.get('firstname', 'User') }}</strong>!</p>
+                <p>Your documents have been received as a <strong>{{ role|capitalize }}</strong>. Our administrators are currently reviewing your application.</p>
+                
+                <div class="alert alert-info py-3 mt-4 border-0">
+                    <i class="fas fa-info-circle mr-2"></i> Please check back later. You will receive access to your dashboard once your credentials are confirmed.
+                </div>
+
+                <form action="{{ url_for('auth.logout') }}" method="GET" class="mt-4">
+                    <button type="submit" class="btn btn-outline-dark px-5 shadow-sm">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Log Out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
