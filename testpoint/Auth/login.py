@@ -284,22 +284,32 @@ def verify_register():
     cursor.close(); connection.close()
     return render_template('verify.html', remaining_seconds=remaining_seconds)
 
-#! 5. DOCUMENT UPLOAD
+#! 5. DOCUMENT UPLOAD (Modified to show Admin Notes)
 @auth.route('/upload_verification', methods=['GET', 'POST'])
 def upload_verification():
     email = session.get('pending_email')
     if not email: return redirect(url_for('auth.login'))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT admin_notes, verification_status FROM pending_users WHERE email = %s", (email,))
+    p_data = cursor.fetchone()
+
     if request.method == 'POST':
         file = request.files.get('document')
         if file and allowed_file(file.filename):
             filename = secure_filename(f"VERIFY_{int(datetime.now().timestamp())}_{email.split('@')[0]}.pdf")
             file.save(os.path.join(UPLOAD_FOLDER, filename))
-            connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-            cursor.execute("UPDATE pending_users SET document_path = %s, verification_status = 'pending_approval' WHERE email = %s", (filename, email))
-            connection.commit(); cursor.close(); connection.close()
+            
+            cursor.execute("UPDATE pending_users SET document_path = %s, verification_status = 'pending_approval', admin_notes = NULL WHERE email = %s", (filename, email))
+            connection.commit()
+            cursor.close(); connection.close()
             return render_template('waiting_approval.html', role=session.get('pending_role'))
-        else: flash("Please upload a valid PDF file.", "danger")
-    return render_template('upload_verification.html')
+        else:
+            flash("Please upload a valid PDF file.", "danger")
+
+    cursor.close(); connection.close()
+    return render_template('upload_verification.html', admin_notes=p_data['admin_notes'] if p_data else None)
 
 #! 6. RESEND OTP (With 5 per hour rate limit)
 @auth.route('/resend_otp', methods=['POST'])
@@ -558,3 +568,90 @@ def approve_user(pending_id):
         except Exception as e: connection.rollback(); return jsonify({"error": str(e)}), 500
         finally: cursor.close(); connection.close()
     return jsonify({"error": "Not found"}), 404
+
+#! 7. ADMIN ACTION: REJECT USER (PERMANENT)
+@auth.route('/admin/reject_user/<int:pending_id>', methods=['POST'])
+def reject_user(pending_id):
+    if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
+
+    reason = request.form.get('reason')
+    notes = request.form.get('notes')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    cursor.execute("SELECT email, firstname, document_path FROM pending_users WHERE pending_id = %s", (pending_id,))
+    p = cursor.fetchone()
+
+    if p:
+        try:
+            # 1. Delete physical file
+            if p['document_path']:
+                file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            # 2. Send Rejection Email
+            msg = Message(subject='Registration Rejected - TestPoint', sender='verify@testpoint.com', recipients=[p['email']])
+            msg.body = f"Hello {p['firstname']},\n\nUnfortunately, your registration has been rejected.\nReason: {reason}\nAdmin Notes: {notes}\n\nYou will need to register again with valid information."
+            mail.send(msg)
+
+            # 3. Delete from database
+            cursor.execute("DELETE FROM pending_users WHERE pending_id = %s", (pending_id,))
+            connection.commit()
+            return jsonify({"message": "User rejected and data purged."}), 200
+        except Exception as e:
+            connection.rollback()
+            return jsonify({"error": str(e)}), 500
+        finally:
+            cursor.close()
+            connection.close()
+    return jsonify({"error": "User not found"}), 404
+
+#! 9. ADMIN ACTION: REQUEST RESUBMISSION
+@auth.route('/admin/resubmit_user/<int:pending_id>', methods=['POST'])
+def resubmit_user(pending_id):
+    if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
+
+    reason = request.form.get('reason')
+    notes = request.form.get('notes')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    cursor.execute("SELECT email, firstname, document_path FROM pending_users WHERE pending_id = %s", (pending_id,))
+    p = cursor.fetchone()
+
+    if p:
+        try:
+            # 1. Delete the old physical file to save space
+            if p['document_path']:
+                file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            # 2. Update status and save notes
+            full_note = f"Reason: {reason}. {notes}"
+            cursor.execute("""
+                UPDATE pending_users 
+                SET verification_status = 'rejected', 
+                    document_path = NULL, 
+                    admin_notes = %s 
+                WHERE pending_id = %s
+            """, (full_note, pending_id))
+
+            # 3. Send Email Notification
+            msg = Message(subject='Action Required: Resubmit Documents - TestPoint', sender='verify@testpoint.com', recipients=[p['email']])
+            msg.body = f"Hello {p['firstname']},\n\nOur admins have reviewed your documents and require a resubmission.\n\ {full_note}\n\nPlease log in to your account to upload the correct documents."
+            mail.send(msg)
+
+            connection.commit()
+            return jsonify({"message": "Resubmission requested."}), 200
+        except Exception as e:
+            connection.rollback()
+            return jsonify({"error": str(e)}), 500
+        finally:
+            cursor.close()
+            connection.close()
+    return jsonify({"error": "User not found"}), 404
+

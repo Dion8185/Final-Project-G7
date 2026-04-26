@@ -1,82 +1,181 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Account Verification - TestPoint</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
-    <style>
-        .upload-area { border: 2px dashed #d1d3e2; border-radius: 15px; padding: 40px; transition: all 0.3s; background: #f8f9fc; }
-        .upload-area:hover { border-color: #4e73df; background: #fff; }
-        .card { border-radius: 15px; border: none; }
-    </style>
-</head>
-<body class="bg-gradient-primary">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-xl-7 col-lg-8 col-md-10">
-                <div class="card o-hidden border-0 shadow-lg my-5 animate__animated animate__zoomIn">
-                    <div class="card-body p-0">
-                        <div class="p-5">
-                            <div class="text-center">
-                                <div class="mb-4">
-                                    <i class="fas fa-file-invoice fa-4x text-primary"></i>
+{% extends "auth_base.html" %}
+
+{% block title %}Account Verification - TestPoint{% endblock %}
+
+{% block head %}
+<style>
+    .upload-card { border-radius: 15px; border: none; }
+    
+    /* ── MODERN UPLOAD ZONE ── */
+    .upload-zone {
+        border: 2px dashed #d1d3e2;
+        border-radius: 12px;
+        padding: 40px 20px;
+        background: #f8f9fc;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    .upload-zone:hover {
+        border-color: #4e73df;
+        background-color: #fff;
+    }
+    .upload-zone i { color: #d1d3e2; transition: color 0.3s; }
+    .upload-zone:hover i { color: #4e73df; }
+    
+    /* Hide actual input but keep it clickable via label */
+    .file-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    /* ── STEP INDICATOR ── */
+    .step-indicator { display: flex; justify-content: center; margin-bottom: 2rem; }
+    .step-item { text-align: center; position: relative; padding: 0 20px; }
+    .step-number {
+        width: 30px; height: 30px; line-height: 30px;
+        border-radius: 50%; background: #eaecf4;
+        display: inline-block; color: #858796; font-weight: bold; font-size: 14px;
+    }
+    .step-item.active .step-number { background: #4e73df; color: #fff; }
+    .step-text { display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-top: 5px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-xl-6 col-lg-7 col-md-9">
+            
+            <!-- Progress Steps -->
+            <div class="step-indicator mt-5">
+                <div class="step-item">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span class="step-text text-muted">Register</span>
+                </div>
+                <div class="step-item">
+                    <span class="step-number"><i class="fas fa-check"></i></span>
+                    <span class="step-text text-muted">OTP</span>
+                </div>
+                <div class="step-item active">
+                    <span class="step-number">3</span>
+                    <span class="step-text text-primary">Verify ID</span>
+                </div>
+            </div>
+
+            <div class="card shadow-lg upload-card mb-5 animate__animated animate__fadeInUp">
+                <div class="card-body p-0">
+                    <div class="p-5">
+                        <div class="text-center mb-4">
+                            <h1 class="h4 text-gray-900 font-weight-bold">Identity Verification</h1>
+                            <p class="text-muted small">To activate your account, please upload your institutional credentials.</p>
+                        </div>
+
+                        <!-- ── ADMIN FEEDBACK AREA ── -->
+                        {% if admin_notes %}
+                        <div class="alert alert-warning border-left-warning shadow-sm animate__animated animate__shakeX mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-circle fa-2x mr-3"></i>
+                                <div>
+                                    <div class="font-weight-bold small uppercase">Admin Feedback:</div>
+                                    <div class="small">{{ admin_notes }}</div>
                                 </div>
-                                <h1 class="h4 text-gray-900 mb-2 font-weight-bold">Final Step: Verification</h1>
-                                <p class="mb-4">To ensure system security, please upload a <strong>PDF</strong> copy of your School ID or Certificate of Registration.</p>
                             </div>
+                        </div>
+                        {% endif %}
 
-                            {% with messages = get_flashed_messages(with_categories=true) %}
-                                {% if messages %}
-                                    {% for category, message in messages %}
-                                        <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
-                                            {{ message }}
-                                            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-                                        </div>
-                                    {% endfor %}
-                                {% endif %}
-                            {% endwith %}
-
-                            <form action="{{ url_for('auth.upload_verification') }}" method="POST" enctype="multipart/form-data">
-                                <div class="upload-area text-center mb-4">
-                                    <i class="fas fa-cloud-upload-alt fa-3x text-gray-300 mb-3"></i>
-                                    <div class="form-group">
-                                        <input type="file" name="document" id="document" accept=".pdf" class="form-control-file" style="display: none;" required>
-                                        <label for="document" class="btn btn-primary px-4 py-2 pointer">
-                                            <i class="fas fa-search mr-2"></i> Select PDF File
-                                        </label>
-                                        <div id="file-name" class="mt-2 small text-primary font-weight-bold"></div>
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                                     </div>
-                                    <p class="text-xs text-muted mb-0">Only PDF files are accepted. Max size: 5MB.</p>
-                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
 
-                                <button type="submit" class="btn btn-success btn-block font-weight-bold py-3 shadow">
-                                    Submit for Admin Review
-                                </button>
-                            </form>
+                        <form action="{{ url_for('auth.upload_verification') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
                             
-                            <hr>
-                            <div class="text-center">
-                                <form action="{{ url_for('auth.logout') }}" method="GET">
-                                    <button type="submit" class="btn btn-link small text-danger">Cancel and Log Out</button>
-                                </form>
+                            <!-- ── CUSTOM UPLOAD AREA ── -->
+                            <div class="upload-zone text-center" id="drop-area">
+                                <i class="fas fa-file-pdf fa-4x mb-3" id="icon-display"></i>
+                                <h6 class="font-weight-bold text-dark" id="text-display">Click or Drag PDF here</h6>
+                                <p class="text-xs text-muted mb-0">Accepted Format: <strong>PDF Only</strong> (Max 5MB)</p>
+                                
+                                <input type="file" name="document" id="fileInput" class="file-input" accept=".pdf" required>
                             </div>
+
+                            <!-- Filename Preview -->
+                            <div id="file-name-preview" class="text-center mt-3 d-none">
+                                <span class="badge badge-info p-2">
+                                    <i class="fas fa-paperclip mr-1"></i> <span id="file-name-text">filename.pdf</span>
+                                </span>
+                            </div>
+
+                            <div class="mt-4">
+                                <button type="submit" class="btn btn-primary btn-user btn-block font-weight-bold py-3 shadow-sm" id="submitBtn">
+                                    Submit for Verification
+                                </button>
+                            </div>
+                        </form>
+
+                        <hr>
+                        <div class="text-center">
+                            <a class="small text-danger font-weight-bold" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Cancel and Logout
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        document.getElementById('document').onchange = function () {
-            document.getElementById('file-name').innerHTML = '<i class="fas fa-check-circle mr-1"></i> ' + this.files[0].name;
-        };
-    </script>
-</body>
-</html>
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    const fileInput = $('#fileInput');
+    const textDisplay = $('#text-display');
+    const iconDisplay = $('#icon-display');
+    const preview = $('#file-name-preview');
+    const nameText = $('#file-name-text');
+
+    fileInput.on('change', function(e) {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            
+            // Check if it's actually a PDF
+            if (file.type !== "application/pdf") {
+                alert("Please select a PDF file only.");
+                this.value = "";
+                return;
+            }
+
+            // Update UI to show selection
+            textDisplay.text("PDF Selected Successfully!");
+            iconDisplay.removeClass('text-gray-300').addClass('text-success');
+            nameText.text(file.name);
+            preview.removeClass('d-none');
+            
+            // Visual feedback on the zone
+            $('.upload-zone').css('border-color', '#1cc88a').css('background', '#f0fff4');
+        }
+    });
+
+    // Loading state on submit
+    $('#uploadForm').on('submit', function() {
+        const btn = $('#submitBtn');
+        btn.prop('disabled', true);
+        btn.html('<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...');
+    });
+});
+</script>
+{% endblock %}

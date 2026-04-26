@@ -6,6 +6,7 @@
 <style>
     .doc-preview { font-size: 0.8rem; padding: 5px 10px; border-radius: 5px; background: #f8f9fc; border: 1px solid #e3e6f0; text-decoration: none !important; color: #4e73df; }
     .doc-preview:hover { background: #eaecf4; }
+    .badge-pending { background-color: #f6c23e; color: #fff; }
 </style>
 {% endblock %}
 
@@ -17,8 +18,8 @@
 </div>
 
 <!-- Data Table -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+<div class="card shadow mb-4 border-left-primary">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center bg-white">
         <h6 class="m-0 font-weight-bold text-primary">Pending Users Queue</h6>
     </div>
     <div class="card-body">
@@ -46,29 +47,33 @@
                         <td class="font-weight-bold text-dark">{{ p.firstname }} {{ p.lastname }}</td>
                         <td>{{ p.email }}</td>
                         <td>
+                            {% if p.document_path %}
                             <a href="/static/uploads/verifications/{{ p.document_path }}" target="_blank" class="doc-preview shadow-sm">
                                 <i class="fas fa-file-pdf mr-1 text-danger"></i> View PDF
                             </a>
+                            {% else %}
+                            <span class="text-muted small italic">No file uploaded</span>
+                            {% endif %}
                         </td>
                         <td class="text-center">
                             <!-- Approve Button -->
-                            <button class="btn btn-success btn-sm btn-circle mr-2" 
-                                    title="Approve" 
+                            <button class="btn btn-success btn-sm btn-circle mr-2 shadow-sm" 
+                                    title="Approve User" 
                                     onclick="approveUser('{{ p.pending_id }}', '{{ p.firstname }}')">
                                 <i class="fas fa-check"></i>
                             </button>
+                            <!-- Resubmit Button -->
+                            <button class="btn btn-warning btn-sm btn-circle mr-2 shadow-sm" 
+                                    title="Request Resubmission"
+                                    onclick="openResubmitModal('{{ p.pending_id }}', '{{ p.firstname }}')">
+                                <i class="fas fa-redo"></i>
+                            </button> 
                             <!-- Reject Button -->
-                            <button class="btn btn-danger btn-sm btn-circle mr-2" 
-                                    title="Reject"
-                                    onclick="rejectUser('{{ p.pending_id }}')">
+                            <button class="btn btn-danger btn-sm btn-circle shadow-sm" 
+                                    title="Reject Permanently"
+                                    onclick="openRejectModal('{{ p.pending_id }}', '{{ p.firstname }}')">
                                 <i class="fas fa-times"></i>
                             </button>
-                            <!-- Resubmit Button: This triggers the Javascript function below -->
-                            <button class="btn btn-warning btn-sm btn-circle mr-2" 
-                                    title="Resubmit Request"
-                                    onclick="resubmitRequest('{{ p.pending_id }}')">
-                                <i class="fas fa-redo"></i>
-                            </button>                     
                         </td>
                     </tr>
                     {% else %}
@@ -87,36 +92,72 @@
 {% endblock %}
 
 {% block modals %}
-<!-- Resubmit Request Modal -->
-<div class="modal fade" id="resubmitModal" tabindex="-1" role="dialog" aria-labelledby="resubmitModalLabel" aria-hidden="true">
+<!-- 1. Resubmit Request Modal -->
+<div class="modal fade" id="resubmitModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content shadow-lg border-0">
             <div class="modal-header bg-warning text-white border-0">
-                <h5 class="modal-title font-weight-bold" id="resubmitModalLabel">
-                    <i class="fas fa-redo-alt mr-2"></i> Request Resubmission
-                </h5>
-                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">×</span>
-                </button>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-redo-alt mr-2"></i> Request Resubmission</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form id="resubmitForm">
                 <div class="modal-body">
-                    <p class="text-gray-600 small">This will notify the user via email that their documents were insufficient. The current file will be flagged for replacement.</p>
-                    
-                    <!-- Hidden input to store the ID of the user being processed -->
-                    <input type="hidden" id="resubmit_pending_id" name="pending_id">
+                    <p class="text-gray-600 small">The current document will be deleted. The user <strong><span id="resubmit_name"></span></strong> will be notified to upload a new file.</p>
+                    <input type="hidden" id="resubmit_id">
                     
                     <div class="form-group">
-                        <label class="font-weight-bold text-dark">Reason for Resubmission</label>
-                        <textarea class="form-control" id="resubmitReason" rows="4" 
-                            placeholder="e.g. The uploaded ID is blurry or expired. Please upload a clear copy..." required></textarea>
+                        <label class="small font-weight-bold">Issue Type</label>
+                        <select class="form-control" id="resubmit_reason" required>
+                            <option value="Blurry/Unreadable Content">Blurry/Unreadable Content</option>
+                            <option value="Expired ID Card">Expired ID Card</option>
+                            <option value="Invalid Document Type">Invalid Document Type</option>
+                            <option value="Information Mismatch">Information Mismatch</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Additional Instructions</label>
+                        <textarea class="form-control" id="resubmit_notes" rows="3" placeholder="Provide specific instructions for the user..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0">
                     <button class="btn btn-light btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning btn-sm px-4 shadow-sm">
-                        <i class="fas fa-paper-plane mr-1"></i> Send Instructions
-                    </button>
+                    <button type="submit" class="btn btn-warning btn-sm px-4 shadow-sm">Send Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Reject Request Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-times mr-2"></i> Reject Registration</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form id="rejectForm">
+                <div class="modal-body">
+                    <p class="text-gray-600 small">This will <strong>permanently delete</strong> the application for <strong><span id="reject_name"></span></strong> and notify them via email.</p>
+                    <input type="hidden" id="reject_id">
+                    
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Rejection Reason</label>
+                        <select class="form-control" id="reject_reason" required>
+                            <option value="Fraudulent/Fake Documents">Fraudulent/Fake Documents</option>
+                            <option value="Duplicate Account Detected">Duplicate Account Detected</option>
+                            <option value="Security Violation">Security Violation</option>
+                            <option value="Ineligible for Registration">Ineligible for Registration</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">Detailed Explanation</label>
+                        <textarea class="form-control" id="reject_notes" rows="3" placeholder="This will be sent to the user's email..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-light btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm px-4 shadow-sm">Confirm Rejection</button>
                 </div>
             </form>
         </div>
@@ -126,12 +167,11 @@
 
 {% block scripts %}
 <script>
+    // --- APPROVAL LOGIC ---
     function approveUser(id, name) {
-        if (confirm("Are you sure you want to approve " + name + "?")) {
-            fetch("{{ url_for('auth.approve_user', pending_id=0) }}".replace('0', id), {
-                method: "POST"
-            })
-            .then(response => response.json())
+        if (confirm("Are you sure you want to approve " + name + "? This will activate their account.")) {
+            fetch("{{ url_for('auth.approve_user', pending_id=0) }}".replace('0', id), { method: "POST" })
+            .then(res => res.json())
             .then(data => {
                 if (data.message) { location.reload(); } 
                 else { alert("Error: " + data.error); }
@@ -139,40 +179,44 @@
         }
     }
 
-    function rejectUser(id) {
-        if (confirm("Reject this application?")) {
-            alert("Rejection logic triggered for ID: " + id);
-        }
+    // --- RESUBMIT LOGIC ---
+    function openResubmitModal(id, name) {
+        $('#resubmit_id').val(id);
+        $('#resubmit_name').text(name);
+        $('#resubmitModal').modal('show');
     }
 
-    // 1. Function called by the yellow button
-    function resubmitRequest(id) {
-        $('#resubmitReason').val(''); // Clear old text
-        $('#resubmit_pending_id').val(id); // Put the user ID in the hidden field
-        $('#resubmitModal').modal('show'); // Open the modal
-    }
-
-    // 2. Function called when the modal form is submitted
     $('#resubmitForm').on('submit', function(e) {
         e.preventDefault();
-        
-        const pendingId = $('#resubmit_pending_id').val();
-        const reason = $('#resubmitReason').val();
+        const id = $('#resubmit_id').val();
+        const fd = new FormData();
+        fd.append('reason', $('#resubmit_reason').val());
+        fd.append('notes', $('#resubmit_notes').val());
 
-        // UI Feedback
-        const submitBtn = $(this).find('button[type="submit"]');
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sending...');
+        fetch("{{ url_for('auth.resubmit_user', pending_id=0) }}".replace('0', id), {
+            method: "POST",
+            body: fd
+        }).then(() => location.reload());
+    });
 
-        // LOGGING FOR TESTING
-        console.log("Form Submitted for ID:", pendingId);
-        console.log("Reason provided:", reason);
+    // --- REJECTION LOGIC ---
+    function openRejectModal(id, name) {
+        $('#reject_id').val(id);
+        $('#reject_name').text(name);
+        $('#rejectModal').modal('show');
+    }
 
-        // Simulate a successful SMTP / Backend call
-        setTimeout(() => {
-            alert("Success! Request sent for ID: " + pendingId);
-            $('#resubmitModal').modal('hide');
-            submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Send Instructions');
-        }, 1000);
+    $('#rejectForm').on('submit', function(e) {
+        e.preventDefault();
+        const id = $('#reject_id').val();
+        const fd = new FormData();
+        fd.append('reason', $('#reject_reason').val());
+        fd.append('notes', $('#reject_notes').val());
+
+        fetch("{{ url_for('auth.reject_user', pending_id=0) }}".replace('0', id), {
+            method: "POST",
+            body: fd
+        }).then(() => location.reload());
     });
 </script>
 {% endblock %}
