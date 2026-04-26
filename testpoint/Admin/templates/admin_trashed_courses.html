@@ -78,14 +78,12 @@
                             {% endif %}
                         </td>
                         <td class="text-center">
-                            <!-- Restore Action -->
                             <button type="button" class="btn btn-success btn-circle btn-sm mr-1" 
                                     title="Restore Course" data-toggle="modal" data-target="#restoreCourseModal"
                                     data-id="{{ course.course_id }}" data-name="{{ course.course_code }}">
                                 <i class="fas fa-undo"></i>
                             </button>
 
-                            <!-- Permanent Delete Action -->
                             <button type="button" class="btn btn-danger btn-circle btn-sm" 
                                     title="Delete Permanently" data-toggle="modal" data-target="#permDeleteCourseModal"
                                     data-id="{{ course.course_id }}" data-name="{{ course.course_code }}">

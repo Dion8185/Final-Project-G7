@@ -79,12 +79,12 @@
                             <!-- Verification Form -->
                             <form action="{{ url_for('auth.verify_reset_otp') }}" method="POST" id="otpForm" class="user">
                                 <div class="otp-input-container">
-                                    <input type="text" name="pin1" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required autofocus>
-                                    <input type="text" name="pin2" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin3" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin4" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin5" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin6" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin1" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required autofocus>
+                                    <input type="text" name="pin2" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin3" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin4" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin5" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin6" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
                                 </div>
 
                                 <div class="text-center mb-4">

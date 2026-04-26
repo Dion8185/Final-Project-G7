@@ -66,54 +66,42 @@ def generate_unique_otp():
 
 def send_otp_email(recipient_email, recipient_name, otp_code):
     try:
-        msg = Message(subject='Test Point - Verification Code', sender='verify@testpoint.com', recipients=[recipient_email])
+        msg = Message(subject='Test Point - Account Verification Code', sender='verify@testpoint.com', recipients=[recipient_email])
         msg.html = f"""
-       <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verification Code</title>
 </head>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
-
 <body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
         <tr>
             <td align="center">
-                <!-- Main Card -->
                 <table width="100%" cellpadding="0" cellspacing="0" border="0"
                     style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-
-                    <!-- Blue Top Bar -->
                     <tr>
                         <td style="height: 6px; background-color: #2d58d1; border-radius: 12px 12px 0 0;"></td>
                     </tr>
-
-                    <!-- Header -->
                     <tr>
                         <td align="center" style="padding: 40px 40px 20px;">
-                            <h1 style="font-size: 42px;">📑</i></h1>
+                            <h1 style="font-size: 42px; margin:0;">📑</h1>
                             <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">
                                 TestPoint Examination System
                             </div>
                         </td>
                     </tr>
-
-                    <!-- Body Content -->
                     <tr>
                         <td style="padding: 0 40px 40px;">
                             <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a; font-weight: normal;">
                                 Hello, <span style="color: #2d58d1; font-weight: 600;">{recipient_name}</span>
                             </p>
-
                             <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">
                                 Use the one-time code below to complete your verification. This code is valid for
                                 <strong style="color: #333;">10 minutes</strong> and should not be shared with anyone.
                             </p>
-
-                            <!-- OTP Code Box (Updated to Blue Theme) -->
+                            
                             <table width="100%" cellpadding="0" cellspacing="0" border="0"
                                 style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 8px;">
                                 <tr>
@@ -127,35 +115,27 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
                                     </td>
                                 </tr>
                             </table>
-
                             <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">
                                 If you did not request this code, you can safely disregard this email.
                             </p>
                         </td>
                     </tr>
-
-                    <!-- Footer -->
                     <tr>
                         <td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
-                            <p style="margin: 0 0 6px; font-size: 12px; color: #64748b;">
-                                Need help? <a href="#" style="color: #2d58d1; text-decoration: none; font-weight: 600;">Contact Support</a>
-                            </p>
                             <p style="margin: 0; font-size: 11px; color: #94a3b8; letter-spacing: 1px;">
                                 © TestPoint 2026 · All rights reserved
                             </p>
                         </td>
                     </tr>
-
                 </table>
             </td>
         </tr>
     </table>
 </body>
-
 </html>
-        """
-        print(f"Sending OTP email to {recipient_email} with code {otp_code}")
-        mail.send(f"📑: {msg}" )
+"""
+        mail.send(msg)
+        print(f"📧 Sent professional OTP email to {recipient_email}: {otp_code}")
     except Exception as e:
         print(f"Error sending email: {e}")
 
@@ -321,31 +301,191 @@ def upload_verification():
         else: flash("Please upload a valid PDF file.", "danger")
     return render_template('upload_verification.html')
 
-#! 6. RESEND OTP (For Pending Users)
+#! 6. RESEND OTP (With 5 per hour rate limit)
 @auth.route('/resend_otp', methods=['POST'])
 def resend_otp():
-    email = session.get('pending_email'); fname = session.get('firstname', 'User')
+    email = session.get('pending_email')
+    fname = session.get('firstname', 'User')
+
     if email:
-        otp = generate_unique_otp(); expiry = datetime.now() + timedelta(minutes=10)
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        cursor.execute("UPDATE pending_users SET otp_code = %s, otp_expires_at = %s WHERE email = %s", (otp, expiry, email))
-        connection.commit(); cursor.close(); connection.close(); send_otp_email(email, fname, otp)
-        return jsonify({"message": "New code sent!"}), 200
-    return jsonify({"message": "Session expired."}), 400
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+ 
+        cursor.execute("SELECT otp_count, last_otp_sent FROM pending_users WHERE email = %s", (email,))
+        row = cursor.fetchone()
+        
+        if not row:
+            cursor.close(); connection.close()
+            return jsonify({"message": "Registration record not found."}), 404
+
+        now = datetime.now()
+        if row['last_otp_sent'] and (now - row['last_otp_sent']) > timedelta(hours=1):
+            count = 1
+        else:
+            count = (row['otp_count'] or 0) + 1
+
+        if count > 5:
+            cursor.close(); connection.close()
+            return jsonify({"message": "Resend limit reached. Please try again after 1 hour."}), 429
+        
+        otp = generate_unique_otp()
+        expiry = now + timedelta(minutes=10)
+
+        cursor.execute("""
+            UPDATE pending_users 
+            SET otp_code = %s, otp_expires_at = %s, otp_count = %s, last_otp_sent = NOW() 
+            WHERE email = %s
+        """, (otp, expiry, count, email))
+        
+        connection.commit()
+        cursor.close(); connection.close()
+        
+        send_otp_email(email, fname, otp)
+        return jsonify({"message": f"New code sent! ({count}/5 attempts this hour)"}), 200
+
+    return jsonify({"message": "Session expired. Please start the registration again."}), 400
 
 #! 7. FORGOT PASSWORD ROUTES (Using otp_table for existing users)
 @auth.route('/forgot-password', methods=['POST'])
 def forgot_password():
-    email = request.form.get('email'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,)); user = cursor.fetchone()
+    email = request.form.get('email')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    # 1. Check if user exists in the main table
+    cursor.execute("SELECT user_id, otp_count, last_otp_sent FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    
     if user:
-        otp = generate_unique_otp(); expiry = datetime.now() + timedelta(minutes=10)
-        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", (user['user_id'], otp, expiry))
-        connection.commit(); msg = Message("Password Reset OTP", sender="verify@testpoint.com", recipients=[email])
-        msg.body = f"Your code: {otp}"; mail.send(msg); session.update({'reset_email': email, 'reset_user_id': user['user_id'], 'otp_expiry_timestamp': expiry.timestamp()})
-        cursor.close(); connection.close(); return redirect(url_for('auth.verify_reset_otp'))
-    flash("Email not found.", "warning"); cursor.close(); connection.close(); return redirect(url_for('auth.login'))
+        now = datetime.now()
+        # Reset count to 1 if the last OTP was sent more than 1 hour ago
+        if user['last_otp_sent'] and (now - user['last_otp_sent']) > timedelta(hours=1):
+            count = 1
+        else:
+            count = (user['otp_count'] or 0) + 1
 
+        # Block if more than 5 requests in an hour
+        if count > 5:
+            cursor.close()
+            connection.close()
+            flash("Too many password reset attempts. Please wait 1 hour before trying again.", "danger")
+            return redirect(url_for('auth.login'))
+
+        otp = generate_unique_otp()
+        expiry = now + timedelta(minutes=10)
+        
+        # Insert into otp_table and update the user's rate-limit tracking
+        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", 
+                       (user['user_id'], otp, expiry))
+        cursor.execute("UPDATE users SET otp_count = %s, last_otp_sent = NOW() WHERE user_id = %s", 
+                       (count, user['user_id']))
+        
+        connection.commit()
+        
+        try:
+            msg = Message("Password Reset OTP", sender="verify@testpoint.com", recipients=[email])
+            msg.html = f"""
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verification Code</title>
+</head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+
+<body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
+        <tr>
+            <td align="center">
+                <!-- Main Card -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                    style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+                    <!-- Blue Top Bar -->
+                    <tr>
+                        <td style="height: 6px; background-color: #2d58d1; border-radius: 12px 12px 0 0;"></td>
+                    </tr>
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 40px 20px;">
+                            <h1 style="font-size: 42px;">📑</i></h1>
+                            <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">
+                                TestPoint Examination System
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">
+                                Use the one-time code below to reset your password. This code is valid for
+                                <strong style="color: #333;">10 minutes</strong> and should not be shared with anyone.
+                            </p>
+
+                            <!-- OTP Code Box (Updated to Blue Theme) -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                                style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 8px;">
+                                <tr>
+                                    <td align="center" style="padding: 25px;">
+                                        <p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1e40af; opacity: 0.7;">
+                                            Your verification code
+                                        </p>
+                                        <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 40px; font-weight: 700; letter-spacing: 12px; color: #1e40af; text-indent: 12px;">
+                                            {otp}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">
+                                If you did not request this code, you can safely disregard this email.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
+                            <p style="margin: 0; font-size: 11px; color: #94a3b8; letter-spacing: 1px;">
+                                © TestPoint 2026 · All rights reserved
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>"""
+            mail.send(msg)
+            flash(f"This is attempt {count}/5 for this hour.", "success")
+            
+            session.update({
+                'reset_email': email, 
+                'reset_user_id': user['user_id'], 
+                'otp_expiry_timestamp': expiry.timestamp()
+            })
+            
+            cursor.close()
+            connection.close()
+            return redirect(url_for('auth.verify_reset_otp'))
+       
+        except Exception as e:
+            flash(f"Email error: {str(e)}", "danger")
+            return redirect(url_for('auth.login'))
+    else:
+        flash("No account found with that email address.", "warning")
+        cursor.close()
+        connection.close()
+        return redirect(url_for('auth.login'))
+    
 @auth.route('/verify-reset-otp', methods=['GET', 'POST'])
 def verify_reset_otp():
     if 'reset_email' not in session: return redirect(url_for('auth.login'))
