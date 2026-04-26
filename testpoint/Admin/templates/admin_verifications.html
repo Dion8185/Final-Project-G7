@@ -51,16 +51,24 @@
                             </a>
                         </td>
                         <td class="text-center">
+                            <!-- Approve Button -->
                             <button class="btn btn-success btn-sm btn-circle mr-2" 
                                     title="Approve" 
                                     onclick="approveUser('{{ p.pending_id }}', '{{ p.firstname }}')">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm btn-circle" 
+                            <!-- Reject Button -->
+                            <button class="btn btn-danger btn-sm btn-circle mr-2" 
                                     title="Reject"
                                     onclick="rejectUser('{{ p.pending_id }}')">
                                 <i class="fas fa-times"></i>
                             </button>
+                            <!-- Resubmit Button: This triggers the Javascript function below -->
+                            <button class="btn btn-warning btn-sm btn-circle mr-2" 
+                                    title="Resubmit Request"
+                                    onclick="resubmitRequest('{{ p.pending_id }}')">
+                                <i class="fas fa-redo"></i>
+                            </button>                     
                         </td>
                     </tr>
                     {% else %}
@@ -78,28 +86,93 @@
 </div>
 {% endblock %}
 
+{% block modals %}
+<!-- Resubmit Request Modal -->
+<div class="modal fade" id="resubmitModal" tabindex="-1" role="dialog" aria-labelledby="resubmitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-warning text-white border-0">
+                <h5 class="modal-title font-weight-bold" id="resubmitModalLabel">
+                    <i class="fas fa-redo-alt mr-2"></i> Request Resubmission
+                </h5>
+                <button class="close text-white" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <form id="resubmitForm">
+                <div class="modal-body">
+                    <p class="text-gray-600 small">This will notify the user via email that their documents were insufficient. The current file will be flagged for replacement.</p>
+                    
+                    <!-- Hidden input to store the ID of the user being processed -->
+                    <input type="hidden" id="resubmit_pending_id" name="pending_id">
+                    
+                    <div class="form-group">
+                        <label class="font-weight-bold text-dark">Reason for Resubmission</label>
+                        <textarea class="form-control" id="resubmitReason" rows="4" 
+                            placeholder="e.g. The uploaded ID is blurry or expired. Please upload a clear copy..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-light btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning btn-sm px-4 shadow-sm">
+                        <i class="fas fa-paper-plane mr-1"></i> Send Instructions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
 {% block scripts %}
 <script>
     function approveUser(id, name) {
-        if (confirm("Are you sure you want to approve " + name + "? Data will be transferred to active users.")) {
+        if (confirm("Are you sure you want to approve " + name + "?")) {
             fetch("{{ url_for('auth.approve_user', pending_id=0) }}".replace('0', id), {
                 method: "POST"
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message) {
-                    location.reload();
-                } else {
-                    alert("Error: " + data.error);
-                }
+                if (data.message) { location.reload(); } 
+                else { alert("Error: " + data.error); }
             });
         }
     }
 
     function rejectUser(id) {
-        if (confirm("Reject this application? The user will be notified to re-upload documents.")) {
+        if (confirm("Reject this application?")) {
             alert("Rejection logic triggered for ID: " + id);
         }
     }
+
+    // 1. Function called by the yellow button
+    function resubmitRequest(id) {
+        $('#resubmitReason').val(''); // Clear old text
+        $('#resubmit_pending_id').val(id); // Put the user ID in the hidden field
+        $('#resubmitModal').modal('show'); // Open the modal
+    }
+
+    // 2. Function called when the modal form is submitted
+    $('#resubmitForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const pendingId = $('#resubmit_pending_id').val();
+        const reason = $('#resubmitReason').val();
+
+        // UI Feedback
+        const submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sending...');
+
+        // LOGGING FOR TESTING
+        console.log("Form Submitted for ID:", pendingId);
+        console.log("Reason provided:", reason);
+
+        // Simulate a successful SMTP / Backend call
+        setTimeout(() => {
+            alert("Success! Request sent for ID: " + pendingId);
+            $('#resubmitModal').modal('hide');
+            submitBtn.prop('disabled', false).html('<i class="fas fa-paper-plane mr-1"></i> Send Instructions');
+        }, 1000);
+    });
 </script>
 {% endblock %}
