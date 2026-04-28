@@ -521,6 +521,73 @@ def reset_password():
         return redirect(url_for('auth.login'))
     return render_template('reset_password.html')
 
+@auth.route('/resend-reset-otp', methods=['POST'])
+def resend_reset_otp():
+    email = session.get('reset_email')
+    user_id = session.get('reset_user_id')
+
+    if not email or not user_id:
+        flash("Session expired. Please start the password reset again.", "warning")
+        return redirect(url_for('auth.login'))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # Fetch current count and last timestamp for existing user
+        cursor.execute("SELECT otp_count, last_otp_sent FROM users WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        now = datetime.now()
+        # Reset count if last sent was over 1 hour ago
+        if user['last_otp_sent'] and (now - user['last_otp_sent']) > timedelta(hours=1):
+            count = 1
+        else:
+            count = (user['otp_count'] or 0) + 1
+
+        if count > 5:
+            flash("Rate limit exceeded. Please wait 1 hour to request a new code.", "danger")
+            return redirect(url_for('auth.verify_reset_otp'))
+        
+        otp = generate_unique_otp()
+        expiry = now + timedelta(minutes=10)
+        
+        # 1. Update otp_table
+        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", 
+                       (user_id, otp, expiry))
+        
+        # 2. Update rate limit in users table
+        cursor.execute("UPDATE users SET otp_count = %s, last_otp_sent = NOW() WHERE user_id = %s", 
+                       (count, user_id))
+        
+        connection.commit()
+        
+        # 3. Update session expiry for JS timer
+        session['otp_expiry_timestamp'] = expiry.timestamp()
+        
+        # 4. Send Email
+        msg = Message("Password Reset OTP - TestPoint", sender="verify@testpoint.com", recipients=[email])
+        msg.html = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+            <h2 style="color: #4e73df;">Password Reset Verification</h2>
+            <p>Your new verification code is:</p>
+            <h1 style="letter-spacing: 5px; color: #1a1a1a;">{otp}</h1>
+            <p>This is attempt {count}/5 for this hour. The code expires in 10 minutes.</p>
+        </div>
+        """
+        mail.send(msg)
+        
+        flash(f"A new verification code has been sent. ({count}/5)", "success")
+        
+    except Exception as e:
+        if connection: connection.rollback()
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        if cursor: cursor.close()
+        if connection: connection.close()
+
+    return redirect(url_for('auth.verify_reset_otp'))
+
 #! 8. LOGOUT & AUTO-SUBMIT GRADING
 @auth.route('/logout', methods=['POST', 'GET'])
 def logout():

@@ -38,13 +38,18 @@
         }
 
         #timer-text { font-weight: bold; color: #e74a3b; }
-
-        .resend-link { cursor: pointer; text-decoration: none; }
-        .resend-link.disabled {
-            color: #858796 !important;
-            pointer-events: none;
-            cursor: default;
+        
+        .resend-btn {
+            background: none;
+            border: none;
+            color: #4e73df;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
         }
+        .resend-btn:disabled { color: #858796; cursor: default; text-decoration: none; }
     </style>
 </head>
 
@@ -60,11 +65,11 @@
                                 <div class="mb-4">
                                     <i class="fas fa-user-lock fa-4x text-primary"></i>
                                 </div>
-                                <h1 class="h4 text-gray-900 mb-2">Password Reset Verification</h1>
-                                <p class="mb-4">We've sent a 6-digit verification code to <strong>{{ session['reset_email'] }}</strong>. Please enter it below to proceed.</p>
+                                <h1 class="h4 text-gray-900 mb-2 font-weight-bold">Verify Reset Code</h1>
+                                <p class="mb-4 small">We've sent a 6-digit code to <strong>{{ session['reset_email'] }}</strong>.</p>
                             </div>
 
-                            <!-- Flash Messages -->
+                            <!-- ── FLASH MESSAGES AREA ── -->
                             {% with messages = get_flashed_messages(with_categories=true) %}
                                 {% if messages %}
                                     {% for category, message in messages %}
@@ -79,12 +84,12 @@
                             <!-- Verification Form -->
                             <form action="{{ url_for('auth.verify_reset_otp') }}" method="POST" id="otpForm" class="user">
                                 <div class="otp-input-container">
-                                    <input type="text" name="pin1" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required autofocus>
-                                    <input type="text" name="pin2" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin3" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin4" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin5" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin6" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin1" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required autofocus>
+                                    <input type="text" name="pin2" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin3" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin4" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin5" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                                    <input type="text" name="pin6" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
                                 </div>
 
                                 <div class="text-center mb-4">
@@ -101,15 +106,16 @@
 
                             <div class="text-center">
                                 <p class="mb-0 small text-gray-600">Didn't receive the code?</p>
-                                <!-- Uses the generic resend route (handled in your backend) -->
-                                <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" class="small font-weight-bold text-primary resend-link">
-                                    Resend Code
-                                </a>
-                                <div id="resendMessage" class="mt-2 small"></div>
+                                <!-- ── MODIFIED RESEND FORM ── -->
+                                <form action="{{ url_for('auth.resend_reset_otp') }}" method="POST">
+                                    <button type="submit" id="resendBtn" class="resend-btn">
+                                        Resend New Code
+                                    </button>
+                                </form>
                             </div>
                             
                             <div class="text-center mt-3">
-                                <a class="small" href="{{ url_for('auth.login') }}">Cancel and return to login</a>
+                                <a class="small" href="{{ url_for('auth.login') }}">Return to login</a>
                             </div>
                         </div>
                     </div>
@@ -126,7 +132,7 @@
         $(document).ready(function() {
             const inputs = $('.otp-input');
 
-            // 1. PIN Input Navigation Logic
+            // 1. PIN Input Navigation
             inputs.each(function(index) {
                 $(this).on('input', function() {
                     if ($(this).val().length === 1 && index < inputs.length - 1) {
@@ -141,48 +147,31 @@
                 });
             });
 
-            // 2. Persistent Timer Logic
+            // 2. Timer Logic
             let timeLeft = parseInt("{{ remaining_seconds }}");
             const timerDisplay = $('#timer-text');
-            const otpForm = $('#otpForm');
+            const resendBtn = $('#resendBtn');
 
             function updateTimer() {
                 if (timeLeft <= 0) {
                     timerDisplay.text("Expired").addClass('text-danger');
-                    otpForm.css('opacity', '0.5');
                     inputs.prop('disabled', true);
+                    $('#otpForm').css('opacity', '0.5');
                 } else {
-                    let minutes = Math.floor(timeLeft / 60);
-                    let seconds = timeLeft % 60;
-                    timerDisplay.text(`${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`);
+                    let m = Math.floor(timeLeft / 60);
+                    let s = timeLeft % 60;
+                    timerDisplay.text(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
                     timeLeft--;
                     setTimeout(updateTimer, 1000);
                 }
             }
             updateTimer();
-        });
 
-        // 3. Resend Code Logic
-        function resendOtp() {
-            const btn = $('#resendBtn');
-            const msgDiv = $('#resendMessage');
-            
-            btn.addClass('disabled').text("Sending...");
-
-            fetch("{{ url_for('auth.forgot_password') }}", {
-                method: "POST",
-                // Passing email via hidden session logic on backend
-                body: new URLSearchParams({'email': "{{ session['reset_email'] }}"})
-            })
-            .then(response => {
-                if(response.ok) {
-                    window.location.reload(); // Reload to refresh the timer and show success flash
-                } else {
-                    msgDiv.html('<span class="text-danger">Failed to resend code.</span>');
-                    btn.removeClass('disabled').text("Resend Code");
-                }
+            // 3. Simple Button Cooldown to prevent spam
+            resendBtn.on('click', function() {
+                $(this).prop('disabled', true).text("Sending...");
             });
-        }
+        });
     </script>
 </body>
 </html>

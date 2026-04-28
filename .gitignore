@@ -8,3 +8,5 @@ templates/searchTemplate.html
 testpoint/__init__.py
 testpoint/passwordDB.env
 passwordDB.env
+nigga.html
+.gitignore

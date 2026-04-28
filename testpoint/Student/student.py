@@ -608,7 +608,7 @@ def view_course(course_id):
                                progress_pct=progress_pct,
                                total_exams=total_exams,
                                completed_exams=completed_exams,
-                               now=now) # Ensure 'now' is passed
+                               now=now)
     finally:
         cursor.close()
         connection.close()
