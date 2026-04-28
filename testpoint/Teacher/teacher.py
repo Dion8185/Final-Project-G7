@@ -78,7 +78,7 @@ def teacher_dashboard():
             # 4. REPLACEMENT: Recent Exam Activity (Last 5 finished exams)
             cursor.execute("""
                 SELECT ea.score, s.firstname, s.lastname, ex.title, ea.end_time,
-                (SELECT COUNT(*) FROM exam_questions WHERE exam_id = ex.exam_id) as total_q
+                (SELECT question_limit FROM exams WHERE exam_id = ea.exam_id) as total_q
                 FROM exam_attempts ea
                 JOIN students s ON ea.student_id = s.student_id
                 JOIN exams ex ON ea.exam_id = ex.exam_id
@@ -86,6 +86,7 @@ def teacher_dashboard():
                 WHERE c.teacher_id = %s AND ea.status = 'finished'
                 ORDER BY ea.end_time DESC LIMIT 5
             """, (teacher_id,))
+            
             recent_submissions = cursor.fetchall()
 
             return render_template('teacher_dashboard.html',
