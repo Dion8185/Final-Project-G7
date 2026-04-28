@@ -345,7 +345,7 @@ def add_exam():
             new_id = cursor.lastrowid
             connection.commit()
             flash('Exam initialized! Now add questions to the pool.', 'success')
-            return redirect(url_for('teacher.manage_questions', exam_id=new_id))
+            return redirect(url_for('teacher.manage_questions', exam_id=new_id)) 
         except mysql.connector.Error as err:
             flash(f'Error: {err}', 'danger')
             return redirect(url_for('teacher.manage_exams'))

@@ -423,7 +423,6 @@ def empty_trash():
 
 
 #! MANAGE COURSES
-#! MANAGE COURSES
 @admin.route('/manage_courses')
 def manage_courses():
     if admin_logged_in():
@@ -469,7 +468,7 @@ def add_course():
     cursor = connection.cursor()
 
     try:
-        # 🔍 Check duplicate by course_code ONLY
+        # Check duplicate by course_code ONLY
         cursor.execute("SELECT course_id FROM courses WHERE course_code = %s", (course_code,))
 
         if cursor.fetchone():
