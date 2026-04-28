@@ -13,7 +13,6 @@
         .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
         .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
         .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(231, 74, 59, 0.2) !important; }
         .badge-pulse { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } }
         {% block extra_css %}{% endblock %}
@@ -28,9 +27,6 @@
                 <div class="sidebar-brand-text mx-3">Teacher Panel</div>
             </a>
             <hr class="sidebar-divider my-0">
-            <li class="nav-item {{ 'active' if request.endpoint == 'teacher.teacher_dashboard' }}">
-                <a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a>
-            </li>
             <hr class="sidebar-divider">
             <div class="sidebar-heading">Classroom</div>
             <li class="nav-item {{ 'active' if 'course' in request.endpoint or 'enrollee' in request.endpoint }}">
@@ -48,9 +44,6 @@
             <div class="sidebar-heading">Results</div>
             <li class="nav-item {{ 'active' if request.endpoint == 'teacher.student_monitor' }}">
                 <a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a>
-            </li>
-            <li class="nav-item {{ 'active' if request.endpoint == 'teacher.exam_analysis' }}">
-                <a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a>
             </li>
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>

@@ -59,11 +59,6 @@
         transition: all 0.3s cubic-bezier(.25, .8, .25, 1); 
         border: none; 
     }
-    
-    .card:hover { 
-        transform: translateY(-5px); 
-        box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.15) !important; 
-    }
 </style>
     {% block head %}{% endblock %}
 </head>
@@ -75,7 +70,7 @@
                 {% include 'admin_navbar.html' %}
                 
                 <!-- CONTENT BLOCK: Animated -->
-                <div class="container-fluid animate__animated animate__fadeInUp">
+                <div class="container-fluid animate__animated animate__fadeIn">
                     {% block content %}{% endblock %}
                 </div>
 

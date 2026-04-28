@@ -150,18 +150,11 @@
 
 {% block content %}
 <div class="animate__animated animate__fadeIn py-4">
-    <!-- Breadcrumbs -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb bg-transparent p-0 small">
-            <li class="breadcrumb-item"><a href="{{ url_for('teacher.manage_exams') }}">Exams</a></li>
-            <li class="breadcrumb-item active">{{ exam.title }}</li>
-        </ol>
-    </nav>
-
+    
     <!-- Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Manage Exam Questions | {{ exam.title }}</h1>
-        <div>
+        <h1 class="h3 mb-0 text-gray-800">Manage Exam Questions | {{ exam.title }}</h1>
+        <div style="display: flex; gap: 10px;">
             <button class="btn btn-outline-primary btn-sm shadow-sm mr-1" data-toggle="modal" data-target="#bankModal">
                 <i class="fas fa-university mr-1"></i> Pick from Bank
             </button>
@@ -171,8 +164,9 @@
             <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal">
                 <i class="fas fa-plus mr-1"></i> New Question
             </button>
+            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>            
         </div>
-    </div>
+    </div>       
 
     <!-- BULK ACTIONS BAR (FOR LINKED QUESTIONS) -->
     <div class="bulk-actions-bar shadow p-3 mb-4" id="bulkBar">
@@ -400,7 +394,7 @@
 <div class="modal fade" id="manualModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-dark text-white">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title font-weight-bold">New Question</h5>
             </div>
             <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST">
