@@ -23,8 +23,7 @@
 <div class="animate__animated animate__fadeIn">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 mb-0 text-gray-800">Class: <span class="text-primary">{{ course.course_name }}</span></h1>
-            <p class="mb-0 small text-muted">Course Code: {{ course.course_code }}</p>
+            <h1 class="h3 mb-0 text-gray-800">Class: <span class="text-primary">{{ course.course_code }} - {{ course.course_name }}</span></h1>
         </div>
         <div>
             <button class="btn btn-sm btn-primary shadow-sm px-3" data-toggle="modal" data-target="#enrollModal">
@@ -36,7 +35,7 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3 bg-white">
-            <h6 class="m-0 font-weight-bold text-primary">Currently Enrolled Students</h6>
+            <h6 class="m-0 font-weight-bold">Currently Enrolled Students</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">

@@ -12,15 +12,10 @@
 <!-- HEADER WITH BACK BUTTON -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
-        <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-secondary shadow-sm mb-2">
-            <i class="fas fa-arrow-left fa-sm"></i> Back to Course List
-        </a>
         <h1 class="h3 mb-0 text-gray-800">Enrollees: <span class="text-primary">{{ course.course_name }}</span></h1>
     </div>
-    <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#enrollModal">
-        <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Enroll Student
-    </button>
-</div>
+    <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>     
+</div>z
 
 <div class="card shadow mb-4">
     <div class="card-body">
