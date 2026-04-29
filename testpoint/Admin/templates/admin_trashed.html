@@ -110,6 +110,10 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination (controlled by paginator.js) -->
+        <nav class="mt-4" aria-label="Trashed accounts pagination">
+            <ul class="pagination justify-content-center" id="trashed-accounts-pagination"></ul>
+        </nav>
     </div>
 </div>
 {% endblock %}
@@ -185,25 +189,32 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+
 <script>
 (function ($) {
     "use strict";
 
-    /* Filtering Logic */
+    /* ── Filtering & Pagination ─────────────────────────────────────────── */
+    const userTableBody = document.querySelector('#userTable tbody');
+    const allRows = Array.from(userTableBody.querySelectorAll('tr.user-row'));
+    let filteredRows = [...allRows];
+
     function performFilter() {
         var searchVal = $('#searchInput').val().toLowerCase();
         var roleVal = $('#roleFilter').val().toLowerCase();
 
-        $(".user-row").each(function () {
-            var row = $(this);
-            var rowText = row.find('.search-data').text().toLowerCase();
-            var rowRole = row.attr('data-role').toLowerCase();
+        filteredRows = allRows.filter(row => {
+            var rowText = $(row).find('.search-data').text().toLowerCase();
+            var rowRole = $(row).attr('data-role').toLowerCase();
 
             var matchesSearch = rowText.indexOf(searchVal) > -1;
             var matchesRole = roleVal === "" || rowRole === roleVal;
 
-            row.toggle(matchesSearch && matchesRole);
+            return matchesSearch && matchesRole;
         });
+
+        paginator.reset();
     }
 
     $('#searchInput').on('keyup', performFilter);
@@ -230,6 +241,16 @@
         var actionUrl = "{{ url_for('admin.delete_account_permanently', user_id='0') }}".replace('0', userId);
         $('#permDeleteForm').attr('action', actionUrl);
     });
+
+    /* ── Paginator ────────────────────────────────────────────────────────── */
+    const paginator = createPaginator({
+        tableBodySelector  : 'tbody',
+        paginationSelector : '#trashed-accounts-pagination',
+        rowsPerPage        : 10,
+        getVisibleRows     : () => filteredRows,
+    });
+
+    paginator.render();
 
 })(jQuery);
 </script>

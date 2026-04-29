@@ -73,6 +73,10 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination (controlled by paginator.js) -->
+        <nav class="mt-4" aria-label="Enrollees pagination">
+            <ul class="pagination justify-content-center" id="enrollees-pagination"></ul>
+        </nav>
     </div>
 </div>
 
@@ -130,19 +134,35 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+
 <script>
     (function ($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery);
     
+    // ── Filtering & Pagination ────────────────────────────────────────
+    const enrollTableBody = document.querySelector('#enrollTable tbody');
+    const allRows = Array.from(enrollTableBody.querySelectorAll('tr.enrollee-row'));
+    let filteredRows = [...allRows];
+    
     function filterEnrollees() {
         var searchVal = $('#searchInput').val().toLowerCase();
-        $('.enrollee-row').each(function () {
-            var row = $(this);
-            var rowText = row.text().toLowerCase();
-            row.toggle(rowText.indexOf(searchVal) > -1);
+        filteredRows = allRows.filter(row => {
+            return row.textContent.toLowerCase().indexOf(searchVal) > -1;
         });
+        paginator.reset();
     }
 
     $('#searchInput').on('keyup', filterEnrollees);
+    
+    // ── Paginator ─────────────────────────────────────────────────────────────
+    const paginator = createPaginator({
+        tableBodySelector  : 'tbody',
+        paginationSelector : '#enrollees-pagination',
+        rowsPerPage        : 10,
+        getVisibleRows     : () => filteredRows,
+    });
+
+    paginator.render();
 
     // Handle unenroll modal
     $('#confirmUnenrollModal').on('show.bs.modal', function (e) {

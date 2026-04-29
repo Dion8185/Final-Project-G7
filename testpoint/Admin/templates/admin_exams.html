@@ -116,42 +116,39 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination (controlled by paginator.js) -->
+        <nav class="mt-4" aria-label="Exams pagination">
+            <ul class="pagination justify-content-center" id="exams-pagination"></ul>
+        </nav>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+
 <script>
 $(document).ready(function() {
-    // Function to perform filtering
+    // ── Filtering & Pagination ─────────────────────────────────────────
+    const examTableBody = document.querySelector('#examTable tbody');
+    const allRows = Array.from(examTableBody.querySelectorAll('tr.exam-row'));
+    let filteredRows = [...allRows];
+    
     function performFilter() {
         const searchText = $('#examSearch').val().toLowerCase();
         const statusValue = $('#statusFilter').val();
-        let visibleCount = 0;
 
-        $('.exam-row').each(function() {
-            const row = $(this);
-            const rowSearchText = row.data('search');
-            const rowStatus = row.data('status');
+        filteredRows = allRows.filter(row => {
+            const rowSearchText = $(row).data('search');
+            const rowStatus = $(row).data('status');
 
-            // Logic: Match Search AND Match Status
             const matchesSearch = rowSearchText.includes(searchText);
             const matchesStatus = (statusValue === 'all' || rowStatus === statusValue);
 
-            if (matchesSearch && matchesStatus) {
-                row.show();
-                visibleCount++;
-            } else {
-                row.hide();
-            }
+            return matchesSearch && matchesStatus;
         });
 
-        // Show "No Results" row if everything is hidden
-        if (visibleCount === 0) {
-            $('#noResultsRow').show();
-        } else {
-            $('#noResultsRow').hide();
-        }
+        paginator.reset();
     }
 
     // Trigger filter on typing
@@ -163,6 +160,16 @@ $(document).ready(function() {
     $('#statusFilter').on('change', function() {
         performFilter();
     });
+
+    // ── Paginator ──────────────────────────────────────────────────────
+    const paginator = createPaginator({
+        tableBodySelector  : 'tbody',
+        paginationSelector : '#exams-pagination',
+        rowsPerPage        : 10,
+        getVisibleRows     : () => filteredRows,
+    });
+
+    paginator.render();
 });
 </script>
 {% endblock %}

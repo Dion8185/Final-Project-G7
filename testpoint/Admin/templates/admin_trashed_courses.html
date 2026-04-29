@@ -100,6 +100,10 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination (controlled by paginator.js) -->
+        <nav class="mt-4" aria-label="Trashed courses pagination">
+            <ul class="pagination justify-content-center" id="trashed-courses-pagination"></ul>
+        </nav>
     </div>
 </div>
 {% endblock %}
@@ -174,21 +178,30 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+
 <script>
     (function ($) {
         "use strict";
 
-        // Search Filter
-        $('#searchInput').on('keyup', function() {
-            var value = $(this).val().toLowerCase();
-            $(".course-row").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        // ── Filtering & Pagination ────────────────────────────────────────
+        const courseTableBody = document.querySelector('#courseTable tbody');
+        const allRows = Array.from(courseTableBody.querySelectorAll('tr.course-row'));
+        let filteredRows = [...allRows];
+
+        function performFilter() {
+            var value = $('#searchInput').val().toLowerCase();
+            filteredRows = allRows.filter(row => {
+                return row.textContent.toLowerCase().indexOf(value) > -1;
             });
-        });
+            paginator.reset();
+        }
+
+        $('#searchInput').on('keyup', performFilter);
 
         $('#resetFilters').on('click', function () {
             $('#searchInput').val('');
-            $(".course-row").show();
+            performFilter();
         });
 
         // Modal Action Injection: Restore
@@ -196,7 +209,6 @@
             var btn = $(event.relatedTarget);
             var id = btn.data('id');
             $('#restoreCourseName').text(btn.data('name'));
-            // Ensure this matches the backend: restore_course takes course_id
             var action = "{{ url_for('admin.restore_course', course_id='0') }}".replace('0', id);
             $('#restoreForm').attr('action', action);
         });
@@ -206,10 +218,19 @@
             var btn = $(event.relatedTarget);
             var id = btn.data('id');
             $('#deleteCourseName').text(btn.data('name'));
-            
             var action = "{{ url_for('admin.delete_course_permanently', course_id='0') }}".replace('0', id);
             $('#permDeleteForm').attr('action', action);
         });
+
+        // ── Paginator ──────────────────────────────────────────────────────
+        const paginator = createPaginator({
+            tableBodySelector  : 'tbody',
+            paginationSelector : '#trashed-courses-pagination',
+            rowsPerPage        : 10,
+            getVisibleRows     : () => filteredRows,
+        });
+
+        paginator.render();
 
     })(jQuery);
 </script>

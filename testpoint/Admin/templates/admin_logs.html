@@ -45,7 +45,6 @@
 {% block content %}
 <body id="page-top">
     <div id="wrapper">
-
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 <div class="container-fluid animate__animated animate__fadeIn">
@@ -57,29 +56,24 @@
 
                     <!-- Filter Options -->
                     <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-dark"><i class="fas fa-filter mr-2"></i>Filter Logs
-                            </h6>
-                        </div>
                         <div class="card-body">
-                            <form action="" method="GET" class="row">
+                            <form class="row" onsubmit="return false;">
                                 <div class="col-md-3 mb-2">
                                     <select class="form-control" name="category">
                                         <option value="">All Categories</option>
-                                        <option value="Security">Student Accounts</option>
-                                        <option value="User">Teacher Accounts</option>
-                                        <option value="Exam"></option>
-                                        <option value="System">System Updates</option>
+                                        <option value="student">Student Accounts</option>
+                                        <option value="teacher">Teacher Accounts</option>
+                                        <option value="admin">Admin Accounts</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3 mb-2">
                                     <input type="date" class="form-control" name="date">
                                 </div>
                                 <div class="col-md-4 mb-2">
-                                    <input type="text" class="form-control" placeholder="Search by username or IP...">
+                                    <input type="text" class="form-control" name="search" placeholder="Search by username or IP...">
                                 </div>
                                 <div class="col-md-2 mb-2">
-                                    <button type="submit" class="btn btn-dark btn-block">Apply</button>
+                                    <button type="submit" class="btn btn-dark btn-block">Reset</button>
                                 </div>
                             </form>
                         </div>
@@ -90,13 +84,13 @@
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle">
-                                    <thead>
+                                    <thead class="thead-light">
                                         <tr>
                                             <th>Date Created</th>
                                             <th>Role</th>
                                             <th>User ID</th>
                                             <th>Email</th>
-                                            <th>Action</th>
+                                            <th>Time Since Creation</th>
                                         </tr>
                                     </thead>
 
@@ -122,23 +116,16 @@
                                             </td>
 
                                             <td>
-                                                <a href="#" class="btn btn-sm btn-circle btn-light">
-                                                    <i class="fas fa-search"></i>
-                                                </a>
+                                                <span class="time-since small" data-created="{{ log.created_at }}">—</span>
                                             </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
-                            <!-- Pagination -->
-                            <nav class="mt-4">
-                                <ul class="pagination justify-content-center">
-                                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
-                                </ul>
+                            <!-- Pagination (controlled by paginator.js) -->
+                            <nav class="mt-4" aria-label="Logs pagination">
+                                <ul class="pagination justify-content-center" id="logs-pagination"></ul>
                             </nav>
                         </div>
                     </div>
@@ -147,4 +134,95 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load the reusable paginator (adjust path to wherever you serve static files) -->
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+
+<script>
+    // ── Time Since ───────────────────────────────────────────────────────────
+    function timeSince(dateStr) {
+        const iso = dateStr.trim().replace(' ', 'T');
+        const created = new Date(iso);
+        if (isNaN(created.getTime())) return 'Invalid date';
+
+        const diffMs = Date.now() - created.getTime();
+        if (diffMs < 0) return 'Just now';
+
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        const totalHours   = Math.floor(totalMinutes / 60);
+        const totalDays    = Math.floor(totalHours   / 24);
+
+        if (totalSeconds < 60)   return `${totalSeconds}s ago`;
+        if (totalMinutes < 60)   return `${totalMinutes}m ${totalSeconds % 60}s ago`;
+        if (totalHours   < 24)   return `${totalHours}h ${totalMinutes % 60}m ago`;
+        return `${totalDays}d ${totalHours % 24}h ${totalMinutes % 60}m ago`;
+    }
+
+    function renderTimestamps() {
+        document.querySelectorAll('.time-since').forEach(el => {
+            const raw = el.dataset.created;
+            if (raw) el.textContent = timeSince(raw);
+        });
+    }
+
+    renderTimestamps();
+    setInterval(renderTimestamps, 30000);
+
+    // ── Filtering ─────────────────────────────────────────────────────────────
+    const categorySelect = document.querySelector('select[name="category"]');
+    const dateInput      = document.querySelector('input[name="date"]');
+    const searchInput    = document.querySelector('input[name="search"]');
+    const resetButton    = document.querySelector('button[type="submit"]');
+    const tableBody      = document.querySelector('tbody');
+    const allRows        = Array.from(tableBody.querySelectorAll('tr'));
+
+    // Tracks which rows survive the current filter (paginator reads this)
+    let filteredRows = [...allRows];
+
+    function applyFilters() {
+        const category = categorySelect.value.toLowerCase();
+        const dateVal  = dateInput.value;
+        const search   = searchInput.value.trim().toLowerCase();
+
+        filteredRows = allRows.filter(row => {
+            const role    = (row.querySelector('td:nth-child(2) span')?.textContent || '').trim().toLowerCase();
+            const userId  = (row.querySelector('td:nth-child(3)')?.textContent     || '').trim().toLowerCase();
+            const email   = (row.querySelector('td:nth-child(4)')?.textContent     || '').trim().toLowerCase();
+            const rowDate = (row.querySelector('td:nth-child(1)')?.textContent     || '').trim().slice(0, 10);
+
+            return (!category || role === category)
+                && (!dateVal  || rowDate === dateVal)
+                && (!search   || userId.includes(search) || email.includes(search));
+        });
+
+        // Reset pagination and re-render with the new filtered set
+        paginator.reset();
+    }
+
+    categorySelect.addEventListener('change', applyFilters);
+    dateInput.addEventListener('change', applyFilters);
+    searchInput.addEventListener('input', applyFilters);
+
+    resetButton.addEventListener('click', e => {
+        e.preventDefault();
+        categorySelect.value = '';
+        dateInput.value      = '';
+        searchInput.value    = '';
+        applyFilters();
+    });
+
+    // ── Paginator ─────────────────────────────────────────────────────────────
+    const paginator = createPaginator({
+        tableBodySelector  : 'tbody',
+        paginationSelector : '#logs-pagination',
+        rowsPerPage        : 10,
+        // Tells the paginator to only page over rows that passed the filter
+        getVisibleRows     : () => filteredRows,
+    });
+
+    paginator.render();
+</script>
 {% endblock %}

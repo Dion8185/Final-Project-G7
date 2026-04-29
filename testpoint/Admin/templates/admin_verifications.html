@@ -18,10 +18,7 @@
 </div>
 
 <!-- Data Table -->
-<div class="card shadow mb-4 border-left-primary">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center bg-white">
-        <h6 class="m-0 font-weight-bold text-primary">Pending Users Queue</h6>
-    </div>
+<div class="card shadow mb-4">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover align-middle" id="verificationTable" width="100%">
@@ -87,6 +84,10 @@
                 </tbody>
             </table>
         </div>
+        <!-- Pagination (controlled by paginator.js) -->
+        <nav class="mt-4" aria-label="Verifications pagination">
+            <ul class="pagination justify-content-center" id="verifications-pagination"></ul>
+        </nav>
     </div>
 </div>
 {% endblock %}
@@ -166,7 +167,22 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+
 <script>
+    // ── Paginator ──────────────────────────────────────────────────────
+    const allRows = Array.from(document.querySelectorAll('#verificationTable tbody tr'));
+    const filteredRows = [...allRows];
+
+    const paginator = createPaginator({
+        tableBodySelector  : 'tbody',
+        paginationSelector : '#verifications-pagination',
+        rowsPerPage        : 10,
+        getVisibleRows     : () => filteredRows,
+    });
+
+    paginator.render();
+
     // --- APPROVAL LOGIC ---
     function approveUser(id, name) {
         if (confirm("Are you sure you want to approve " + name + "? This will activate their account.")) {
