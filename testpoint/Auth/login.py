@@ -30,6 +30,8 @@ def admin_logged_in():
     return session.get('admin_logged_in', False)
 def teacher_logged_in(): 
     return session.get('teacher_logged_in', False)
+def pending_user_logged_in(): 
+    return session.get('pending_user_logged_in', False)
 
 # ── VALIDATION LOGIC ──
 NAME_REGEX = re.compile(r"^[A-Za-zñÑ]+([ '-][A-Za-zñÑ]+)*$") 
@@ -93,7 +95,7 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding: 0 40px 40px;">
+                        <td style="text-align: justify; padding: 0 40px 40px;">
                             <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a; font-weight: normal;">
                                 Hello, <span style="color: #2d58d1; font-weight: 600;">{recipient_name}</span>
                             </p>
@@ -135,56 +137,44 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
 </html>
 """
         mail.send(msg)
-        print(f"📧 Sent professional OTP email to {recipient_email}: {otp_code}")
+        print(f"📑:{otp_code}")
     except Exception as e:
         print(f"Error sending email: {e}")
-        
+
 def send_reset_otp_email(recipient_email, otp_code):
     try:
         msg = Message(subject='Test Point - Password Reset', sender='verify@testpoint.com', recipients=[recipient_email])
         msg.html = f"""
-        <html lang="en">
-
+<!DOCTYPE html> 
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verification Code</title>
 </head>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
-
 <body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
         <tr>
             <td align="center">
-                <!-- Main Card -->
                 <table width="100%" cellpadding="0" cellspacing="0" border="0"
                     style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-
-                    <!-- Red Top Bar -->
                     <tr>
                         <td style="height: 6px; background-color: #dc2626; border-radius: 12px 12px 0 0;"></td>
                     </tr>
-
-                    <!-- Header -->
                     <tr>
                         <td align="center" style="padding: 40px 40px 20px;">
-                            <h1 style="font-size: 42px;">📑</h1>
+                            <h1 style="font-size: 42px; margin:0;">📑</h1>
                             <div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #dc2626; font-weight: bold; margin-top: 10px;">
                                 TestPoint Examination System
                             </div>
                         </td>
                     </tr>
-
-                    <!-- Body Content -->
                     <tr>
-                        <td style="padding: 0 40px 40px;">
-                            <p>Hello {recipient_email}, use this code to reset your password. Valid for 10 minutes.</p>
-                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">
-                                Use the one-time code below to reset your password. This code is valid for
+                        <td style="text-align: justify; padding: 0 40px 40px;">
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;"> 
+                                Hello <strong>{recipient_email}</strong>, Use the one-time code below to reset your password. This code is valid for
                                 <strong style="color: #333;">10 minutes</strong> and should not be shared with anyone.
                             </p>
-
-                            <!-- OTP Code Box (Red Theme) -->
                             <table width="100%" cellpadding="0" cellspacing="0" border="0"
                                 style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
                                 <tr>
@@ -198,14 +188,11 @@ def send_reset_otp_email(recipient_email, otp_code):
                                     </td>
                                 </tr>
                             </table>
-
                             <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">
                                 If you did not request this code, you can safely disregard this email.
                             </p>
                         </td>
                     </tr>
-
-                    <!-- Footer -->
                     <tr>
                         <td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
                             <p style="margin: 0; font-size: 11px; color: #94a3b8; letter-spacing: 1px;">
@@ -213,23 +200,27 @@ def send_reset_otp_email(recipient_email, otp_code):
                             </p>
                         </td>
                     </tr>
-
                 </table>
             </td>
         </tr>
     </table>
 </body>
-
 </html>"""
         mail.send(msg)
-        print(f"📧 Sent professional OTP email to {recipient_email}: {otp_code}")
+        print(f"📑:{otp_code}")
     except Exception as e:
-        print(f"Error sending email: {e}")
-   
+        print(f"Error sending email: {e}")     
 
 #! 1. LOGIN ROUTE
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    
+    if session.get('in_reset_flow'):
+        if not session.get('otp_verified'):
+            return redirect(url_for('auth.verify_reset_otp'))
+        return redirect(url_for('auth.reset_password'))
+    if pending_user_logged_in():
+        return redirect(url_for('auth.upload_verification'))
     if user_logged_in(): 
         return redirect(url_for('student.student_dashboard'))
     if admin_logged_in(): 
@@ -273,15 +264,21 @@ def login():
             session['pending_email'] = pending['email']
             session['pending_role'] = pending['role']
             session['firstname'] = pending['firstname']
+            session['pending_user_logged_in'] = True
             
             if not pending['is_otp_verified']:
                 flash('Please verify your email OTP.', 'warning')
-                cursor.close(); connection.close(); return redirect(url_for('auth.verify_register'))
+                cursor.close(); connection.close(); 
+                return redirect(url_for('auth.verify_register'))
+            
             if pending['verification_status'] == 'pending_upload' or pending['verification_status'] == 'rejected':
                 flash('Please upload verification documents.', 'info')
-                cursor.close(); connection.close(); return redirect(url_for('auth.upload_verification'))
+                cursor.close(); connection.close(); 
+                return redirect(url_for('auth.upload_verification'))
+            
             if pending['verification_status'] == 'pending_approval':
-                cursor.close(); connection.close(); return render_template('waiting_approval.html', role=pending['role'])
+                cursor.close(); connection.close(); 
+                return render_template('waiting_approval.html', role=pending['role'])
 
         flash('Invalid email or password!', 'danger')
         cursor.close(); connection.close()
@@ -375,29 +372,75 @@ def verify_register():
 #! 5. DOCUMENT UPLOAD (Modified to show Admin Notes)
 @auth.route('/upload_verification', methods=['GET', 'POST'])
 def upload_verification():
+    
+    if pending_user_logged_in() == False:
+        return redirect(url_for('auth.login'))
+     
     email = session.get('pending_email')
-    if not email: return redirect(url_for('auth.login'))
+    if not email:
+        return redirect(url_for('auth.login'))
 
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT admin_notes, verification_status FROM pending_users WHERE email = %s", (email,))
+
+    cursor.execute("""
+        SELECT admin_notes, verification_status 
+        FROM pending_users 
+        WHERE email = %s
+    """, (email,))
     p_data = cursor.fetchone()
 
+    if p_data:
+        status = p_data.get('verification_status')
+
+        if status in ['pending_approval', 'approved']:
+            cursor.close()
+            connection.close()
+            return render_template(
+                'waiting_approval.html',
+                role=session.get('pending_role')
+            )
+
+    # ✅ NORMAL FLOW
     if request.method == 'POST':
         file = request.files.get('document')
+
         if file and allowed_file(file.filename):
-            filename = secure_filename(f"VERIFY_{int(datetime.now().timestamp())}_{email.split('@')[0]}.pdf")
+            filename = secure_filename(
+                f"VERIFY_{int(datetime.now().timestamp())}_{email.split('@')[0]}.pdf"
+            )
+
             file.save(os.path.join(UPLOAD_FOLDER, filename))
-            
-            cursor.execute("UPDATE pending_users SET document_path = %s, verification_status = 'pending_approval', admin_notes = NULL WHERE email = %s", (filename, email))
+
+            cursor.execute("""
+                UPDATE pending_users 
+                SET document_path = %s, 
+                    verification_status = 'pending_approval', 
+                    admin_notes = NULL 
+                WHERE email = %s
+            """, (filename, email))
+
             connection.commit()
-            cursor.close(); connection.close()
-            return render_template('waiting_approval.html', role=session.get('pending_role'))
+
+            cursor.close()
+            connection.close()
+
+            session['pending_user_logged_in'] = True
+
+            return render_template(
+                'waiting_approval.html',
+                role=session.get('pending_role')
+            )
         else:
             flash("Please upload a valid PDF file.", "danger")
 
-    cursor.close(); connection.close()
-    return render_template('upload_verification.html', admin_notes=p_data['admin_notes'] if p_data else None)
+    cursor.close()
+    connection.close()
+
+    return render_template(
+        'upload_verification.html',
+        admin_notes=p_data['admin_notes'] if p_data else None
+    )
 
 #! 6. RESEND OTP (With 5 per hour rate limit)
 @auth.route('/resend_otp', methods=['POST'])
@@ -453,96 +496,157 @@ def forgot_password():
     cursor.execute("SELECT user_id, otp_count, last_otp_sent FROM users WHERE email = %s", (email,))
     user = cursor.fetchone()
     
-    if not user:
+    if user:
+        now = datetime.now()
+        # Reset count if last sent > 1 hour ago
+        if user['last_otp_sent'] and (now - user['last_otp_sent']) > timedelta(hours=1):
+            count = 1
+        else:
+            count = (user['otp_count'] or 0) + 1
+
+        if count > 5:
+            cursor.close(); connection.close()
+            flash("Too many reset attempts. Please wait 1 hour.", "danger")
+            return redirect(url_for('auth.login'))
+
+        otp = generate_unique_otp()
+        expiry = now + timedelta(minutes=10)
+        
+        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", (user['user_id'], otp, expiry))
+        cursor.execute("UPDATE users SET otp_count = %s, last_otp_sent = NOW() WHERE user_id = %s", (count, user['user_id']))
+        connection.commit()
+        
+        send_reset_otp_email(email, otp)
+        session.update({'reset_email': email, 'reset_user_id': user['user_id'], 'otp_expiry_timestamp': expiry.timestamp()})
+        
         cursor.close(); connection.close()
-        flash("No account found with that email address.", "danger")
-        return redirect(url_for('auth.login'))
-
-    # Rate limiting logic
-    now = datetime.now()
-    if user['last_otp_sent'] and (now - user['last_otp_sent']) > timedelta(hours=1):
-        count = 1
-    else:
-        count = (user['otp_count'] or 0) + 1
-
-    if count > 5:
-        cursor.close(); connection.close()
-        flash("Too many attempts. Please wait 1 hour.", "danger")
-        return redirect(url_for('auth.login'))
-
-    otp = generate_unique_otp()
-    expiry = now + timedelta(minutes=10)
+        return redirect(url_for('auth.verify_reset_otp'))
     
-    cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", 
-                   (user['user_id'], otp, expiry))
-    cursor.execute("UPDATE users SET otp_count = %s, last_otp_sent = NOW() WHERE user_id = %s", 
-                   (count, user['user_id']))
-    connection.commit()
-    
-    session.update({'reset_email': email, 'reset_user_id': user['user_id'], 'otp_expiry_timestamp': expiry.timestamp()})
-    
-    send_reset_otp_email(email, otp)
-    
+    flash("Email not found.", "warning")
     cursor.close(); connection.close()
-    flash(f"OTP sent! Attempt {count}/5 for this hour.", "success")
-    return redirect(url_for('auth.verify_reset_otp'))
+    return redirect(url_for('auth.login'))
 
-@auth.route('/resend-reset-otp', methods=['POST'])
+@auth.route('/resend_reset_otp', methods=['POST'])
 def resend_reset_otp():
     email = session.get('reset_email')
     user_id = session.get('reset_user_id')
-    
-    if not email or not user_id:
-        return jsonify({"message": "Session expired."}), 400
 
-    connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT otp_count, last_otp_sent FROM users WHERE user_id = %s", (user_id,))
-    user = cursor.fetchone()
+    if email and user_id:
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        
+        cursor.execute("SELECT otp_count, last_otp_sent FROM users WHERE user_id = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        now = datetime.now()
+        if user['last_otp_sent'] and (now - user['last_otp_sent']) > timedelta(hours=1):
+            count = 1
+        else:
+            count = (user['otp_count'] or 0) + 1
+
+        if count > 5:
+            cursor.close(); connection.close()
+            return jsonify({"success": False, "message": "Hourly limit reached."}), 429
+        
+        otp = generate_unique_otp()
+        expiry = now + timedelta(minutes=10)
+        
+        cursor.execute("UPDATE otp_table SET is_used = 1 WHERE user_id = %s", (user_id,))
+        cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", (user_id, otp, expiry))
+        cursor.execute("UPDATE users SET otp_count = %s, last_otp_sent = NOW() WHERE user_id = %s", (count, user_id))
+        
+        connection.commit()
+        session['otp_expiry_timestamp'] = expiry.timestamp()
+        
+        cursor.close(); connection.close()
+        send_reset_otp_email(email, otp)
+        
+        return jsonify({"success": True, "count": count}), 200
     
-    # Rate limit check
-    now = datetime.now()
-    count = (user['otp_count'] + 1) if (now - user['last_otp_sent'] < timedelta(hours=1)) else 1
-    
-    if count > 5:
-        return jsonify({"message": "Limit reached. Please wait 1 hour."}), 429
-    
-    otp = generate_unique_otp()
-    expiry = now + timedelta(minutes=10)
-    
-    cursor.execute("INSERT INTO otp_table (user_id, otp_code, expires_at, is_used) VALUES (%s, %s, %s, 0)", (user_id, otp, expiry))
-    cursor.execute("UPDATE users SET otp_count = %s, last_otp_sent = NOW() WHERE user_id = %s", (count, user_id))
-    connection.commit()
-    cursor.close(); connection.close()
-    
-    send_reset_otp_email(email, otp)
-    session['otp_expiry_timestamp'] = expiry.timestamp()
-    
-    return jsonify({"message": f"Code resent! ({count}/5 attempts)"}), 200
+    return jsonify({"success": False, "message": "Session expired."}), 400
     
 @auth.route('/verify-reset-otp', methods=['GET', 'POST'])
 def verify_reset_otp():
-    if 'reset_email' not in session: return redirect(url_for('auth.login'))
+    if 'reset_email' not in session: 
+        return redirect(url_for('auth.login'))
+    
+    session['in_reset_flow'] = True
+    
+    if session.get('otp_verified'):
+        return redirect(url_for('auth.reset_password'))
+    
     rem = int(session.get('otp_expiry_timestamp', 0) - datetime.now().timestamp())
+
     if request.method == 'POST':
         pin = "".join([request.form.get(f'pin{i}') for i in range(1, 7)])
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM otp_table WHERE user_id = %s AND otp_code = %s AND is_used = 0 AND expires_at > NOW()", (session.get('reset_user_id'), pin))
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT * FROM otp_table 
+            WHERE user_id = %s 
+              AND otp_code = %s 
+              AND is_used = 0 
+              AND expires_at > NOW()
+        """, (session.get('reset_user_id'), pin))
+
         if cursor.fetchone():
-            cursor.execute("UPDATE otp_table SET is_used = 1 WHERE user_id = %s AND otp_code = %s", (session.get('reset_user_id'), pin))
-            connection.commit(); session['otp_verified'] = True; cursor.close(); connection.close(); return redirect(url_for('auth.reset_password'))
-        else: flash("Invalid code.", "danger")
-        cursor.close(); connection.close()
+            cursor.execute("""
+                UPDATE otp_table 
+                SET is_used = 1 
+                WHERE user_id = %s AND otp_code = %s
+            """, (session.get('reset_user_id'), pin))
+
+            connection.commit()
+
+            session['otp_verified'] = True
+
+            cursor.close()
+            connection.close()
+
+            return redirect(url_for('auth.reset_password'))
+        else:
+            flash("Invalid code.", "danger")
+
+        cursor.close()
+        connection.close()
+
     return render_template('verify_reset_otp.html', remaining_seconds=rem)
+
 
 @auth.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
-    if not session.get('otp_verified'): return redirect(url_for('auth.login'))
-    if request.method == 'POST':
-        pw = request.form.get('password'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (generate_password_hash(pw), session.get('reset_user_id')))
-        connection.commit(); session.clear(); flash("Password updated!", "success"); cursor.close(); connection.close()
+    if 'reset_email' not in session:
         return redirect(url_for('auth.login'))
+    
+    session['in_reset_flow'] = True
+
+    if not session.get('otp_verified'):
+        return redirect(url_for('auth.verify_reset_otp'))
+
+    if request.method == 'POST':
+        pw = request.form.get('password')
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            UPDATE users 
+            SET password = %s 
+            WHERE user_id = %s
+        """, (generate_password_hash(pw), session.get('reset_user_id')))
+
+        connection.commit()
+        session.clear()
+
+        flash("Password updated!", "success")
+
+        cursor.close()
+        connection.close()
+
+        return redirect(url_for('auth.login'))
+
     return render_template('reset_password.html')
 
 #! 8. LOGOUT & AUTO-SUBMIT GRADING

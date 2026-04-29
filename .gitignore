@@ -8,5 +8,8 @@ templates/searchTemplate.html
 testpoint/__init__.py
 testpoint/passwordDB.env
 passwordDB.env
-nigga.html
-.gitignore
+.vscode/settings.json
+
+testpoint/static/uploads/verifications/VERIFY_1777465895_jp2soccemm.pdf
+testpoint/static/uploads/verifications/VERIFY_1777465892_jp2soccemm.pdf
+testpoint/static/uploads/verifications/VERIFY_1777465867_jp2soccemm.pdf

@@ -7,9 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Verify Reset Code - TestPoint</title>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"
+        type="text/css">
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
+        rel="stylesheet">
 
     <style>
         .otp-input-container {
@@ -37,9 +41,16 @@
             box-shadow: 0 0 8px rgba(78, 115, 223, 0.25);
         }
 
-        #timer-text { font-weight: bold; color: #e74a3b; }
+        #timer-text {
+            font-weight: bold;
+            color: #e74a3b;
+        }
 
-        .resend-link { cursor: pointer; text-decoration: none; }
+        .resend-link {
+            cursor: pointer;
+            text-decoration: none;
+        }
+
         .resend-link.disabled {
             color: #858796 !important;
             pointer-events: none;
@@ -58,45 +69,42 @@
                         <div class="p-5">
                             <div class="text-center">
                                 <div class="mb-4">
-                                    <i class="fas fa-user-lock fa-4x text-primary"></i>
+                                    <i class="fas fa-envelope-open-text fa-4x text-primary"></i>
                                 </div>
-                                <h1 class="h4 text-gray-900 mb-2 font-weight-bold">Password Reset Verification</h1>
-                                <p class="mb-4">Enter the 6-digit code sent to your email to verify your identity.</p>
+                                <h1 class="h4 text-gray-900 mb-2">Verify Your Email</h1>
+                                <p class="mb-4">Enter the 6-digit code sent to your email address to complete your
+                                    registration.</p>
                             </div>
 
-                            <form action="{{ url_for('auth.verify_reset_otp') }}" method="POST" id="otpForm" class="user">
+                            <form action="{{ url_for('auth.verify_reset_otp') }}" method="POST" id="otpForm"
+                                class="user">
                                 <div class="otp-input-container">
-                                    <input type="text" name="pin1" class="otp-input" maxlength="1" autocomplete="off" pattern="\d*" inputmode="numeric" required autofocus>
-                                    <input type="text" name="pin2" class="otp-input" maxlength="1" autocomplete="off" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin3" class="otp-input" maxlength="1" autocomplete="off" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin4" class="otp-input" maxlength="1" autocomplete="off" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin5" class="otp-input" maxlength="1" autocomplete="off" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin6" class="otp-input" maxlength="1" autocomplete="off" pattern="\d*" inputmode="numeric" required>
+                                    {% for i in range(1, 7) %}
+                                    <input type="text" name="pin{{i}}" class="otp-input" maxlength="1"
+                                        autocomplete="off" pattern="\d*" inputmode="numeric" required {% if i==1
+                                        %}autofocus{% endif %}>
+                                    {% endfor %}
                                 </div>
-
                                 <div class="text-center mb-4">
                                     <span class="small text-gray-600">Code expires in: </span>
                                     <span id="timer-text">--:--</span>
                                 </div>
-
-                                <button type="submit" id="verifyBtn" class="btn btn-primary btn-user btn-block font-weight-bold shadow-sm">
-                                    Verify & Continue
-                                </button>
+                                <button type="submit" id="verifyBtn"
+                                    class="btn btn-primary btn-user btn-block font-weight-bold shadow-sm">Verify &
+                                    Continue</button>
                             </form>
 
                             <hr>
 
                             <div class="text-center">
                                 <p class="mb-0 small text-gray-600">Didn't receive the code?</p>
-                                <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" class="small font-weight-bold text-primary resend-link">
-                                    Resend New Code
-                                </a>
+                                <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()"
+                                    class="small font-weight-bold text-primary resend-link">Resend New Code</a>
                                 <div id="resendMessage" class="mt-2 small font-weight-bold"></div>
                             </div>
-                            
-                            <div class="text-center mt-3">
-                                <a class="small" href="{{ url_for('auth.login') }}">Return to Login</a>
-                            </div>
+
+                            <div class="text-center mt-3"><a class="small" href="{{ url_for('auth.logout') }}">Return to
+                                    Login</a></div>
                         </div>
                     </div>
                 </div>
@@ -111,73 +119,72 @@
         $(document).ready(function () {
             "use strict";
             const inputs = $('.otp-input');
+            const timerDisplay = $('#timer-text');
 
-            // 1. PIN INPUT LOGIC (FIXED NAVIGATION)
+            // 1. CHECK FOR RELOAD MESSAGE (ATTEMPT COUNT)
+            if (sessionStorage.getItem('otp_resent')) {
+                const count = sessionStorage.getItem('otp_count');
+                $('#resendMessage').html(`<span class="text-success">New code sent! (${count}/5 attempts this hour)</span>`);
+                // Clear storage so it doesn't show again on manual refresh
+                sessionStorage.removeItem('otp_resent');
+                sessionStorage.removeItem('otp_count');
+            }
+
+            // 2. PIN NAVIGATION
             inputs.each(function (index) {
                 $(this).on('input', function () {
-                    // Forward move: If current input has value, focus next
-                    if (this.value.length === 1 && index < inputs.length - 1) {
-                        inputs.eq(index + 1).focus();
-                    }
+                    if (this.value.length === 1 && index < inputs.length - 1) inputs.eq(index + 1).focus();
                 });
-
                 $(this).on('keydown', function (e) {
-                    // Backward move: If Backspace and current input is empty, focus previous
-                    if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
-                        inputs.eq(index - 1).focus();
-                    }
+                    if (e.key === 'Backspace' && this.value.length === 0 && index > 0) inputs.eq(index - 1).focus();
                 });
             });
 
-            // 2. TIMER LOGIC (Using ISO MM:SS Format)
-            let timeLeft = parseInt("{{ remaining_seconds }}");
+            // 3. BACKEND TIMER LOGIC
+            let timeLeft = parseInt("{{ remaining_seconds if remaining_seconds else 0 }}");
             function updateTimer() {
                 if (timeLeft <= 0) {
-                    $('#timer-text').text("Expired").addClass('text-danger');
-                    $('.otp-input').prop('disabled', true);
+                    timerDisplay.text("Expired").addClass('text-danger');
+                    inputs.prop('disabled', true);
                     $('#otpForm').css('opacity', '0.6');
                 } else {
-                    const minutes = Math.floor(timeLeft / 60);
-                    const seconds = timeLeft % 60;
-                    $('#timer-text').text(
-                        String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0')
-                    );
-                    timeLeft--; 
+                    let m = Math.floor(timeLeft / 60);
+                    let s = timeLeft % 60;
+                    timerDisplay.text(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+                    timeLeft--;
                     setTimeout(updateTimer, 1000);
                 }
-
-
-                
             }
             updateTimer();
+
+            // 4. RESEND LOGIC (Refresh First)
+            window.resendOtp = function () {
+                const btn = $('#resendBtn');
+                btn.addClass('disabled').text("Sending...");
+
+                fetch("{{ url_for('auth.resend_reset_otp') }}", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Set flags in storage and REFRESH
+                            sessionStorage.setItem('otp_resent', 'true');
+                            sessionStorage.setItem('otp_count', data.count);
+                            window.location.reload();
+                        } else {
+                            $('#resendMessage').html(`<span class="text-danger">${data.message}</span>`);
+                            btn.removeClass('disabled').text("Resend New Code");
+                        }
+                    })
+                    .catch(error => {
+                        $('#resendMessage').html(`<span class="text-danger">Network error.</span>`);
+                        btn.removeClass('disabled').text("Resend New Code");
+                    });
+            };
         });
-
-        // 3. RESEND LOGIC (JSON Fetch)
-        function resendOtp() {
-            const btn = $('#resendBtn');
-            const msg = $('#resendMessage');
-
-            btn.addClass('disabled').text('Sending...');
-
-            fetch("{{ url_for('auth.resend_reset_otp') }}", { 
-                method: "POST",
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(response => response.json())
-            .then(data => {
-                msg.text(data.message).addClass('text-success');
-                btn.removeClass('disabled').text('Resend New Code');
-                
-                // Refresh page after 2 seconds to restart the timer
-                if(data.success) {
-                    setTimeout(() => window.location.reload(), 1500);
-                }
-            })
-            .catch(err => {
-                msg.text("Error sending code.").addClass('text-danger');
-                btn.removeClass('disabled').text('Resend New Code');
-            });
-        }
     </script>
 </body>
+
 </html>
