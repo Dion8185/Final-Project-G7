@@ -6,6 +6,7 @@ import os
 load_dotenv("testpoint/passwordDB.env")
 passwordDB = os.getenv("DBPASSWORD")
 emailpassword = os.getenv("GMAILPASS")
+email = os.getenv("GMAIL")
 
 if not passwordDB:
     raise ValueError("DBPASSWORD is not set in passwordDB.env")
@@ -25,7 +26,7 @@ def create_app():
     app.secret_key = "Secret@123_key"
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 465
-    app.config['MAIL_USERNAME'] = 'lucator51plus1@gmail.com'
+    app.config['MAIL_USERNAME'] = email
     app.config['MAIL_PASSWORD'] = emailpassword
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_USE_SSL'] = True
