@@ -1,22 +1,38 @@
 {% extends "admin_base.html" %}
 
+{% block title %}Account Manager - Admin Control{% endblock %}
+
 {% block head %}
 <style>
-    .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-    .card { border: none; }
-    .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
+    .sidebar {
+        transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important;
+    }
+
+    .card {
+        border: none;
+    }
+
+    .btn-circle.btn-sm {
+        height: 30px;
+        width: 30px;
+        font-size: 0.75rem;
+    }
 
     /* ── VALIDATION STYLES ── */
-    .form-control.is-valid, .form-control.is-valid:focus {
+    .form-control.is-valid,
+    .form-control.is-valid:focus {
         border-color: #28a745 !important;
         box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, .25) !important;
         background-image: none !important;
     }
-    .form-control.is-invalid, .form-control.is-invalid:focus {
+
+    .form-control.is-invalid,
+    .form-control.is-invalid:focus {
         border-color: #dc3545 !important;
         box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, .25) !important;
         background-image: none !important;
     }
+
     .field-feedback {
         font-size: 0.70rem;
         margin-top: 0.2rem;
@@ -24,8 +40,14 @@
         min-height: 1rem;
         padding-left: 5px;
     }
-    .field-feedback.valid-msg { color: #28a745; }
-    .field-feedback.invalid-msg { color: #dc3545; }
+
+    .field-feedback.valid-msg {
+        color: #28a745;
+    }
+
+    .field-feedback.invalid-msg {
+        color: #dc3545;
+    }
 
     /* ── SECTION LABEL ── */
     .section-header {
@@ -43,33 +65,42 @@
 
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Account Manager</h1>
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Account Manager</h1>
     <div style="display: flex; gap: 10px;">
-        <span class="badge badge-dark p-2"><i class="fas fa-users mr-1"></i>Total Users: {{ users|length }}</span>
-        <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addUserModal">
+        <span class="badge badge-dark p-2 shadow-sm"><i class="fas fa-users mr-1"></i>Total Users: {{ users|length
+            }}</span>
+        <button class="btn btn-sm btn-primary shadow-sm px-3" data-toggle="modal" data-target="#addUserModal">
             <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Add New User
         </button>
-        <a href="{{ url_for('admin.trashed_accounts') }}" class="btn btn-sm btn-danger shadow-sm">
+        <a href="{{ url_for('admin.trashed_accounts') }}" class="btn btn-sm btn-danger shadow-sm px-3">
             <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Accounts
         </a>
     </div>
 </div>
 
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">User Registry</li>
+    </ol>
+</nav>
+
 {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endfor %}
-    {% endif %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
 {% endwith %}
 
 <!-- Filter Card -->
-<div class="card shadow mb-4">
+<div class="card shadow mb-4 border-bottom-primary">
     <div class="card-body">
         <form id="filterForm" class="row">
             <div class="col-md-3 mb-2">
@@ -99,52 +130,64 @@
 
 <!-- Users Table -->
 <div class="card shadow mb-4">
-    <div class="card-body">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle" id="userTable" width="100%">
+            <table class="table table-hover align-middle mb-0" id="userTable" width="100%">
                 <thead class="thead-light">
                     <tr>
                         <th>Role</th>
                         <th>ID</th>
                         <th>Full Name</th>
+                        <th>Group (Program/Block)</th>
                         <th>Email</th>
                         <th>Status</th>
-                        <th>Joined Date</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for user in users %}
-                    <tr class="user-row" data-role="{{ user[5] }}" data-status="{% if user[6] == 1 %}verified{% else %}pending{% endif %}">
+                    <tr class="user-row" data-role="{{ user.role }}"
+                        data-status="{% if user.is_verified == 1 %}verified{% else %}pending{% endif %}">
                         <td>
-                            {% if user[5] == 'admin' %} <span class="badge badge-secondary">Admin</span>
-                            {% elif user[5] == 'teacher' %} <span class="badge badge-danger">Teacher</span>
+                            {% if user.role == 'admin' %} <span class="badge badge-secondary">Admin</span>
+                            {% elif user.role == 'teacher' %} <span class="badge badge-danger">Teacher</span>
                             {% else %} <span class="badge badge-primary">Student</span> {% endif %}
                         </td>
-                        <td><span class="font-weight-bold text-dark search-data">{{ user[0] }}</span></td>
+                        <td><span class="font-weight-bold text-dark search-data">{{ user.user_id }}</span></td>
                         <td class="search-data text-capitalize">
-                            {% if user[5] == 'admin' and not user[1] %} Admin: {{user[0]}} {% else %} {{ user[1] }} {{ user[2] }} {{ user[3] }} {% endif %}
+                            {{ user.firstname }} {{ user.middlename if user.middlename else '' }} {{ user.lastname }}
                         </td>
-                        <td class="search-data">{{ user[4] }}</td>
                         <td>
-                            {% if user[6] == 1 %} <span class="badge badge-success">Verified</span>
+                            {% if user.role == 'student' %}
+                            <small class="font-weight-bold text-dark">{{ user.program_name if user.program_name else
+                                'N/A' }}</small><br>
+                            <span class="badge badge-light border">{{ user.block_name if user.block_name else
+                                'Unassigned' }}</span>
+                            {%elif user.role == 'teacher' %}
+                            <span class="text-muted small italic">Faculty</span>
+                            {% else %}
+                            <span class="text-muted small italic">Staff/Admin</span>
+                            {% endif %}
+                        </td>
+                        <td class="search-data small">{{ user.email }}</td>
+                        <td>
+                            {% if user.is_verified == 1 %} <span class="badge badge-success">Verified</span>
                             {% else %} <span class="badge badge-warning">Pending</span> {% endif %}
                         </td>
-                        <td class="small">{{ user[7] }}</td>
                         <td class="text-center">
-                            <!-- UNIFORM SUCCESS BUTTON -->
-                            <button class="btn btn-success btn-circle btn-sm view-details-btn" 
-                                title="View Assignments"
-                                data-id="{{ user[0] }}" 
-                                data-name="{{ user[1] }} {{ user[3] }}">
+                            <button class="btn btn-success btn-circle btn-sm view-details-btn mr-1 shadow-sm"
+                                title="View Assignments" data-id="{{ user.user_id }}"
+                                data-name="{{ user.firstname }} {{ user.lastname }}">
                                 <i class="fas fa-university"></i>
-                            </button>                            
+                            </button>
 
-                            <button class="btn btn-info btn-circle btn-sm" title="Edit" data-toggle="modal" data-target="#editUserModal{{ user[0] }}">
+                            <button class="btn btn-info btn-circle btn-sm mr-1 shadow-sm" title="Edit"
+                                data-toggle="modal" data-target="#editUserModal{{ user.user_id }}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete" data-toggle="modal" data-target="#deleteUserModal" 
-                                data-id="{{ user[0] }}" data-name="{{ user[1] }} {{ user[3] }}">
+                            <button type="button" class="btn btn-danger btn-circle btn-sm shadow-sm" title="Delete"
+                                data-toggle="modal" data-target="#deleteUserModal" data-id="{{ user.user_id }}"
+                                data-name="{{ user.firstname }} {{ user.lastname }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -153,27 +196,31 @@
                 </tbody>
             </table>
         </div>
-        <!-- Pagination (controlled by paginator.js) -->
-        <nav class="mt-4" aria-label="Accounts pagination">
-            <ul class="pagination justify-content-center" id="accounts-pagination"></ul>
-        </nav>
+        <!-- Pagination -->
+        <div class="p-3 bg-light border-top">
+            <nav aria-label="Accounts pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="accounts-pagination"></ul>
+            </nav>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- Uniform Details Modal (AJAX Powered) -->
+<!-- ── DYNAMIC DETAILS MODAL ── -->
 <div class="modal fade" id="userDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-info-circle mr-2"></i><span id="modalLabel">Details</span></h5>
+            <div class="modal-header bg-success text-white border-0">
+                <h5 class="modal-title font-weight-bold small uppercase"><i class="fas fa-info-circle mr-2"></i><span
+                        id="modalLabel">Details</span></h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <div class="modal-body">
-                <p class="small text-muted">Account: <span id="detailUserName" class="font-weight-bold text-dark"></span></p>
-                <ul id="detailList" class="list-group list-group-flush">
-                    <!-- Dynamic Content will be injected here -->
+                <p class="small text-muted mb-3">User: <span id="detailUserName"
+                        class="font-weight-bold text-dark"></span></p>
+                <ul id="detailList" class="list-group list-group-flush shadow-sm border">
+                    <!-- Dynamic Content -->
                 </ul>
             </div>
         </div>
@@ -181,65 +228,84 @@
 </div>
 
 {% for user in users %}
-<!-- Edit User Modal -->
-<div class="modal fade validate-modal" id="editUserModal{{ user[0] }}" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+<!-- ── EDIT USER MODAL ── -->
+<div class="modal fade validate-modal" id="editUserModal{{ user.user_id }}" tabindex="-1" role="dialog"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-edit mr-2"></i>Edit Account: {{ user[0] }}</h5>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-edit mr-2"></i>Edit Account: {{
+                    user.user_id }}</h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
-            <form action="{{ url_for('admin.update_account', user_id=user[0]) }}" method="POST" novalidate>
-                <div class="modal-body">
+            <form action="{{ url_for('admin.update_account', user_id=user.user_id) }}" method="POST" novalidate>
+                <div class="modal-body bg-light">
+                    <div class="section-header">Basic Profile</div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Firstname</label>
-                        <input type="text" class="form-control" name="firstname" value="{{ user[1] }}" required>
+                        <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
                         <span class="field-feedback"></span>
                     </div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Middlename</label>
-                        <input type="text" class="form-control" name="middlename" value="{{ user[2] }}">
-                        <span class="field-feedback"></span>
+                        <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}">
                     </div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Lastname</label>
-                        <input type="text" class="form-control" name="lastname" value="{{ user[3] }}" required>
+                        <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
                         <span class="field-feedback"></span>
                     </div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Email Address</label>
-                        <input type="email" class="form-control" name="email" value="{{ user[4] }}" required>
+                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
                         <span class="field-feedback"></span>
                     </div>
+
+                    {% if user.role == 'student' %}
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-primary">Assigned Block / Section</label>
+                        <select class="form-control" name="block_id">
+                            <option value="">-- No Block Assigned --</option>
+                            {% for b in blocks %}
+                            <option value="{{ b.block_id }}" {% if b.block_name==user.block_name %}selected{% endif %}>
+                                {{ b.program_name }} - {{ b.block_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
                     <hr>
+                    <div class="section-header text-danger">Security</div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="small font-weight-bold text-dark">New Password</label>
-                                <input type="password" class="form-control" name="password" id="edit_pwd_{{user[0]}}" placeholder="Leave blank to keep current">
+                                <input type="password" class="form-control" name="password"
+                                    id="edit_pwd_{{user.user_id}}" placeholder="Keep current">
                                 <span class="field-feedback"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label class="small font-weight-bold text-dark">Confirm Password</label>
-                                <input type="password" class="form-control" name="confirm_password" data-match="edit_pwd_{{user[0]}}"}>
-                                <span class="field-feedback"></span>
+                                <label class="small font-weight-bold text-dark">Confirm</label>
+                                <input type="password" class="form-control" name="confirm_password"
+                                    data-match="edit_pwd_{{user.user_id}}">
                             </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Account Status</label>
                         <select class="form-control" name="status">
-                            <option value="1" {% if user[6] == 1 %}selected{% endif %}>Verified</option>
-                            <option value="0" {% if user[6] == 0 %}selected{% endif %}>Pending</option>
+                            <option value="1" {% if user.is_verified==1 %}selected{% endif %}>Verified</option>
+                            <option value="0" {% if user.is_verified==0 %}selected{% endif %}>Pending</option>
                         </select>
                     </div>
-                    <input type="hidden" name="role" value="{{ user[5] }}">
+                    <input type="hidden" name="role" value="{{ user.role }}">
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-info" type="submit">Save Changes</button>
+                <div class="modal-footer bg-white">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-info btn-sm px-4" type="submit">Update Account</button>
                 </div>
             </form>
         </div>
@@ -247,7 +313,7 @@
 </div>
 {% endfor %}
 
-<!-- Add New User Modal -->
+<!-- ── ADD NEW USER MODAL ── -->
 <div class="modal fade validate-modal" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow">
@@ -256,9 +322,9 @@
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.add_user') }}" method="POST" novalidate id="addUserForm">
-                <div class="modal-body px-4">
-                    
-                    <div class="section-header mt-2">Personal Information</div>
+                <div class="modal-body px-4 bg-light">
+
+                    <div class="section-header mt-2">Identity Details</div>
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -271,7 +337,6 @@
                             <div class="form-group">
                                 <label class="small font-weight-bold text-dark">Middlename</label>
                                 <input type="text" class="form-control" name="middlename">
-                                <span class="field-feedback"></span>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -294,13 +359,25 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="small font-weight-bold text-dark">Role</label>
-                                <select class="form-control" name="role">
+                                <select class="form-control" name="role" id="addUserRole">
                                     <option value="student">Student</option>
                                     <option value="teacher">Teacher</option>
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- DYNAMIC BLOCK SELECTION -->
+                    <div class="form-group" id="blockSelectionArea">
+                        <label class="small font-weight-bold text-primary font-italic">Block Assignment (For Students
+                            Only)</label>
+                        <select class="form-control border-primary" name="block_id">
+                            <option value="">-- Select Block/Section --</option>
+                            {% for b in blocks %}
+                            <option value="{{ b.block_id }}">{{ b.program_name }} - {{ b.block_name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="row">
@@ -314,80 +391,73 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="small font-weight-bold text-dark">Confirm Password</label>
-                                <input type="password" class="form-control" name="confirm_password" data-match="add_pwd" required>
-                                <span class="field-feedback"></span>
+                                <input type="password" class="form-control" name="confirm_password" data-match="add_pwd"
+                                    required>
                             </div>
                         </div>
                     </div>
 
-                    <div class="section-header mt-3">Additional User Information (Address)</div>
-                    <div class="row">
+                    <div class="section-header mt-3">Personal Information (Address)</div>
+                    <div class="row small">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <select name="region" class="form-control" id="region" required>
+                                <select name="region" class="form-control form-control-sm" id="region" required>
                                     <option value="">— Region —</option>
                                 </select>
                                 <input type="hidden" name="region_text" id="region-text">
-                                <span class="field-feedback"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <select name="province" class="form-control" id="province" required>
+                                <select name="province" class="form-control form-control-sm" id="province" required>
                                     <option value="">— Province —</option>
                                 </select>
                                 <input type="hidden" name="province_text" id="province-text">
-                                <span class="field-feedback"></span>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <select name="city" class="form-control" id="city" required>
-                                    <option value="">— City / Municipality —</option>
+                                <select name="city" class="form-control form-control-sm" id="city" required>
+                                    <option value="">— City —</option>
                                 </select>
                                 <input type="hidden" name="city_text" id="city-text">
-                                <span class="field-feedback"></span>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <select name="barangay" class="form-control" id="barangay" required>
+                                <select name="barangay" class="form-control form-control-sm" id="barangay" required>
                                     <option value="">— Barangay —</option>
                                 </select>
                                 <input type="hidden" name="barangay_text" id="barangay-text">
-                                <span class="field-feedback"></span>
                             </div>
                         </div>
                     </div>
 
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit">Create User</button>
+                <div class="modal-footer bg-white">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm px-5 shadow-sm" type="submit">Initialize User</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- ── DELETE MODAL ── -->
 <div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title font-weight-bold"><i class="fas fa-trash-alt mr-2"></i>Delete Account</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
-            <form id="deleteUserForm" method="POST" action="">
+            <form id="deleteUserForm" method="POST">
                 <div class="modal-body text-center py-4">
                     <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                    <p class="text-dark font-weight-bold">Are you sure you want to delete <span id="deleteUserName"></span>?</p>
+                    <p class="text-dark font-weight-bold">Move <span id="deleteUserName"></span> to trash?</p>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger px-4" type="submit">Yes, Delete</button>
+                <div class="modal-footer bg-light border-0">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4 btn-sm" type="submit">Move to Trash</button>
                 </div>
             </form>
         </div>
@@ -409,7 +479,7 @@
         const userTableBody = document.querySelector('#userTable tbody');
         const allRows = Array.from(userTableBody.querySelectorAll('tr.user-row'));
         let filteredRows = [...allRows];
-        
+
         function performFilter() {
             var searchVal = $('#searchInput').val().toLowerCase();
             var roleVal = $('#roleFilter').val().toLowerCase();
@@ -432,148 +502,64 @@
             performFilter();
         });
 
+        // Add User Role Toggle logic
+        $('#addUserRole').on('change', function () {
+            if ($(this).val() === 'student') {
+                $('#blockSelectionArea').slideDown();
+            } else {
+                $('#blockSelectionArea').slideUp();
+            }
+        });
+
         $('#deleteUserModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
-            var userId = btn.data('id');
             $('#deleteUserName').text(btn.data('name'));
-            var actionUrl = "{{ url_for('admin.delete_account', user_id='0') }}".replace('0', userId);
-            $('#deleteUserForm').attr('action', actionUrl);
+            $('#deleteUserForm').attr('action', "{{ url_for('admin.delete_account', user_id='0') }}".replace('0', btn.data('id')));
         });
 
         /* ══════════════════════════════════════════
            PAGINATOR
         ══════════════════════════════════════════ */
         const paginator = createPaginator({
-            tableBodySelector  : 'tbody',
-            paginationSelector : '#accounts-pagination',
-            rowsPerPage        : 10,
-            getVisibleRows     : () => filteredRows,
+            tableBodySelector: 'tbody',
+            paginationSelector: '#accounts-pagination',
+            rowsPerPage: 10,
+            getVisibleRows: () => filteredRows,
         });
-
         paginator.render();
 
-        /* ── Dynamic Details Logic (AJAX) ── */
-        $('.view-details-btn').on('click', function() {
+        /* ── Dynamic Details Logic ── */
+        $('.view-details-btn').on('click', function () {
             var userId = $(this).data('id');
-            var userName = $(this).data('name');
-            var list = $('#detailList');
-            
-            $('#detailUserName').text(userName);
-            list.html('<li class="list-group-item text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</li>');
+            $('#detailUserName').text($(this).data('name'));
+            $('#detailList').html('<li class="list-group-item text-center small">Loading...</li>');
             $('#userDetailsModal').modal('show');
-
-            $.getJSON('/admin/get_user_courses/' + userId, function(data) {
+            $.getJSON('/admin/get_user_courses/' + userId, function (data) {
                 $('#modalLabel').text(data.label);
-                list.empty();
-                if (data.items && data.items.length > 0) {
-                    data.items.forEach(function(item) {
-                        list.append('<li class="list-group-item d-flex justify-content-between align-items-center">' +
-                            '<span><strong>' + item.course_code + '</strong> - ' + item.course_name + '</span>' +
-                            '</li>');
-                    });
-                } else {
-                    list.append('<li class="list-group-item text-muted text-center">No active assignments/enrollments found.</li>');
-                }
-            }).fail(function() {
-                list.html('<li class="list-group-item text-danger text-center">Error loading data.</li>');
+                $('#detailList').empty();
+                data.items.forEach(function (item) {
+                    $('#detailList').append('<li class="list-group-item small font-weight-bold">' + (item.class_code || item.course_code) + ' - ' + item.course_name + '</li>');
+                });
             });
         });
 
         /* ══════════════════════════════════════════
-           VALIDATION CORE LOGIC
+           VALIDATION LOGIC
         ══════════════════════════════════════════ */
+        function setValid(el) { $(el).removeClass('is-invalid').addClass('is-valid'); $(el).siblings('.field-feedback').text('✓').addClass('valid-msg').removeClass('invalid-msg'); }
+        function setInvalid(el, msg) { $(el).removeClass('is-valid').addClass('is-invalid'); $(el).siblings('.field-feedback').text(msg).addClass('invalid-msg').removeClass('valid-msg'); }
 
-        function setValid(el, msg) {
-            $(el).removeClass('is-invalid').addClass('is-valid');
-            $(el).siblings('.field-feedback').text(msg || '✓ Looks good!').removeClass('invalid-msg').addClass('valid-msg');
-        }
-
-        function setInvalid(el, msg) {
-            $(el).removeClass('is-valid').addClass('is-invalid');
-            $(el).siblings('.field-feedback').text(msg || '').removeClass('valid-msg').addClass('invalid-msg');
-        }
-
-        function clearState(el) {
-            $(el).removeClass('is-valid is-invalid');
-            $(el).siblings('.field-feedback').text('').removeClass('valid-msg invalid-msg');
-        }
-
-        function checkNameField(v, label, required) {
-            if (!v) return required ? { ok: false, msg: label + ' is required.' } : { ok: true, msg: '' };
-            if (v.length < 2) return { ok: false, msg: label + ' must be 2+ chars.' };
-            if (!/^[A-Za-zÀ-ÖØ-öø-ÿ\s'\-\.]+$/.test(v)) return { ok: false, msg: 'Only letters and spaces allowed.' };
-            return { ok: true, msg: '✓ Valid' };
-        }
-
-        function checkEmail(v) {
-            if (!v) return { ok: false, msg: 'Email is required.' };
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return { ok: false, msg: 'Invalid email format.' };
-            return { ok: true, msg: '✓ Valid email.' };
-        }
-
-        function checkPassword(v, isOptional = false) {
-            if (!v && isOptional) return { ok: true, msg: '' };
-            if (!v) return { ok: false, msg: 'Password is required.' };
-            if (v.length < 8) return { ok: false, msg: 'Min. 8 characters.' };
-            if (!/[A-Z]/.test(v) || !/[0-9]/.test(v) || !/[!@#$%^&*]/.test(v)) 
-                return { ok: false, msg: 'Add Uppercase, Digit, and Special char.' };
-            return { ok: true, msg: '✓ Strong password!' };
-        }
-
-        /* ── Dynamic Validation Logic ── */
-        $(document).on('input blur change', '.validate-modal input, .validate-modal select', function() {
-            const input = $(this);
-            const name = input.attr('name');
-            const val = input.val() ? input.val().trim() : '';
-            const isEdit = input.closest('form').attr('action').includes('update_account');
-            let res = { ok: true, msg: '' };
-
-            if (['firstname', 'lastname', 'middlename'].includes(name)) {
-                res = checkNameField(val, name, name !== 'middlename');
-                if (val === '' && name === 'middlename') clearState(input);
-                else res.ok ? setValid(input) : setInvalid(input, res.msg);
-            }
-            else if (name === 'email') {
-                res = checkEmail(val);
-                res.ok ? setValid(input, res.msg) : setInvalid(input, res.msg);
-            }
-            else if (name === 'password') {
-                res = checkPassword(val, isEdit);
-                if (val === '' && isEdit) clearState(input);
-                else res.ok ? setValid(input, res.msg) : setInvalid(input, res.msg);
-                // Force confirm check
-                input.closest('form').find('input[name="confirm_password"]').trigger('input');
-            }
-            else if (name === 'confirm_password') {
-                const matchId = input.data('match');
-                const targetPwd = $('#' + matchId).val();
-                if (!val && !isEdit) setInvalid(input, 'Confirm password.');
-                else if (val !== targetPwd) setInvalid(input, 'Passwords do not match.');
-                else if (val === '' && isEdit && targetPwd === '') clearState(input);
-                else setValid(input, '✓ Match!');
-            }
-            else if (['region', 'province', 'city', 'barangay'].includes(name)) {
-                val ? setValid(input, '✓ Selected') : setInvalid(input, 'Selection required.');
-            }
+        $(document).on('input blur', '.validate-modal input', function () {
+            const i = $(this), n = i.attr('name'), v = i.val().trim();
+            if (n === 'email') /^[^@]+@[^@]+\.[^@]+$/.test(v) ? setValid(i) : setInvalid(i, 'Invalid email');
+            else if (n === 'password' && v.length < 8 && !i.closest('form').attr('action').includes('update')) setInvalid(i, 'Min 8 chars');
+            else if (i.attr('required') && !v) setInvalid(i, 'Required');
+            else setValid(i);
         });
 
-        // Submission Guard
-        $(document).on('submit', '.validate-modal form', function(e) {
-            const form = $(this);
-            form.find('input[required], select[required], input[name="email"]').trigger('blur');
-
-            if (form.find('.is-invalid').length > 0) {
-                e.preventDefault();
-                form.find('.inline-validation-error').remove();
-                const alert = $(
-                    '<div class="alert alert-warning alert-dismissible fade show inline-validation-error mt-2 mb-0" role="alert">' +
-                    '<i class="fas fa-exclamation-circle mr-2"></i>Please fix all validation errors before proceeding.' +
-                    '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>' +
-                    '</div>'
-                );
-                form.find('.modal-footer').before(alert);
-                setTimeout(function() { alert.alert('close'); }, 4000);
-            }
+        $(document).on('submit', '.validate-modal form', function (e) {
+            $(this).find('input[required]').trigger('blur');
+            if ($(this).find('.is-invalid').length > 0) { e.preventDefault(); alert("Please fix validation errors."); }
         });
 
     })(jQuery);

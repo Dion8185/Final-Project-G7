@@ -1,5 +1,7 @@
 {% extends "admin_base.html" %}
 
+{% block title %}Exam Oversight - Admin Control{% endblock %}
+
 {% block head %}
 <style>
     .sidebar {
@@ -40,23 +42,32 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="h3 mb-4 text-gray-800">Global Exam Oversight</h1>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Global Exam Oversight</h1>
+    <span class="badge badge-dark p-2 shadow-sm"><i class="fas fa-eye mr-1"></i> System-Wide Monitor</span>
+</div>
 
 <!-- Filters -->
-<div class="card shadow mb-4">
+<div class="card shadow mb-4 border-bottom-primary">
     <div class="card-body">
         <form class="row" id="filterForm">
-            <div class="col-md-4 mb-2">
+            <div class="col-md-3 mb-2">
                 <select class="form-control" id="statusFilter">
                     <option value="all">All Statuses</option>
-                    <option value="live">Live</option>
+                    <option value="live">Live Now</option>
                     <option value="active">Active / Scheduled</option>
                     <option value="inactive">Inactive</option>
                 </select>
             </div>
-            <div class="col-md-8 mb-2">
-                <input type="text" class="form-control" id="examSearch" 
-                    placeholder="Search by Teacher, Exam Title, or Course Code...">
+            <div class="col-md-9 mb-2">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i
+                                class="fas fa-search text-gray-400"></i></span>
+                    </div>
+                    <input type="text" class="form-control border-left-0" id="examSearch"
+                        placeholder="Search by Instructor, Exam Title, Subject, or Block...">
+                </div>
             </div>
         </form>
     </div>
@@ -64,62 +75,82 @@
 
 <!-- Exam Table -->
 <div class="card shadow mb-4">
-    <div class="card-body">
+    <div class="card-header py-3 bg-white">
+        <h6 class="m-0 font-weight-bold text-primary">Master Examination Registry</h6>
+    </div>
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle" id="examTable">
+            <table class="table table-hover align-middle mb-0" id="examTable">
                 <thead class="thead-light">
                     <tr>
-                        <th>Exam Title</th>
-                        <th>Teacher</th>
-                        <th>Course Code</th>
-                        <th>Status</th>
-                        <th>Violations</th>
-                        <th>Actions</th>
+                        <th width="20%">Exam Title</th>
+                        <th width="15%">Instructor</th>
+                        <th width="15%">Subject (Catalog)</th>
+                        <th width="15%">Block / Section</th>
+                        <th width="15%">Live Status</th>
+                        <th width="10%">Violations</th>
+                        <th class="text-center" width="10%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for exam in exams %}
-                    <!-- Added class 'exam-row' and data attributes for filtering -->
-                    <tr class="exam-row" 
+                    <tr class="exam-row"
                         data-status="{{ 'live' if exam.is_live else 'active' if exam.is_active == 1 else 'inactive' }}"
-                        data-search="{{ exam.title|lower }} {{ exam.teacher_full_name|lower }} {{ exam.course_code|lower }}">
-                        
-                        <td><strong>{{ exam.title }}</strong></td>
+                        data-search="{{ exam.title|lower }} {{ exam.teacher_full_name|lower }} {{ exam.course_code|lower }} {{ exam.block_name|lower }}">
+
+                        <td>
+                            <div class="font-weight-bold text-dark">{{ exam.title }}</div>
+                            <small class="text-muted"><i class="fas fa-clock mr-1"></i> {{ exam.duration_minutes }}
+                                mins</small>
+                        </td>
                         <td>{{ exam.teacher_full_name }}</td>
                         <td><span class="badge badge-light border">{{ exam.course_code }}</span></td>
                         <td>
-                            {% if exam.is_live %}
-                                <span class="text-danger font-weight-bold status-label" data-val="live">
-                                    <div class="pulse-live"></div> LIVE ({{ exam.active_count }} Testing)
-                                </span>
-                            {% elif exam.is_active == 1 %}
-                                <span class="badge badge-success status-label" data-val="active">Active / Scheduled</span>
-                            {% else %}
-                                <span class="badge badge-secondary status-label" data-val="inactive">Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="{% if exam.total_violations > 5 %}text-danger{% else %}text-warning{% endif %} font-weight-bold">
-                                <i class="fas fa-exclamation-triangle mr-1"></i> {{ exam.total_violations }}
+                            <span class="text-primary font-weight-bold small text-uppercase">
+                                <i class="fas fa-layer-group mr-1"></i>{{ exam.block_name }}
                             </span>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-dark">View Details</button>
+                            {% if exam.is_live %}
+                            <span class="text-danger font-weight-bold status-label" data-val="live">
+                                <div class="pulse-live"></div> LIVE ({{ exam.active_count }} Testing)
+                            </span>
+                            {% elif exam.is_active == 1 %}
+                            <span class="badge badge-success status-label px-2 py-1" data-val="active">Active /
+                                Scheduled</span>
+                            {% else %}
+                            <span class="badge badge-secondary status-label px-2 py-1"
+                                data-val="inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span
+                                class="{% if exam.total_violations > 5 %}text-danger{% else %}text-warning{% endif %} font-weight-bold">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> {{ exam.total_violations }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-dark rounded-pill px-3 shadow-sm">Details</button>
                         </td>
                     </tr>
                     {% endfor %}
-                    
-                    <!-- This row shows only if no results match the filter -->
+
                     <tr id="noResultsRow" style="display: none;">
-                        <td colspan="6" class="text-center py-4 text-muted">No exams match your filter criteria.</td>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="fas fa-search-minus fa-3x text-gray-200 mb-3"></i>
+                            <p class="text-gray-500 italic">No exams match your filter criteria.</p>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <!-- Pagination (controlled by paginator.js) -->
-        <nav class="mt-4" aria-label="Exams pagination">
-            <ul class="pagination justify-content-center" id="exams-pagination"></ul>
-        </nav>
+
+        <!-- Pagination Container -->
+        <div class="p-3 bg-light border-top">
+            <nav aria-label="Exams pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="exams-pagination"></ul>
+            </nav>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -128,48 +159,53 @@
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
 
 <script>
-$(document).ready(function() {
-    // ── Filtering & Pagination ─────────────────────────────────────────
-    const examTableBody = document.querySelector('#examTable tbody');
-    const allRows = Array.from(examTableBody.querySelectorAll('tr.exam-row'));
-    let filteredRows = [...allRows];
-    
-    function performFilter() {
-        const searchText = $('#examSearch').val().toLowerCase();
-        const statusValue = $('#statusFilter').val();
+    $(document).ready(function () {
+        "use strict";
 
-        filteredRows = allRows.filter(row => {
-            const rowSearchText = $(row).data('search');
-            const rowStatus = $(row).data('status');
+        // ── Filtering & Pagination ─────────────────────────────────────────
+        const examTableBody = document.querySelector('#examTable tbody');
+        const allRows = Array.from(examTableBody.querySelectorAll('tr.exam-row'));
+        let filteredRows = [...allRows];
 
-            const matchesSearch = rowSearchText.includes(searchText);
-            const matchesStatus = (statusValue === 'all' || rowStatus === statusValue);
+        function performFilter() {
+            const searchText = $('#examSearch').val().toLowerCase();
+            const statusValue = $('#statusFilter').val();
 
-            return matchesSearch && matchesStatus;
+            filteredRows = allRows.filter(row => {
+                const rowSearchText = $(row).data('search');
+                const rowStatus = $(row).data('status');
+
+                const matchesSearch = rowSearchText.indexOf(searchText) > -1;
+                const matchesStatus = (statusValue === 'all' || rowStatus === statusValue);
+
+                return matchesSearch && matchesStatus;
+            });
+
+            // Toggle No Results Message
+            if (filteredRows.length === 0) {
+                $('#noResultsRow').show();
+            } else {
+                $('#noResultsRow').hide();
+            }
+
+            paginator.reset();
+        }
+
+        $('#examSearch').on('keyup', performFilter);
+        $('#statusFilter').on('change', performFilter);
+
+        // ── Paginator Implementation ──────────────────────────────────────
+        const paginator = createPaginator({
+            tableBodySelector: 'tbody',
+            paginationSelector: '#exams-pagination',
+            rowsPerPage: 10,
+            getVisibleRows: () => filteredRows,
         });
 
-        paginator.reset();
-    }
+        paginator.render();
 
-    // Trigger filter on typing
-    $('#examSearch').on('keyup', function() {
+        // Initial Filter Call
         performFilter();
     });
-
-    // Trigger filter on dropdown change
-    $('#statusFilter').on('change', function() {
-        performFilter();
-    });
-
-    // ── Paginator ──────────────────────────────────────────────────────
-    const paginator = createPaginator({
-        tableBodySelector  : 'tbody',
-        paginationSelector : '#exams-pagination',
-        rowsPerPage        : 10,
-        getVisibleRows     : () => filteredRows,
-    });
-
-    paginator.render();
-});
 </script>
 {% endblock %}

@@ -1,10 +1,12 @@
 {% extends "admin_base.html" %}
 
+{% block title %}Manage Enrollees - {{ class_info.class_code }}{% endblock %}
+
 {% block head %}
 <style>
-    .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
     .card { border: none; }
     .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
+    .enrollee-row { transition: all 0.2s; }
 </style>
 {% endblock %}
 
@@ -12,16 +14,30 @@
 <!-- HEADER WITH BACK BUTTON -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
-        <h1 class="h3 mb-0 text-gray-800">Enrollees: <span class="text-primary">{{ course.course_name }}</span></h1>
+        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Enrollees: <span class="text-primary">{{ class_info.course_name }}</span></h1>
+        <p class="mb-0 small text-muted">Class Code: <strong class="text-dark">{{ class_info.class_code }}</strong></p>
     </div>
-    <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>     
-</div>z
+    <div class="d-flex" style="gap: 10px;">
+        <button class="btn btn-sm btn-primary shadow-sm px-3" data-toggle="modal" data-target="#enrollModal">
+            <i class="fas fa-user-plus fa-sm mr-1"></i> Enroll Student
+        </button>
+        <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-secondary shadow-sm px-3">
+            <i class="fas fa-arrow-left fa-sm mr-1"></i> Back to Classes
+        </a>     
+    </div>
+</div>
 
-<div class="card shadow mb-4">
-    <div class="card-body">
-        <div class="row">
+<!-- Search Filter -->
+<div class="card shadow mb-4 border-bottom-primary">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
             <div class="col-md-6">
-                <input type="text" class="form-control" id="searchInput" placeholder="Search by student ID, name, or email...">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                    </div>
+                    <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search by student ID, name, or email...">
+                </div>
             </div>
         </div>
     </div>
@@ -30,7 +46,7 @@
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}" role="alert">
                 {{ message }}
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -42,9 +58,12 @@
 
 <!-- Table Card -->
 <div class="card shadow mb-4">
-    <div class="card-body">
+    <div class="card-header py-3 bg-white">
+        <h6 class="m-0 font-weight-bold text-dark text-uppercase small">Active Enrollment List</h6>
+    </div>
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover" id="enrollTable" width="100%">
+            <table class="table table-hover align-middle mb-0" id="enrollTable" width="100%">
                 <thead class="thead-light">
                     <tr>
                         <th>Student ID</th>
@@ -57,75 +76,92 @@
                 <tbody>
                     {% for enrollee in enrollees %}
                     <tr class="enrollee-row">
-                        <td><span class="font-weight-bold">{{ enrollee.student_id }}</span></td>
-                        <td>{{ enrollee.firstname }} {{ enrollee.lastname }}</td>
+                        <td><span class="font-weight-bold text-dark">{{ enrollee.student_id }}</span></td>
+                        <td class="text-capitalize">{{ enrollee.firstname }} {{ enrollee.lastname }}</td>
                         <td>{{ enrollee.email }}</td>
                         <td class="small">{{ enrollee.enrolled_at }}</td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#confirmUnenrollModal" data-enrollment="{{ enrollee.enrollment_id }}" data-course="{{ course.course_id }}" data-name="{{ enrollee.firstname }} {{ enrollee.lastname }}">
-                                <i class="fas fa-user-minus mr-1"></i> Unenroll
+                            <button type="button" class="btn btn-danger btn-circle btn-sm shadow-sm" 
+                                    data-toggle="modal" data-target="#confirmUnenrollModal" 
+                                    data-enrollment="{{ enrollee.enrollment_id }}" 
+                                    data-class="{{ class_info.class_code }}" 
+                                    data-name="{{ enrollee.firstname }} {{ enrollee.lastname }}">
+                                <i class="fas fa-user-minus"></i>
                             </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center py-4">No students enrolled yet.</td></tr>
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <i class="fas fa-users-slash fa-3x text-gray-200 mb-3"></i>
+                            <p class="text-gray-500 italic">No students enrolled in this class yet.</p>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination (controlled by paginator.js) -->
-        <nav class="mt-4" aria-label="Enrollees pagination">
-            <ul class="pagination justify-content-center" id="enrollees-pagination"></ul>
-        </nav>
+        <!-- Pagination -->
+        <div class="p-3 bg-light border-top text-center">
+            <nav aria-label="Enrollees pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="enrollees-pagination"></ul>
+            </nav>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Enroll Student Modal -->
-<div class="modal fade" id="enrollModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content border-0 shadow">
+{% block modals %}
+<!-- ── MODALS SECTION (Outside Content Area) ── -->
+
+<!-- 1. Enroll Student Modal -->
+<div class="modal fade" id="enrollModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i>Enroll Student</h5>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i>Add to Class</h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.enroll_student') }}" method="POST">
-                <div class="modal-body">
-                    <input type="hidden" name="course_id" value="{{ course.course_id }}">
+                <div class="modal-body bg-light">
+                    <!-- Link to current Class Code -->
+                    <input type="hidden" name="class_code" value="{{ class_info.class_code }}">
                     <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Select Student</label>
+                        <label class="small font-weight-bold text-dark">Verified Students</label>
                         <select name="student_id" class="form-control" required>
-                            <option value="">-- Select student to add --</option>
+                            <option value="">-- Search student to add --</option>
                             {% for s in all_students %}
                             <option value="{{ s.student_id }}">{{ s.firstname }} {{ s.lastname }} ({{ s.student_id }})</option>
                             {% endfor %}
                         </select>
+                        <small class="text-muted italic mt-2 d-block">Only showing verified students not yet in this class.</small>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit">Complete Enrollment</button>
+                <div class="modal-footer bg-white">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Complete Enrollment</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Confirm Unenroll Modal -->
-<div class="modal fade" id="confirmUnenrollModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
+<!-- 2. Confirm Unenroll Modal -->
+<div class="modal fade" id="confirmUnenrollModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Confirm Unenrollment</h5>
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Remove Enrollee</h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form id="unenrollForm" method="POST">
-                <div class="modal-body">
-                    <p class="mb-3">Are you sure you want to unenroll <strong id="studentNameDisplay"></strong> from this course?</p>
-                    <p class="text-muted small mb-0"><i class="fas fa-info-circle mr-1"></i>This action cannot be undone.</p>
+                <div class="modal-body text-center py-4 bg-white">
+                    <p class="mb-2 h5 text-dark">Remove <strong id="studentNameDisplay"></strong>?</p>
+                    <p class="text-muted small mb-0">This student will lose access to all exams and records for the class: <strong>{{ class_info.class_code }}</strong>.</p>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger" type="submit"><i class="fas fa-trash mr-1"></i> Remove Student</button>
+                <div class="modal-footer bg-light border-0">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Yes, Unenroll</button>
                 </div>
             </form>
         </div>
@@ -137,43 +173,52 @@
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
 
 <script>
-    (function ($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function (e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery);
-    
-    // ── Filtering & Pagination ────────────────────────────────────────
-    const enrollTableBody = document.querySelector('#enrollTable tbody');
-    const allRows = Array.from(enrollTableBody.querySelectorAll('tr.enrollee-row'));
-    let filteredRows = [...allRows];
-    
-    function filterEnrollees() {
-        var searchVal = $('#searchInput').val().toLowerCase();
-        filteredRows = allRows.filter(row => {
-            return row.textContent.toLowerCase().indexOf(searchVal) > -1;
-        });
-        paginator.reset();
-    }
-
-    $('#searchInput').on('keyup', filterEnrollees);
-    
-    // ── Paginator ─────────────────────────────────────────────────────────────
-    const paginator = createPaginator({
-        tableBodySelector  : 'tbody',
-        paginationSelector : '#enrollees-pagination',
-        rowsPerPage        : 10,
-        getVisibleRows     : () => filteredRows,
-    });
-
-    paginator.render();
-
-    // Handle unenroll modal
-    $('#confirmUnenrollModal').on('show.bs.modal', function (e) {
-        var btn = $(e.relatedTarget);
-        var enrollmentId = btn.data('enrollment');
-        var courseId = btn.data('course');
-        var studentName = btn.data('name');
-        var form = $(this).find('form');
+    (function ($) { 
+        "use strict"; 
         
-        $('#studentNameDisplay').text(studentName);
-        form.attr('action', '{{ url_for("admin.unenroll_student", enrollment_id=0, course_id=0) }}'.replace(/0\/0/, enrollmentId + '/' + courseId));
-    });
+        // ── Filtering Logic
+        const enrollTableBody = document.querySelector('#enrollTable tbody');
+        const allRows = Array.from(enrollTableBody.querySelectorAll('tr.enrollee-row'));
+        let filteredRows = [...allRows];
+        
+        function filterEnrollees() {
+            var searchVal = $('#searchInput').val().toLowerCase();
+            filteredRows = allRows.filter(row => {
+                return row.textContent.toLowerCase().indexOf(searchVal) > -1;
+            });
+            paginator.reset();
+        }
+
+        $('#searchInput').on('keyup', filterEnrollees);
+        
+        // ── Paginator Init
+        const paginator = createPaginator({
+            tableBodySelector  : 'tbody',
+            paginationSelector : '#enrollees-pagination',
+            rowsPerPage        : 10,
+            getVisibleRows     : () => filteredRows,
+        });
+
+        paginator.render();
+
+        // ── Handle Unenroll Modal Data Injection
+        $('#confirmUnenrollModal').on('show.bs.modal', function (e) {
+            var btn = $(e.relatedTarget);
+            var enrollmentId = btn.data('enrollment');
+            var classCode = btn.data('class');
+            var studentName = btn.data('name');
+            var form = $(this).find('form');
+            
+            $('#studentNameDisplay').text(studentName);
+            
+            // Build dynamic route using enrollment_id and class_code
+            var actionUrl = '{{ url_for("admin.unenroll_student", enrollment_id=0, class_code="_code_") }}'
+                .replace('0', enrollmentId)
+                .replace('_code_', classCode);
+                
+            form.attr('action', actionUrl);
+        });
+
+    })(jQuery);
 </script>
 {% endblock %}

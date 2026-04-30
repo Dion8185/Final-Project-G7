@@ -1,15 +1,19 @@
 {% extends "admin_base.html" %}
+{% block title %}Dashboard - TestPoint Admin{% endblock %}
 
 {% block content %}
 <div class="container-fluid animate__animated animate__fadeIn">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">System Oversight Dashboard</h1>
-        <span class="badge badge-dark p-2"><i class="fas fa-calendar-alt mr-1"></i> Academic Year 2026</span>
+        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">System Oversight Dashboard</h1>
+        <div>
+            <span class="badge badge-dark p-2 shadow-sm mr-2"><i class="fas fa-calendar-alt mr-1"></i> Academic Year 2026</span>
+            <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload();"><i class="fas fa-sync-alt fa-sm"></i> Refresh Data</button>
+        </div>
     </div>
 
     <!-- Summary Cards -->
     <div class="row">
-        <!-- Total Users -->
+        <!-- Registered Users -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
@@ -41,28 +45,28 @@
             </div>
         </div>
 
-        <!-- Total Courses -->
+        <!-- Total Subjects in Catalog -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Active Courses</div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Subject Catalog</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_courses }}</div>
                         </div>
-                        <div class="col-auto"><i class="fas fa-book-open fa-2x text-gray-300"></i></div>
+                        <div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Global Violations (Anti-Cheat Metric) -->
+        <!-- Global Violations -->
         <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-danger shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Cheating Alerts (Global)</div>
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Security Alerts (Global)</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ global_violations }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i></div>
@@ -76,7 +80,7 @@
         <!-- Pie Chart: Account Distribution -->
         <div class="col-xl-4 col-lg-5">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
+                <div class="card-header py-3 bg-white">
                     <h6 class="m-0 font-weight-bold text-primary">Account Distribution</h6>
                 </div>
                 <div class="card-body">
@@ -94,23 +98,40 @@
             </div>
         </div>
 
-        <!-- Course Popularity Progress Bars -->
+        <!-- Subject Popularity Progress Bars -->
         <div class="col-xl-8 col-lg-7">
             <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Top Enrolled Courses</h6>
+                <div class="card-header py-3 bg-white">
+                    <h6 class="m-0 font-weight-bold text-primary">Top Enrolled Subjects</h6>
                 </div>
                 <div class="card-body">
                     {% for course in top_courses %}
-                    <h4 class="small font-weight-bold">{{ course.course_name }} <span class="float-right">{{ course.student_count }} Students</span></h4>
-                    <div class="progress mb-4">
-                        <!-- We calculate a rough percentage based on total users for the bar width -->
-                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ (course.student_count / total_users * 100)|int if total_users > 0 else 0 }}%"></div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between">
+                            <h4 class="small font-weight-bold text-dark">{{ course.course_name }}</h4>
+                            <span class="small font-weight-bold text-primary">{{ course.student_count }} Students</span>
+                        </div>
+                        <div class="progress progress-sm">
+                            <!-- Percentage based on total registered users -->
+                            <div class="progress-bar bg-info shadow-sm" role="progressbar" 
+                                 style="width: {{ (course.student_count / total_users * 100)|int if total_users > 0 else 0 }}%">
+                            </div>
+                        </div>
                     </div>
                     {% endfor %}
+                    
+                    {% if not top_courses %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-layer-group fa-3x text-gray-200 mb-3"></i>
+                        <p class="text-gray-500 italic">No class enrollment data available yet.</p>
+                    </div>
+                    {% endif %}
+
                     <hr>
                     <div class="text-center">
-                        <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-sm btn-dark">View Detailed Global Oversight</a>
+                        <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-outline-dark rounded-pill px-4">
+                            <i class="fas fa-chalkboard-teacher mr-1"></i> Manage Active Classes
+                        </a>
                     </div>
                 </div>
             </div>
@@ -120,30 +141,40 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Load Chart.js 2.9.4 specifically -->
+<!-- Load Chart.js 2.9.4 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
 
 <script>
-    // Set default styling to match SB Admin 2
+    // Set default styling
     Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
     Chart.defaults.global.defaultFontColor = '#858796';
 
-    // Debugging: View this in your browser console (F12) to see if data exists
-    console.log("Labels:", {{ pie_labels|tojson }});
-    console.log("Values:", {{ pie_values|tojson }});
-
     var ctx = document.getElementById("userDistPie");
     
-    // Check if data actually exists before rendering
-    if ({{ pie_values|sum }} > 0) {
+    // Dynamic color mapping based on labels to ensure consistency
+    var labels = {{ pie_labels|tojson }};
+    var values = {{ pie_values|tojson }};
+    var backgroundColors = labels.map(function(label) {
+        if (label === 'Admin') return '#5a5c69';   // Dark Gray
+        if (label === 'Teacher') return '#e74a3b'; // Danger Red
+        return '#4e73df';                         // Primary Blue (Students)
+    });
+    
+    var hoverColors = labels.map(function(label) {
+        if (label === 'Admin') return '#373840';
+        if (label === 'Teacher') return '#be2617';
+        return '#2e59d9';
+    });
+
+    if (values.length > 0 && values.reduce((a, b) => a + b, 0) > 0) {
         var myPieChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: {{ pie_labels|tojson }},
+                labels: labels,
                 datasets: [{
-                    data: {{ pie_values|tojson }},
-                    backgroundColor: ['#5a5c69', '#4e73df', '#e74a3b'], // Admin(Dark), Student(Blue), Teacher(Red)
-                    hoverBackgroundColor: ['#373840', '#2e59d9', '#be2617'],
+                    data: values,
+                    backgroundColor: backgroundColors,
+                    hoverBackgroundColor: hoverColors,
                     hoverBorderColor: "rgba(234, 236, 244, 1)",
                 }],
             },
@@ -156,7 +187,7 @@
                     borderWidth: 1,
                     xPadding: 15,
                     yPadding: 15,
-                    displayColors: false,
+                    displayColors: true,
                     caretPadding: 10,
                 },
                 legend: {
@@ -166,9 +197,12 @@
             },
         });
     } else {
-        // If no data, show a message in the canvas
-        ctx.getContext("2d").font = "14px Nunito";
-        ctx.getContext("2d").fillText("No account data available", 50, 100);
+        // Fallback for no data
+        var chartCtx = ctx.getContext("2d");
+        chartCtx.textAlign = 'center';
+        chartCtx.textBaseline = 'middle';
+        chartCtx.font = "14px Nunito";
+        chartCtx.fillText("No Account Data", ctx.width/2, ctx.height/2);
     }
 </script>
 {% endblock %}

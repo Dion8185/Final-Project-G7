@@ -713,7 +713,7 @@ def reject_user(pending_id):
 
     if p:
         try:
-            # 1. Delete physical file
+            # 1. Delete physical file if exists
             if p['document_path']:
                 file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
                 if os.path.exists(file_path):
@@ -752,13 +752,11 @@ def resubmit_user(pending_id):
 
     if p:
         try:
-            # 1. Delete the old physical file to save space
             if p['document_path']:
                 file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
                 if os.path.exists(file_path):
                     os.remove(file_path)
 
-            # 2. Update status and save notes
             full_note = f"Reason: {reason}. {notes}"
             cursor.execute("""
                 UPDATE pending_users 
@@ -768,7 +766,6 @@ def resubmit_user(pending_id):
                 WHERE pending_id = %s
             """, (full_note, pending_id))
 
-            # 3. Send Email Notification
             msg = Message(subject='Action Required: Resubmit Documents - TestPoint', sender='verify@testpoint.com', recipients=[p['email']])
             msg.body = f"Hello {p['firstname']},\n\nOur admins have reviewed your documents and require a resubmission.\n\ {full_note}\n\nPlease log in to your account to upload the correct documents."
             mail.send(msg)

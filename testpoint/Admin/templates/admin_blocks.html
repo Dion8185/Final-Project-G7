@@ -1,0 +1,130 @@
+{% extends "admin_base.html" %}
+{% block title %}Manage Blocks - Admin{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Blocks & Sections</h1>
+    <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addBlockModal">
+        <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> New Block
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" width="100%">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Program</th>
+                        <th>Block Name</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in blocks %}
+                    <tr>
+                        <td><span class="badge badge-primary px-3">{{ b.program_name }}</span></td>
+                        <td class="font-weight-bold text-dark">{{ b.block_name }}</td>
+                        <td class="text-center">
+                            <!-- Trigger Generic Delete Modal -->
+                            <button type="button" class="btn btn-danger btn-sm btn-circle shadow-sm" 
+                                    data-toggle="modal" data-target="#deleteBlockModal" 
+                                    data-id="{{ b.block_id }}" 
+                                    data-name="{{ b.program_name }} - {{ b.block_name }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td> 
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted italic">No blocks defined in the system.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- ── MODALS SECTION (Outside Animation) ── -->
+
+<!-- 1. Add Block Modal -->
+<div class="modal fade" id="addBlockModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold">Create New Block</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form action="{{ url_for('admin.manage_blocks') }}" method="POST">
+                <div class="modal-body bg-light">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-dark">Target Program</label>
+                        <select name="program_id" class="form-control" required>
+                            <option value="">-- Select Program --</option>
+                            {% for p in programs %}
+                            <option value="{{ p.program_id }}">{{ p.program_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-dark">Block/Section Name</label>
+                        <input type="text" name="block_name" class="form-control" placeholder="e.g. 1-A" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top">
+                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Create Block</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Generic Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBlockModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-exclamation-triangle mr-2"></i>Confirm Deletion</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form id="deleteBlockForm" method="POST" action="">
+                <div class="modal-body text-center py-4 bg-white">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <p class="text-dark font-weight-bold mb-1">Delete block <span id="deleteBlockNameDisplay" class="text-danger"></span>?</p>
+                    <p class="small text-muted mb-0">Students currently assigned to this block will be unassigned. This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button class="btn btn-secondary btn-sm px-3" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Yes, Delete Permanently</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        "use strict";
+
+        // Handle Delete Modal Data Injection
+        $('#deleteBlockModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget); // Button that triggered the modal
+            var blockId = button.data('id');     // Extract info from data-* attributes
+            var blockName = button.data('name');
+            
+            var modal = $(this);
+            modal.find('#deleteBlockNameDisplay').text(blockName);
+            
+            // Build dynamic route using block_id
+            var actionUrl = "{{ url_for('admin.delete_block', block_id=0) }}".replace('0', blockId);
+            modal.find('#deleteBlockForm').attr('action', actionUrl);
+        });
+    });
+</script>
+{% endblock %}

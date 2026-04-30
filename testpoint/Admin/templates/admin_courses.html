@@ -1,192 +1,220 @@
 {% extends "admin_base.html" %}
 
+{% block title %}Subject Catalog - Admin Control{% endblock %}
+
 {% block head %}
 <style>
-    .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-    .card { border: none; }
-    .btn-circle.btn-sm { height: 30px; width: 30px; font-size: 0.75rem; }
-    .field-feedback { font-size: 0.70rem; margin-top: 0.2rem; display: block; min-height: 1rem; }
-    .field-feedback.valid-msg { color: #28a745; }
-    .field-feedback.invalid-msg { color: #dc3545; }
+    .course-card {
+        transition: all 0.2s;
+        border-left: 5px solid transparent;
+    }
+
+    .course-card:hover {
+        border-left: 5px solid #4e73df;
+        background-color: #f8f9fc;
+    }
+
+    .btn-circle.btn-sm {
+        height: 30px;
+        width: 30px;
+        font-size: 0.75rem;
+    }
+
+    /* ── VALIDATION STYLES ── */
+    .field-feedback {
+        font-size: 0.70rem;
+        margin-top: 0.2rem;
+        display: block;
+        min-height: 1rem;
+        padding-left: 5px;
+    }
+
+    .valid-msg {
+        color: #28a745;
+    }
+
+    .invalid-msg {
+        color: #dc3545;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Page Header -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Course Management</h1>
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Subject Catalog</h1>
     <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#addCourseModal">
-            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Course
+        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addCourseModal">
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add New Subject
         </button>
-         <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-danger shadow-sm">
-            <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Courses
+        <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-dark shadow-sm">
+            <i class="fas fa-trash-restore fa-sm text-white-50 mr-1"></i> Subject Trash
         </a>
     </div>
 </div>
 
-<!-- Search Section -->
-<div class="card shadow mb-4">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
-                    </div>
-                    <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search by course code, title, or teacher...">
-                </div>
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Subject Catalog</li>
+    </ol>
+</nav>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}" role="alert">
+    {{ message }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<!-- Filter Card -->
+<div class="card shadow mb-4 border-bottom-primary">
+    <div class="card-body py-3">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text bg-white border-right-0"><i
+                        class="fas fa-search text-gray-400"></i></span>
             </div>
+            <input type="text" id="searchInput" class="form-control border-left-0"
+                placeholder="Search by Subject Code or Title...">
         </div>
     </div>
 </div>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
-                {{ message }}
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
-
-<!-- Courses Table -->
+<!-- Subjects Table -->
 <div class="card shadow mb-4">
+    <div class="card-header py-3 bg-white">
+        <h6 class="m-0 font-weight-bold text-primary">Global Subject List</h6>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover align-middle" id="courseTable" width="100%">
                 <thead class="thead-light">
                     <tr>
-                        <th>Code</th>
-                        <th>Course Title</th>
-                        <th>Assigned Teacher</th>
-                        <th>Students</th>
-                        <th class="text-center">Actions</th>
+                        <th width="15%">Code</th>
+                        <th width="30%">Subject Title</th>
+                        <th width="40%">Description</th>
+                        <th class="text-center" width="15%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in courses %}
                     <tr class="course-row">
-                        <td><strong>{{ course.course_code }}</strong></td>
-                        <td>{{ course.course_name }}</td>
-                        <td>
-                            {% if course.teacher_id %}
-                                <span class="text-dark">{{ course.teacher_fname }} {{ course.teacher_lname }}</span>
-                            {% else %}
-                                <span class="text-muted font-italic">Unassigned</span>
-                            {% endif %}
+                        <td class="font-weight-bold text-dark search-data">{{ course.course_code }}</td>
+                        <td class="search-data">{{ course.course_name }}</td>
+                        <td class="small text-muted">
+                            {{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}
                         </td>
-                        <td><span class="badge badge-pill badge-light border">{{ course.student_count }} Student(s)</span></td>
                         <td class="text-center">
-                            <a href="{{ url_for('admin.manage_enrollments', course_id=course.course_id) }}" class="btn btn-dark btn-circle btn-sm mr-1" title="Manage Students">
-                                <i class="fas fa-users"></i>
-                            </a>
-                            <button class="btn btn-info btn-circle btn-sm mr-1" title="Edit" data-toggle="modal" data-target="#editCourseModal{{ course.course_id }}">
+                            <!-- Trigger Edit Modal -->
+                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1" title="Edit"
+                                data-toggle="modal"
+                                data-target="#editCourseModal{{ course.course_code|replace(' ', '_')|replace('-', '_') }}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete" data-toggle="modal" data-target="#deleteCourseModal" 
-                                data-id="{{ course.course_id }}" data-name="{{ course.course_code }}">
+                            <!-- Trigger Delete Modal -->
+                            <button type="button" class="btn btn-danger btn-circle btn-sm shadow-sm"
+                                title="Move to Trash" data-toggle="modal" data-target="#deleteCourseModal"
+                                data-id="{{ course.course_code }}" data-name="{{ course.course_name }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center text-gray-500 py-5">No courses found.</td></tr>
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <i class="fas fa-book fa-3x text-gray-200 mb-3"></i>
+                            <p class="text-gray-500 italic">No subjects found in the catalog.</p>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination (controlled by paginator.js) -->
-        <nav class="mt-4" aria-label="Courses pagination">
-            <ul class="pagination justify-content-center" id="courses-pagination"></ul>
-        </nav>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- Add Course Modal -->
-<div class="modal fade" id="addCourseModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content border-0 shadow">
+<!-- ── MODALS SECTION (Outside Animation) ── -->
+
+<!-- 1. Add Subject Modal -->
+<div class="modal fade validate-modal" id="addCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">New Course</h5>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-2"></i>New Subject Entry</h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
-            <form action="{{ url_for('admin.add_course') }}" method="POST">
-                <div class="modal-body">
+            <form action="{{ url_for('admin.add_course') }}" method="POST" novalidate>
+                <div class="modal-body bg-light px-4">
                     <div class="form-group">
-                        <label class="small font-weight-bold">Course Code</label>
-                        <input type="text" class="form-control" name="course_code" required>
+                        <label class="small font-weight-bold text-dark">Subject Code</label>
+                        <input type="text" class="form-control" name="course_code" placeholder="e.g. COMP101" required>
+                        <span class="field-feedback"></span>
                     </div>
                     <div class="form-group">
-                        <label class="small font-weight-bold">Course Title</label>
-                        <input type="text" class="form-control" name="course_name" required>
+                        <label class="small font-weight-bold text-dark">Subject Title</label>
+                        <input type="text" class="form-control" name="course_name"
+                            placeholder="e.g. Introduction to Computing" required>
+                        <span class="field-feedback"></span>
                     </div>
                     <div class="form-group">
-                        <label class="small font-weight-bold">Assign Teacher</label>
-                        <select class="form-control" name="teacher_id">
-                            <option value="">-- No Teacher Assigned --</option>
-                            {% for teacher in teachers %}
-                                <option value="{{ teacher.teacher_id }}">{{ teacher.firstname }} {{ teacher.lastname }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold">Description</label>
-                        <textarea class="form-control" name="description" rows="3"></textarea>
+                        <label class="small font-weight-bold text-dark">Subject Description</label>
+                        <textarea class="form-control" name="description" rows="4"
+                            placeholder="Brief overview..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary" type="submit">Create Course</button>
+                <div class="modal-footer bg-white border-top">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm px-4" type="submit">Add to Catalog</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<!-- 2. Edit Subject Modals (Loop) -->
 {% for course in courses %}
-<!-- Edit Course Modal -->
-<div class="modal fade" id="editCourseModal{{ course.course_id }}" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content border-0 shadow">
+<div class="modal fade validate-modal" id="editCourseModal{{ course.course_code|replace(' ', '_')|replace('-', '_') }}"
+    tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title font-weight-bold">Edit Course: {{ course.course_code }}</h5>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Update: {{ course.course_code
+                    }}</h5>
                 <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
-            <form action="{{ url_for('admin.update_course', course_id=course.course_id) }}" method="POST">
-                <div class="modal-body">
+            <form action="{{ url_for('admin.update_course', old_code=course.course_code) }}" method="POST" novalidate>
+                <div class="modal-body bg-light px-4">
                     <div class="form-group">
-                        <label class="small font-weight-bold">Course Code</label>
-                        <input type="text" class="form-control" name="course_code" value="{{ course.course_code }}" required>
+                        <label class="small font-weight-bold text-dark">Subject Code</label>
+                        <input type="text" class="form-control" name="course_code" value="{{ course.course_code }}"
+                            required>
+                        <span class="field-feedback"></span>
                     </div>
                     <div class="form-group">
-                        <label class="small font-weight-bold">Course Title</label>
-                        <input type="text" class="form-control" name="course_name" value="{{ course.course_name }}" required>
+                        <label class="small font-weight-bold text-dark">Subject Title</label>
+                        <input type="text" class="form-control" name="course_name" value="{{ course.course_name }}"
+                            required>
+                        <span class="field-feedback"></span>
                     </div>
                     <div class="form-group">
-                        <label class="small font-weight-bold">Change Teacher</label>
-                        <select class="form-control" name="teacher_id">
-                            <option value="">-- No Teacher Assigned --</option>
-                            {% for teacher in teachers %}
-                                <option value="{{ teacher.teacher_id }}" {% if teacher.teacher_id == course.teacher_id %}selected{% endif %}>
-                                    {{ teacher.firstname }} {{ teacher.lastname }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold">Description</label>
-                        <textarea class="form-control" name="description" rows="3">{{ course.description }}</textarea>
+                        <label class="small font-weight-bold text-dark">Description</label>
+                        <textarea class="form-control" name="description" rows="4">{{ course.description }}</textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-info" type="submit">Update Course</button>
+                <div class="modal-footer bg-white border-top">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-info btn-sm px-4" type="submit">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -194,23 +222,24 @@
 </div>
 {% endfor %}
 
-<!-- Deactivation Modal -->
-<div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title font-weight-bold">Confirm Deactivation</h5>
-                <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
+<!-- 3. Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title font-weight-bold">Move to Trash</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
-            <form id="deleteCourseForm" method="POST">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p class="font-weight-bold">Deactivate course <span id="delCode"></span>?</p>
-                    <p class="small text-muted">The course will be moved to trash and unassigned from the current teacher.</p>
+            <form id="deleteCourseForm" method="POST" action="">
+                <div class="modal-body text-center py-4 bg-white">
+                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+                    <p class="text-dark font-weight-bold mb-1">Move <span id="deleteCourseName"
+                            class="text-danger"></span> to trash?</p>
+                    <p class="small text-muted">You can restore this subject later from the Trash Bin.</p>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-warning px-4" type="submit">Yes, Deactivate</button>
+                <div class="modal-footer bg-light border-0">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Yes, Move to Trash</button>
                 </div>
             </form>
         </div>
@@ -219,45 +248,40 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
-
 <script>
-    (function ($) {
+    $(document).ready(function () {
         "use strict";
 
-        // ── Filtering & Pagination ────────────────────────────────────────
-        const courseTableBody = document.querySelector('#courseTable tbody');
-        const allRows = Array.from(courseTableBody.querySelectorAll('tr.course-row'));
-        let filteredRows = [...allRows];
-        
-        function performFilter() {
-            var searchVal = $('#searchInput').val().toLowerCase();
-            filteredRows = allRows.filter(row => {
-                return row.textContent.toLowerCase().indexOf(searchVal) > -1;
+        // Search Filter
+        $('#searchInput').on('keyup', function () {
+            var value = $(this).val().toLowerCase();
+            $(".course-row").each(function () {
+                var rowText = $(this).find('.search-data').text().toLowerCase();
+                $(this).toggle(rowText.indexOf(value) > -1);
             });
-            paginator.reset();
-        }
+        });
 
-        $('#searchInput').on('keyup', performFilter);
-
-        // Delete Modal Action Injection
+        // Delete Modal Logic
         $('#deleteCourseModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
-            var id = btn.data('id');
-            $('#delCode').text(btn.data('name'));
-            var action = "{{ url_for('admin.deactivate_course', course_id='0') }}".replace('0', id);
-            $('#deleteCourseForm').attr('action', action);
-        });
-        
-        // ── Paginator ─────────────────────────────────────────────────────────────
-        const paginator = createPaginator({
-            tableBodySelector  : 'tbody',
-            paginationSelector : '#courses-pagination',
-            rowsPerPage        : 10,
-            getVisibleRows     : () => filteredRows,
+            var code = btn.data('id');
+            var name = btn.data('name');
+            $('#deleteCourseName').text(code + ": " + name);
+            var actionUrl = "{{ url_for('admin.deactivate_course', course_code='_code_') }}".replace('_code_', code);
+            $('#deleteCourseForm').attr('action', actionUrl);
         });
 
-        paginator.render();
-    })(jQuery);
+        // Inline Validation
+        $(document).on('input blur', '.validate-modal input[required]', function () {
+            const input = $(this);
+            if (input.val().trim().length < 2) {
+                input.removeClass('is-valid').addClass('is-invalid');
+                input.siblings('.field-feedback').text('Required (min 2 chars)').addClass('invalid-msg').removeClass('valid-msg');
+            } else {
+                input.removeClass('is-invalid').addClass('is-valid');
+                input.siblings('.field-feedback').text('✓ OK').addClass('valid-msg').removeClass('invalid-msg');
+            }
+        });
+    });
 </script>
-{% endblock %}  
+{% endblock %}

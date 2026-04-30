@@ -1,0 +1,115 @@
+{% extends "admin_base.html" %}
+{% block title %}Manage Classes - Admin{% endblock %}
+
+{% block content %}
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Academic Classes</h1>
+    <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addClassModal">
+        <i class="fas fa-calendar-plus fa-sm text-white-50 mr-2"></i> Schedule Class
+    </button>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}">{{ message }}
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="card shadow mb-4 border-left-primary">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" width="100%">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Class Code</th>
+                        <th>Subject</th>
+                        <th>Block</th>
+                        <th>Instructor</th>
+                        <th class="text-center">Management</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in classes %}
+                    <tr>
+                        <td><strong class="text-primary">{{ c.class_code }}</strong></td>
+                        <td>{{ c.course_name }}</td>
+                        <td><span class="badge badge-light border">{{ c.program_name }} - {{ c.block_name }}</span></td>
+                        <td>{{ c.firstname }} {{ c.lastname }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center">
+                                <form action="{{ url_for('admin.enroll_block') }}" method="POST" class="mr-2"
+                                    onsubmit="return confirm('Enroll entire block into this class?')">
+                                    <input type="hidden" name="class_code" value="{{ c.class_code }}">
+                                    <button type="submit" class="btn btn-success btn-sm px-3 shadow-sm rounded-pill">
+                                        <i class="fas fa-users mr-1"></i> Enroll Block
+                                    </button>
+                                </form>
+                                <a href="{{ url_for('admin.manage_enrollments', class_code=c.class_code) }}"
+                                    class="btn btn-dark btn-sm px-3 shadow-sm rounded-pill">
+                                    <i class="fas fa-list-ul mr-1"></i> Manage
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- ── MODALS SECTION (Outside Animation) ── -->
+<div class="modal fade" id="addClassModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-calendar-plus mr-2"></i>Schedule New Class
+                </h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form action="{{ url_for('admin.manage_classes') }}" method="POST">
+                <div class="modal-body bg-light px-4">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-dark">Unique Class Code</label>
+                        <input type="text" class="form-control" name="class_code" placeholder="e.g. COMP101-SEC1"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-dark">Subject (From Catalog)</label>
+                        <select name="course_code" class="form-control" required>
+                            <option value="">-- Pick Subject --</option>
+                            {% for s in subjects %}<option value="{{ s.course_code }}">{{ s.course_name }} ({{
+                                s.course_code }})</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-dark">Assigned Block</label>
+                        <select name="block_id" class="form-control" required>
+                            <option value="">-- Pick Section --</option>
+                            {% for b in blocks %}<option value="{{ b.block_id }}">{{ b.program_name }} - {{ b.block_name
+                                }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-dark">Assigned Teacher</label>
+                        <select name="teacher_id" class="form-control" required>
+                            <option value="">-- Pick Instructor --</option>
+                            {% for t in teachers %}<option value="{{ t.teacher_id }}">{{ t.firstname }} {{ t.lastname }}
+                            </option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-white border-top">
+                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Schedule Class</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
