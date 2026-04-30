@@ -1,41 +1,20 @@
 {% extends "teacher_base.html" %}
-{% block title %}Manage Enrollees - {{ course.course_code }}{% endblock %}
-
-{% block head %}
-<style>
-    .student-list-container {
-        max-height: 350px;
-        overflow-y: auto;
-        border: 1px solid #e3e6f0;
-        border-radius: 5px;
-    }
-    .student-item {
-        padding: 10px 15px;
-        border-bottom: 1px solid #f8f9fc;
-        transition: background 0.2s;
-    }
-    .student-item:hover { background-color: #f8f9fc; }
-    .student-item:last-child { border-bottom: none; }
-</style>
-{% endblock %}
+{% block title %}Manage Enrollees - {{ class_code }}{% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 mb-0 text-gray-800">Class: <span class="text-primary">{{ course.course_code }} - {{ course.course_name }}</span></h1>
+            <h1 class="h3 mb-0 text-gray-800">Class: <span class="text-primary">{{ class_code }}</span></h1>
         </div>
         <div>
-            <button class="btn btn-sm btn-primary shadow-sm px-3" data-toggle="modal" data-target="#enrollModal">
-                <i class="fas fa-user-plus mr-1"></i> Bulk Enroll Students
-            </button>
-            <a href="{{ url_for('teacher.my_courses') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>
+            <a href="{{ url_for('teacher.my_courses') }}" class="btn btn-sm btn-secondary shadow-sm"><i class="fas fa-arrow-left fa-sm"></i> Back</a>
         </div>
     </div>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3 bg-white">
-            <h6 class="m-0 font-weight-bold">Currently Enrolled Students</h6>
+            <h6 class="m-0 font-weight-bold text-gray-800">Currently Enrolled Students</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -44,9 +23,6 @@
                         <tr>
                             <th>Student ID</th>
                             <th>Full Name</th>
-                            <th>Email Address</th>
-                            <th>Enrolled Date</th>
-                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -54,18 +30,9 @@
                         <tr class="enrollee-row">
                             <td><span class="font-weight-bold text-dark">{{ s.student_id }}</span></td>
                             <td>{{ s.firstname }} {{ s.lastname }}</td>
-                            <td>{{ s.email }}</td>
-                            <td class="small text-muted">{{ s.enrolled_at }}</td>
-                            <td class="text-center">
-                                <form action="{{ url_for('teacher.unenroll_student', enrollment_id=s.enrollment_id, course_id=course.course_id) }}" method="POST">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm btn-circle" onclick="return confirm('Unenroll student from this class?')">
-                                        <i class="fas fa-user-times"></i>
-                                    </button>
-                                </form>
-                            </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="5" class="text-center py-4 text-muted">No students currently enrolled.</td></tr>
+                        <tr><td colspan="2" class="text-center py-4 text-muted">No students currently enrolled.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -73,81 +40,4 @@
         </div>
     </div>
 </div>
-
-<!-- BULK ENROLL MODAL -->
-<div class="modal fade" id="enrollModal" tabindex="-1">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">Bulk Student Enrollment</h5>
-                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
-            </div>
-            <form action="{{ url_for('teacher.bulk_enroll_students') }}" method="POST">
-                <input type="hidden" name="course_id" value="{{ course.course_id }}">
-                <div class="modal-body bg-light">
-                    
-                    <!-- Search inside modal -->
-                    <div class="form-group">
-                        <div class="input-group input-group-sm mb-3">
-                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-search"></i></span></div>
-                            <input type="text" id="modalSearch" class="form-control" placeholder="Search student name or ID...">
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <label class="small font-weight-bold text-dark m-0">Select Students to Add:</label>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="selectAllModal">
-                            <label class="custom-control-label small font-weight-bold" for="selectAllModal">Select All</label>
-                        </div>
-                    </div>
-
-                    <div class="student-list-container bg-white shadow-sm" id="studentCheckList">
-                        {% for student in all_students %}
-                        <div class="student-item" data-search="{{ student.student_id }} {{ student.firstname }} {{ student.lastname }}">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" name="student_ids[]" value="{{ student.student_id }}" 
-                                       class="custom-control-input student-checkbox" id="chk-{{ student.student_id }}">
-                                <label class="custom-control-label d-block pointer" for="chk-{{ student.student_id }}">
-                                    <div class="font-weight-bold text-dark small">{{ student.firstname }} {{ student.lastname }}</div>
-                                    <div class="text-xs text-muted">{{ student.student_id }}</div>
-                                </label>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="p-4 text-center small text-muted">All verified students are already enrolled.</div>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="modal-footer bg-white border-top">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Enroll Selected Students</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    // 1. Modal "Select All" logic
-    $('#selectAllModal').on('change', function() {
-        // Only select checkboxes that are currently visible (filtered)
-        $('.student-item:visible .student-checkbox').prop('checked', this.checked);
-    });
-
-    // 2. Modal Search logic
-    $('#modalSearch').on('keyup', function() {
-        var value = $(this).val().toLowerCase();
-        $("#studentCheckList .student-item").filter(function() {
-            $(this).toggle($(this).attr('data-search').toLowerCase().indexOf(value) > -1);
-        });
-        
-        // Uncheck "Select All" if we are searching to avoid confusion
-        $('#selectAllModal').prop('checked', false);
-    });
-});
-</script>
 {% endblock %}
