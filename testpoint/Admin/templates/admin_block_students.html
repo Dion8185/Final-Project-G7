@@ -1,0 +1,226 @@
+{% extends "admin_base.html" %}
+{% block title %}Block Enrollees - Admin{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_blocks') }}">Blocks</a></li>
+        <li class="breadcrumb-item active">{{ block.program_name }} - {{ block.block_name }}</li>
+    </ol>
+</nav>
+
+<div class="alert {% if students|length >= block.capacity %}alert-danger{% else %}alert-info{% endif %} shadow-sm small">
+    <i class="fas fa-info-circle mr-2"></i>
+    <strong>Capacity Status:</strong> {{ students|length }} / {{ block.capacity }} slots occupied.
+    {% if students|length >= block.capacity %}
+        <strong>This block is full.</strong> You cannot assign more students.
+    {% else %}
+        {{ block.capacity - students|length }} slots remaining.
+    {% endif %}
+</div>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">
+        Block: <span class="text-primary">{{ block.block_name }}</span> 
+        <small class="text-muted">({{ block.program_name }})</small>
+    </h1>
+    <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#assignStudentModal">
+        <i class="fas fa-user-plus fa-sm mr-2"></i> Assign Student
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-dark">Current Students ({{ students|length }})</h6>
+        
+        <!-- Bulk Action Button (Initially Hidden) -->
+        <button type="button" id="btnBulkUnenroll" class="btn btn-danger btn-sm shadow-sm px-3 d-none" 
+                onclick="confirmBulkUnenroll()">
+            <i class="fas fa-user-minus mr-1"></i> Remove Selected (<span id="selectedCount">0</span>)
+        </button>
+    </div>
+    
+    <div class="card-body p-0">
+        <!-- Main Unenroll Form -->
+        <form id="bulkUnenrollForm" action="{{ url_for('admin.bulk_remove_from_block') }}" method="POST">
+            <input type="hidden" name="block_id" value="{{ block.block_id }}">
+            
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th width="40" class="text-center">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="selectAllCurrent">
+                                    <label class="custom-control-label" for="selectAllCurrent"></label>
+                                </div>
+                            </th>
+                            <th>Student ID</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" name="student_ids" value="{{ s.student_id }}" 
+                                           class="custom-control-input student-unenroll-check" id="un_{{ s.student_id }}">
+                                    <label class="custom-control-label" for="un_{{ s.student_id }}"></label>
+                                </div>
+                            </td>
+                            <td class="font-weight-bold">{{ s.student_id }}</td>
+                            <td>{{ s.firstname }} {{ s.lastname }}</td>
+                            <td class="small">{{ s.email }}</td>
+                            <td class="text-center">
+                                <!-- Keep single remove for quick actions -->
+                                <button type="button" class="btn btn-link text-danger p-0 small" 
+                                        onclick="singleUnenroll('{{ s.student_id }}')">Remove</button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted italic">No students assigned to this block yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="singleUnenrollForm" 
+    action="{{ url_for('admin.remove_from_block', student_id='TMP', block_id=block.block_id) }}" method="POST" class="d-none">
+</form>
+{% endblock %}
+
+{% block modals %}
+<div class="modal fade" id="assignStudentModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title font-weight-bold">Bulk Assign Students</h5>
+                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form action="{{ url_for('admin.assign_to_block') }}" method="POST">
+                <input type="hidden" name="block_id" value="{{ block.block_id }}">
+                
+                <div class="modal-body">
+                    <!-- Search inside modal for convenience -->
+                    <div class="form-group">
+                        <input type="text" id="studentModalSearch" class="form-control form-control-sm mb-3" placeholder="Search unassigned students...">
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+                        <label class="small font-weight-bold mb-0">Select Students</label>
+                        <button type="button" id="selectAllStudents" class="btn btn-sm btn-link p-0 text-primary">Select All</button>
+                    </div>
+
+                    <!-- Scrollable Area for Students -->
+                    <div class="border rounded p-2 bg-light" style="max-height: 300px; overflow-y: auto;">
+                        {% for u in unassigned %}
+                        <div class="custom-control custom-checkbox mb-2 student-item">
+                            <input type="checkbox" name="student_ids" value="{{ u.student_id }}" class="custom-control-input student-checkbox" id="chk_{{ u.student_id }}">
+                            <label class="custom-control-label d-block cursor-pointer" for="chk_{{ u.student_id }}">
+                                <span class="font-weight-bold text-dark">{{ u.firstname }} {{ u.lastname }}</span>
+                                <br><small class="text-muted">{{ u.student_id }}</small>
+                            </label>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted small">
+                            No unassigned students available.
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-white">
+                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit" id="submitBulkAssign" {% if not unassigned %}disabled{% endif %}>
+                        Assign Selected
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 1. Modal Search Filter
+    $('#studentModalSearch').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('.student-item').each(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+        });
+    });
+
+    // 2. Select All Toggle
+    $('#selectAllStudents').on('click', function() {
+        var anyUnchecked = $('.student-checkbox:visible:not(:checked)').length > 0;
+        $('.student-checkbox:visible').prop('checked', anyUnchecked);
+        $(this).text(anyUnchecked ? 'Deselect All' : 'Select All');
+    });
+
+    // Reset Select All text when modal closes
+    $('#assignStudentModal').on('hidden.bs.modal', function () {
+        $('#selectAllStudents').text('Select All');
+        $('.student-checkbox').prop('checked', false);
+        $('#studentModalSearch').val('').trigger('keyup');
+    });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+    const $selectAll = $('#selectAllCurrent');
+    const $checkboxes = $('.student-unenroll-check');
+    const $bulkBtn = $('#btnBulkUnenroll');
+    const $countLabel = $('#selectedCount');
+
+    // Update UI based on how many checkboxes are checked
+    function updateBulkUI() {
+        const checkedCount = $('.student-unenroll-check:checked').length;
+        if (checkedCount > 0) {
+            $bulkBtn.removeClass('d-none').addClass('animate__animated animate__fadeInDown');
+            $countLabel.text(checkedCount);
+        } else {
+            $bulkBtn.addClass('d-none');
+        }
+        $selectAll.prop('checked', checkedCount === $checkboxes.length && $checkboxes.length > 0);
+    }
+
+    // Select All click
+    $selectAll.on('change', function() {
+        $checkboxes.prop('checked', this.checked);
+        updateBulkUI();
+    });
+
+    // Individual checkbox click
+    $checkboxes.on('change', function() {
+        updateBulkUI();
+    });
+});
+
+// Confirmation logic
+function confirmBulkUnenroll() {
+    if (confirm("Are you sure you want to remove the selected students from this block?")) {
+        $('#bulkUnenrollForm').submit();
+    }
+}
+
+// Single unenroll helper
+function singleUnenroll(studentId) {
+    if (confirm("Remove this student from the block?")) {
+        let form = $('#singleUnenrollForm');
+        let action = form.attr('action').replace('TMP', studentId);
+        form.attr('action', action).submit();
+    }
+}
+</script>
+{% endblock %}

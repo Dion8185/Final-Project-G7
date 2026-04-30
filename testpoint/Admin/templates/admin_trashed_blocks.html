@@ -1,0 +1,65 @@
+{% extends "admin_base.html" %}
+{% block title %}Trashed Blocks - Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Block Trash Bin</h1>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Program</th>
+                        <th>Block Name</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in trashed_blocks %}
+                    <tr>
+                        <td><span class="badge badge-secondary">{{ b.program_name }}</span></td>
+                        <td class="font-weight-bold">{{ b.block_name }}</td>
+                        <td class="text-center">
+                            <form action="{{ url_for('admin.restore_block', block_id=b.block_id) }}" method="POST" class="d-inline">
+                                <button class="btn btn-success btn-sm px-3 mr-2" type="submit">Restore</button>
+                            </form>
+                            <button class="btn btn-danger btn-sm px-3" data-toggle="modal" data-target="#permDeleteBlock{{ b.block_id }}">Delete Forever</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center py-5 text-muted">Trash is empty.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Back</a>
+{% endblock %}
+
+{% block modals %}
+{% for b in trashed_blocks %}
+<div class="modal fade" id="permDeleteBlock{{ b.block_id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-body text-center p-5">
+                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                <h5>Permanent Delete?</h5>
+                <p>Deleting <strong>{{ b.block_name }}</strong> cannot be undone.</p>
+                <div class="mt-4">
+                    <button class="btn btn-light btn-sm mr-2" data-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('admin.delete_block_permanently', block_id=b.block_id) }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm px-4">Delete Forever</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

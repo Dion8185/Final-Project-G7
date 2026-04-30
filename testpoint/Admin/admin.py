@@ -280,37 +280,305 @@ def manage_programs():
         cursor.execute("INSERT INTO programs (program_name, description) VALUES (%s, %s)", (name, desc))
         connection.commit(); flash("Program added.", "success"); return redirect(url_for('admin.manage_programs'))
     
-    cursor.execute("SELECT * FROM programs"); progs = cursor.fetchall()
+    cursor.execute("SELECT * FROM programs WHERE is_active = 1")
+    progs = cursor.fetchall()
     cursor.close(); connection.close()
     return render_template('admin_programs.html', programs=progs, firstname=session.get('firstname'))
 
+@admin.route('/edit_program/<int:program_id>', methods=['POST'])
+def edit_program(program_id):
+    if admin_logged_in():
+        name = request.form.get('program_name')
+        desc = request.form.get('description')
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        try:
+            cursor.execute("UPDATE programs SET program_name = %s, description = %s WHERE program_id = %s", (name, desc, program_id))
+            connection.commit()
+            flash(f'Program "{name}" updated.', 'success')
+        finally:
+            cursor.close(); connection.close()
+        return redirect(url_for('admin.manage_programs'))
+    return redirect(url_for('auth.login'))
 
-#! 3. MANAGE BLOCKS (NEW)
+@admin.route('/archive_program/<int:program_id>', methods=['POST'])
+def archive_program(program_id):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("UPDATE programs SET is_active = 0 WHERE program_id = %s", (program_id,))
+        connection.commit(); cursor.close(); connection.close()
+        flash('Program moved to trash.', 'warning')
+        return redirect(url_for('admin.manage_programs'))
+    return redirect(url_for('auth.login'))
+
+@admin.route('/trashed_programs')
+def trashed_programs():
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM programs WHERE is_active = 0")
+        trashed = cursor.fetchall()
+        cursor.close(); connection.close()
+        return render_template('admin_trashed_programs.html', trashed_programs=trashed, firstname=session.get('firstname'))
+    return redirect(url_for('auth.login'))
+
+@admin.route('/restore_program/<int:program_id>', methods=['POST'])
+def restore_program(program_id):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("UPDATE programs SET is_active = 1 WHERE program_id = %s", (program_id,))
+        connection.commit(); cursor.close(); connection.close()
+        flash('Program restored successfully.', 'success')
+        return redirect(url_for('admin.trashed_programs'))
+    return redirect(url_for('auth.login'))
+
+@admin.route('/delete_program_permanently/<int:program_id>', methods=['POST'])
+def delete_program_permanently(program_id):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        try:
+            cursor.execute("DELETE FROM programs WHERE program_id = %s", (program_id,))
+            connection.commit()
+            flash('Program deleted permanently.', 'danger')
+        except mysql.connector.Error as err:
+            flash(f'Database Error: {err}', 'danger')
+        finally:
+            cursor.close(); connection.close()
+        return redirect(url_for('admin.trashed_programs'))
+    return redirect(url_for('auth.login'))
+
+# ! 3. MANAGE BLOCKS & SECTIONS
 @admin.route('/manage_blocks', methods=['GET', 'POST'])
 def manage_blocks():
     if not admin_logged_in(): return redirect(url_for('auth.login'))
     connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    if request.method == 'POST':
-        p_id = request.form.get('program_id'); name = request.form.get('block_name')
-        cursor.execute("INSERT INTO blocks (program_id, block_name) VALUES (%s, %s)", (p_id, name))
-        connection.commit(); flash("Block created.", "success"); return redirect(url_for('admin.manage_blocks'))
     
-    cursor.execute("SELECT b.*, p.program_name FROM blocks b JOIN programs p ON b.program_id = p.program_id")
+    if request.method == 'POST':
+        p_id = request.form.get('program_id')
+        year_level = request.form.get('year_level')
+        cap = request.form.get('capacity')
+        
+        try:
+            # 1. Find all existing blocks for this program & year
+            cursor.execute("""
+                SELECT block_name FROM blocks 
+                WHERE program_id = %s AND block_name LIKE %s AND is_active = 1
+                ORDER BY block_name
+            """, (p_id, f"{year_level}%"))
+            existing_blocks = [b['block_name'] for b in cursor.fetchall()] # List of block names
+            
+            # 2. Generate Next Block Name
+            if not existing_blocks:
+                # No blocks, start at A
+                new_block_name = f"{year_level}A"
+            else:
+                # Extract the letters
+                letters = [block_name[1:] for block_name in existing_blocks]
+                
+                # Find the next letter (handle wrap-around)
+                last_letter = letters[-1] #Get the most recent added
+                next_letter = chr(ord(last_letter) + 1)
+                new_block_name = f"{year_level}{next_letter}"
+
+            # 3. Insert the New Block
+            cursor.execute("""
+                INSERT INTO blocks (program_id, block_name, capacity, is_active) 
+                VALUES (%s, %s, %s, 1)
+            """, (p_id, new_block_name, cap))
+            connection.commit()
+            flash(f"Created Block: {new_block_name}", "success")
+
+        except mysql.connector.Error as err:
+            flash(f"Error creating block: {err}", "danger")
+        return redirect(url_for('admin.manage_blocks'))
+    
+    # GET Method: Fetch active blocks with current count
+    cursor.execute("""
+        SELECT b.*, p.program_name, 
+        (SELECT COUNT(*) FROM students WHERE block_id = b.block_id) as current_count
+        FROM blocks b 
+        JOIN programs p ON b.program_id = p.program_id
+        WHERE b.is_active = 1
+    """)
     blks = cursor.fetchall()
-    cursor.execute("SELECT * FROM programs"); progs = cursor.fetchall()
+    
+    # Fetch active programs for dropdown
+    cursor.execute("SELECT * FROM programs WHERE is_active = 1")
+    progs = cursor.fetchall()
+    
     cursor.close(); connection.close()
     return render_template('admin_blocks.html', blocks=blks, programs=progs, firstname=session.get('firstname'))
 
-@admin.route('/delete_block/<int:block_id>', methods=['POST'])
-def delete_block(block_id):
-    if admin_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        cursor.execute("DELETE FROM blocks WHERE block_id = %s", (block_id,))
-        connection.commit(); cursor.close(); connection.close()
-        flash('Block deleted successfully.', 'success')
-        return redirect(url_for('admin.manage_blocks'))
-    return redirect(url_for('auth.login'))
+@admin.route('/edit_block/<int:block_id>', methods=['POST'])
+def edit_block(block_id):
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    new_name = request.form.get('block_name')
+    new_cap = int(request.form.get('capacity'))
+    
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    try:
+        # Prevent setting capacity lower than current student count
+        cursor.execute("SELECT COUNT(*) as count FROM students WHERE block_id = %s", (block_id,))
+        current_count = cursor.fetchone()['count']
+        
+        if new_cap < current_count:
+            flash(f"Invalid Capacity: Block already has {current_count} students. Cannot reduce limit to {new_cap}.", "danger")
+        else:
+            cursor.execute("UPDATE blocks SET block_name = %s, capacity = %s WHERE block_id = %s", (new_name, new_cap, block_id))
+            connection.commit()
+            flash("Block updated successfully.", "success")
+    finally:
+        cursor.close(); connection.close()
+    return redirect(url_for('admin.manage_blocks'))
 
+
+@admin.route('/archive_block/<int:block_id>', methods=['POST'])
+def archive_block(block_id):
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+    cursor.execute("UPDATE blocks SET is_active = 0 WHERE block_id = %s", (block_id,))
+    connection.commit(); cursor.close(); connection.close()
+    flash('Block moved to trash.', 'warning')
+    return redirect(url_for('admin.manage_blocks'))
+
+
+@admin.route('/trashed_blocks')
+def trashed_blocks():
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT b.*, p.program_name 
+        FROM blocks b 
+        JOIN programs p ON b.program_id = p.program_id 
+        WHERE b.is_active = 0
+    """)
+    trashed = cursor.fetchall()
+    cursor.close(); connection.close()
+    return render_template('admin_trashed_blocks.html', trashed_blocks=trashed, firstname=session.get('firstname'))
+
+
+@admin.route('/restore_block/<int:block_id>', methods=['POST'])
+def restore_block(block_id):
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+    cursor.execute("UPDATE blocks SET is_active = 1 WHERE block_id = %s", (block_id,))
+    connection.commit(); cursor.close(); connection.close()
+    flash('Block restored to active list.', 'success')
+    return redirect(url_for('admin.trashed_blocks'))
+
+
+@admin.route('/delete_block_permanently/<int:block_id>', methods=['POST'])
+def delete_block_permanently(block_id): # <--- Ensure this name is exactly this
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+    try:
+        cursor.execute("DELETE FROM blocks WHERE block_id = %s", (block_id,))
+        connection.commit()
+        flash('Block permanently deleted.', 'danger')
+    except mysql.connector.Error as err:
+        flash(f"Error: {err}", "danger")
+    finally:
+        cursor.close(); connection.close()
+    return redirect(url_for('admin.trashed_blocks'))
+
+
+# --- BLOCK STUDENT ENROLLMENT LOGIC ---
+
+@admin.route('/manage_block_students/<int:block_id>')
+def manage_block_students(block_id):
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    
+    # Fetch Block & Capacity Info
+    cursor.execute("""
+        SELECT b.*, p.program_name 
+        FROM blocks b 
+        JOIN programs p ON b.program_id = p.program_id 
+        WHERE b.block_id = %s
+    """, (block_id,))
+    block_info = cursor.fetchone()
+
+    # Fetch Students currently in this block
+    cursor.execute("SELECT student_id, firstname, lastname, email FROM students WHERE block_id = %s", (block_id,))
+    current_students = cursor.fetchall()
+
+    # Fetch Unassigned Students (Verified and Active)
+    cursor.execute("""
+        SELECT s.student_id, s.firstname, s.lastname 
+        FROM students s
+        JOIN users u ON s.student_id = u.user_id
+        WHERE s.block_id IS NULL AND u.is_verified = 1 AND u.is_active = 1
+    """)
+    unassigned_students = cursor.fetchall()
+
+    cursor.close(); connection.close()
+    return render_template('admin_block_students.html', 
+                           block=block_info, 
+                           students=current_students, 
+                           unassigned=unassigned_students,
+                           firstname=session.get('firstname'))
+
+
+@admin.route('/assign_to_block', methods=['POST'])
+def assign_to_block():
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    block_id = request.form.get('block_id')
+    student_ids = request.form.getlist('student_ids')
+    
+    if not student_ids:
+        flash("No students selected.", "warning")
+        return redirect(url_for('admin.manage_block_students', block_id=block_id))
+
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    try:
+        # Validate capacity before updating
+        cursor.execute("""
+            SELECT capacity, (SELECT COUNT(*) FROM students WHERE block_id = b.block_id) as current_count 
+            FROM blocks b WHERE block_id = %s
+        """, (block_id,))
+        block_stats = cursor.fetchone()
+        
+        available_slots = block_stats['capacity'] - block_stats['current_count']
+        
+        if len(student_ids) > available_slots:
+            flash(f"Overcapacity: Only {available_slots} slots available, but you selected {len(student_ids)} students.", "danger")
+        else:
+            format_strings = ','.join(['%s'] * len(student_ids))
+            cursor.execute(f"UPDATE students SET block_id = %s WHERE student_id IN ({format_strings})", [block_id] + student_ids)
+            connection.commit()
+            flash(f"Successfully assigned {len(student_ids)} students.", "success")
+    finally:
+        cursor.close(); connection.close()
+    return redirect(url_for('admin.manage_block_students', block_id=block_id))
+
+
+@admin.route('/remove_from_block/<string:student_id>/<int:block_id>', methods=['POST'])
+def remove_from_block(student_id, block_id):
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+    cursor.execute("UPDATE students SET block_id = NULL WHERE student_id = %s", (student_id,))
+    connection.commit(); cursor.close(); connection.close()
+    flash("Student removed from block.", "info")
+    return redirect(url_for('admin.manage_block_students', block_id=block_id))
+
+
+@admin.route('/bulk_remove_from_block', methods=['POST'])
+def bulk_remove_from_block():
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    block_id = request.form.get('block_id')
+    student_ids = request.form.getlist('student_ids')
+    
+    if not student_ids:
+        flash("No students selected for removal.", "warning")
+        return redirect(url_for('admin.manage_block_students', block_id=block_id))
+    
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+    try:
+        format_strings = ','.join(['%s'] * len(student_ids))
+        cursor.execute(f"UPDATE students SET block_id = NULL WHERE student_id IN ({format_strings})", tuple(student_ids))
+        connection.commit()
+        flash(f"Removed {len(student_ids)} students from block.", "info")
+    finally:
+        cursor.close(); connection.close()
+    return redirect(url_for('admin.manage_block_students', block_id=block_id))
 
 #! 4. MANAGE COURSES (Master Subject Catalog - course_code is PK)
 @admin.route('/manage_courses')

@@ -1,0 +1,68 @@
+{% extends "admin_base.html" %}
+{% block title %}Trashed Programs - Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Program Trash Bin</h1>
+    <p class="text-muted small">Items here can be restored or deleted permanently.</p>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Program Name</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in trashed_programs %}
+                    <tr>
+                        <td class="font-weight-bold">{{ p.program_name }}</td>
+                        <td class="text-center">
+                            <form action="{{ url_for('admin.restore_program', program_id=p.program_id) }}" method="POST" class="d-inline">
+                                <button class="btn btn-success btn-sm px-3 shadow-sm mr-2" type="submit">
+                                    <i class="fas fa-undo mr-1"></i> Restore
+                                </button>
+                            </form>
+                            <button class="btn btn-danger btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#permDeleteModal{{ p.program_id }}">
+                                <i class="fas fa-times-circle mr-1"></i> Permanent Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2" class="text-center py-5 text-muted">Trash is empty.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<a href="{{ url_for('admin.manage_programs') }}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Back to Programs</a>
+{% endblock %}
+
+{% block modals %}
+{% for p in trashed_programs %}
+<div class="modal fade" id="permDeleteModal{{ p.program_id }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-5">
+                <i class="fas fa-exclamation-circle fa-4x text-danger mb-4"></i>
+                <h4 class="font-weight-bold">Are you sure?</h4>
+                <p>This will permanently delete <strong>{{ p.program_name }}</strong> and cannot be undone.</p>
+                <div class="mt-4">
+                    <button class="btn btn-light px-4 mr-2" data-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('admin.delete_program_permanently', program_id=p.program_id) }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger px-4">Yes, Delete Forever</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

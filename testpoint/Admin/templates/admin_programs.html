@@ -4,23 +4,30 @@
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Degree Programs</h1>
-    <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addProgramModal">
-        <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add Program
-    </button>
-</div>
-
-<!-- Search Filter -->
-<div class="card shadow mb-4 border-bottom-dark">
-    <div class="card-body py-3">
-        <div class="input-group">
-            <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i
-                        class="fas fa-search text-gray-400"></i></span></div>
-            <input type="text" id="progSearch" class="form-control border-left-0"
-                placeholder="Search programs by name...">
-        </div>
+    <div>
+        <!-- Link to the Trash page we created -->
+        <a href="{{ url_for('admin.trashed_programs') }}" class="btn btn-sm btn-outline-danger shadow-sm px-3 mr-2">
+            <i class="fas fa-trash-alt fa-sm mr-1"></i> View Trash
+        </a>
+        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addProgramModal">
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add Program
+        </button>
     </div>
 </div>
 
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+        {{ message }}
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- Table Card -->
 <div class="card shadow mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -35,19 +42,24 @@
                 <tbody id="progTable">
                     {% for p in programs %}
                     <tr class="prog-row">
-                        <td class="font-weight-bold text-dark search-data">{{ p.program_name }}</td>
+                        <td class="font-weight-bold text-dark">{{ p.program_name }}</td>
                         <td class="small text-muted">{{ p.description }}</td>
                         <td class="text-center">
-                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1"><i
-                                    class="fas fa-edit"></i></button>
-                            <button class="btn btn-danger btn-circle btn-sm shadow-sm"><i
-                                    class="fas fa-trash"></i></button>
+                            <!-- EDIT TRIGGER -->
+                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1" 
+                                    data-toggle="modal" data-target="#editProgramModal{{ p.program_id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <!-- ARCHIVE TRIGGER -->
+                            <button class="btn btn-danger btn-circle btn-sm shadow-sm" 
+                                    data-toggle="modal" data-target="#archiveProgramModal{{ p.program_id }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3" class="text-center py-5 text-muted italic">No programs defined in the system.
-                        </td>
+                        <td colspan="3" class="text-center py-5 text-muted italic">No active programs found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -58,7 +70,7 @@
 {% endblock %}
 
 {% block modals %}
-<!-- ── MODALS SECTION (Outside Animation) ── -->
+<!-- 1. ADD PROGRAM MODAL (Outside loop) -->
 <div class="modal fade" id="addProgramModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
@@ -74,18 +86,72 @@
                     </div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Full Description</label>
-                        <textarea name="description" class="form-control" rows="4"
-                            placeholder="Department name or full degree title..."></textarea>
+                        <textarea name="description" class="form-control" rows="4"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-white border-top">
+                <div class="modal-footer bg-white">
                     <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Save Program</button>
+                    <button class="btn btn-primary btn-sm px-4" type="submit">Save Program</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- 2. DYNAMIC MODALS (Inside loop) -->
+{% for p in programs %}
+    <!-- EDIT MODAL -->
+    <div class="modal fade" id="editProgramModal{{ p.program_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold">Edit Program</h5>
+                    <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <!-- Check this line specifically -->
+                <form action="{{ url_for('admin.edit_program', program_id=p.program_id) }}" method="POST">
+                    <div class="modal-body bg-light px-4">
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Program Name</label>
+                            <input type="text" name="program_name" class="form-control" value="{{ p.program_name }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="small font-weight-bold text-dark">Description</label>
+                            <textarea name="description" class="form-control" rows="4">{{ p.description }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-white">
+                        <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-info btn-sm px-4" type="submit">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ARCHIVE MODAL -->
+    <div class="modal fade" id="archiveProgramModal{{ p.program_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title font-weight-bold">Delete Program</h5>
+                    <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <p>Move <strong>{{ p.program_name }}</strong> to trash?</p>
+                    <p class="small text-muted">You can restore this later from the Trash Bin.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <!-- Check this line specifically -->
+                    <form action="{{ url_for('admin.archive_program', program_id=p.program_id) }}" method="POST">
+                        <button type="submit" class="btn btn-danger btn-sm px-4">Move to Trash</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}
