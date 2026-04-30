@@ -7,7 +7,8 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Welcome back, Prof. {{ firstname }}!</h1>
-        <a href="{{ url_for('teacher.manage_exams') }}" class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm">
+        <a href="{{ url_for('teacher.manage_exams') }}"
+            class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm">
             <i class="fas fa-plus fa-sm text-white-50"></i> Create New Exam
         </a>
     </div>
@@ -38,7 +39,8 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Integrity Alerts</div>
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Integrity Alerts
+                            </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_violations }}</div>
                         </div>
                         <div class="col-auto">
@@ -55,7 +57,8 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Avg. Passing Rate</div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Avg. Passing Rate
+                            </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ class_avg }}%</div>
                         </div>
                         <div class="col-auto">
@@ -128,11 +131,13 @@
                                 {% for sub in recent_submissions %}
                                 <tr>
                                     <td class="align-middle">
-                                        <div class="font-weight-bold text-dark">{{ sub.firstname }} {{ sub.lastname }}</div>
+                                        <div class="font-weight-bold text-dark">{{ sub.firstname }} {{ sub.lastname }}
+                                        </div>
                                     </td>
                                     <td class="align-middle small">{{ sub.title }}</td>
                                     <td class="align-middle">
-                                        <span class="badge {% if sub.score >= (sub.total_q * 0.5) %}badge-success{% else %}badge-danger{% endif %} shadow-sm px-2">
+                                        <span
+                                            class="badge {% if sub.score >= (sub.total_q * 0.5) %}badge-success{% else %}badge-danger{% endif %} shadow-sm px-2">
                                             {{ sub.score|int }} / {{ sub.total_q }}
                                         </span>
                                     </td>
@@ -153,7 +158,8 @@
                     </div>
                 </div>
                 <div class="card-footer text-center bg-white">
-                    <a href="{{ url_for('teacher.manage_exams') }}" class="small font-weight-bold text-danger text-uppercase">
+                    <a href="{{ url_for('teacher.manage_exams') }}"
+                        class="small font-weight-bold text-danger text-uppercase">
                         View All Assessment Records <i class="fas fa-chevron-right ml-1"></i>
                     </a>
                 </div>
@@ -173,47 +179,43 @@
     Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
     Chart.defaults.global.defaultFontColor = '#858796';
 
-    // 1. Debug Data to Console
-    console.log("Labels:", {{ dist_labels|tojson }});
-    console.log("Values:", {{ dist_values|tojson }});
-
-    // 2. Initialize Pie Chart
+    // Initialize Pie Chart
     var ctx = document.getElementById("bankDistChart");
-    var dataValues = {{ dist_values|tojson }};
+    var dataValues = {{ dist_values| tojson }};
 
     if (dataValues.length > 0 && dataValues.reduce((a, b) => a + b, 0) > 0) {
         var myPieChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: {{ dist_labels|tojson }},
-                datasets: [{
-                    data: dataValues,
-                    backgroundColor: ['#e74a3b', '#f6c23e', '#36b9cc', '#4e73df'],
-                    hoverBackgroundColor: ['#be2617', '#dda20a', '#2a96a5', '#2e59d9'],
-                    hoverBorderColor: "rgba(234, 236, 244, 1)",
-                }],
+                labels: {{ dist_labels| tojson }},
+    datasets: [{
+        data: dataValues,
+        backgroundColor: ['#e74a3b', '#f6c23e', '#36b9cc', '#4e73df'],
+        hoverBackgroundColor: ['#be2617', '#dda20a', '#2a96a5', '#2e59d9'],
+        hoverBorderColor: "rgba(234, 236, 244, 1)",
+    }],
             },
-            options: {
-                maintainAspectRatio: false,
-                tooltips: {
-                    backgroundColor: "rgb(255,255,255)",
-                    bodyFontColor: "#858796",
+    options: {
+        maintainAspectRatio: false,
+            tooltips: {
+            backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
                     borderColor: '#dddfeb',
-                    borderWidth: 1,
-                    xPadding: 15,
-                    yPadding: 15,
-                    displayColors: true,
-                    caretPadding: 10,
+                        borderWidth: 1,
+                            xPadding: 15,
+                                yPadding: 15,
+                                    displayColors: true,
+                                        caretPadding: 10,
                 },
-                legend: {
-                    display: true,
-                    position: 'bottom',
+        legend: {
+            display: true,
+                position: 'bottom',
                     labels: {
-                        boxWidth: 15,
-                        padding: 20
-                    }
-                },
-                cutoutPercentage: 75,
+                boxWidth: 15,
+                    padding: 20
+            }
+        },
+        cutoutPercentage: 75,
             },
         });
     } else {

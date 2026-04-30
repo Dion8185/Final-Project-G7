@@ -150,7 +150,7 @@
 
 {% block content %}
 <div class="animate__animated animate__fadeIn py-4">
-    
+
     <!-- Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Manage Exam Questions | {{ exam.title }}</h1>
@@ -164,9 +164,10 @@
             <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal">
                 <i class="fas fa-plus mr-1"></i> New Question
             </button>
-            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>            
+            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i
+                    class="fas fa-arrow-left fa-sm"></i> Back</a>
         </div>
-    </div>       
+    </div>
 
     <!-- BULK ACTIONS BAR (FOR LINKED QUESTIONS) -->
     <div class="bulk-actions-bar shadow p-3 mb-4" id="bulkBar">
@@ -263,6 +264,9 @@
                     <div class="col-auto">
                         <button type="button" class="btn btn-sm btn-link text-danger"
                             onclick="unlinkSingle({{ q.question_id }})">Unlink</button>
+                        {% if q.is_isolated %}
+                        <a href="{{ url_for('teacher.delete_isolated_question', q_id=q.question_id, exam_id=exam.exam_id) }}" class="btn btn-sm btn-link text-primary">Delete</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -390,85 +394,107 @@
     </div>
 </div>
 
-<!-- Manual Modal -->
+
+<!-- MANUAL ADD MODAL -->
 <div class="modal fade" id="manualModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content border-0 shadow">
+    <div class="modal-dialog modal-lg shadow-lg">
+        <div class="modal-content border-0">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">New Question</h5>
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-2"></i>New Exam Question</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
-            <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST">
-                <div class="modal-body bg-light">
-                    <div class="form-group"><label class="font-weight-bold">Question Text</label>
-                        <textarea name="question_text" class="form-control" rows="3" required></textarea>
+            <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST" id="manualQuestionForm">
+                <div class="modal-body bg-light px-4">
+                    <div class="form-group">
+                        <label class="font-weight-bold text-dark">Question Text</label>
+                        <textarea name="question_text" class="form-control shadow-sm" rows="3" placeholder="Enter the question here..." required></textarea>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><label>Type</label>
-                            <select name="question_type" class="form-control" id="qTypeSelect">
-                                <option value="multiple_choice">Multiple Choice</option>
-                                <option value="true_false">True / False</option>
-                                <option value="identification">Identification</option>
-                            </select>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Question Type</label>
+                                <select name="question_type" class="form-control shadow-sm" id="qTypeSelect">
+                                    <option value="multiple_choice">Multiple Choice</option>
+                                    <option value="true_false">True / False</option>
+                                    <option value="identification">Identification</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-6"><label>Difficulty</label>
-                            <select name="difficulty" class="form-control">
-                                <option value="easy">Easy</option>
-                                <option value="medium">Medium</option>
-                                <option value="hard">Hard</option>
-                            </select>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Difficulty Level</label>
+                                <select name="difficulty" class="form-control shadow-sm">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="custom-control custom-switch mt-2">
+                        <input type="checkbox" class="custom-control-input" id="saveBankManual" name="save_to_bank" checked>
+                        <label class="custom-control-label small font-weight-bold text-muted" for="saveBankManual">Also store this question in Master Course Bank</label>
+                    </div>
                     <hr>
+
+                    <!-- MULTIPLE CHOICE SECTION -->
                     <div id="section_mc">
+                        <label class="small font-weight-bold text-primary mb-2">Options (Mark the bubble for the correct answer)</label>
                         {% for i in range(4) %}
-                        <div class="input-group mb-2">
+                        <div class="input-group mb-2 shadow-sm">
                             <div class="input-group-prepend">
-                                <div class="input-group-text bg-white">
-                                    <input type="radio" name="correct_option" value="{{ i }}" {{ 'checked' if i==0 }}>
+                                <div class="input-group-text bg-white border-right-0">
+                                    <input type="radio" name="correct_option" value="{{ i }}" {% if i == 0 %}checked{% endif %}>
                                 </div>
                             </div>
-                            <input type="text" name="options[]" class="form-control" placeholder="Choice {{ i+1 }}">
+                            <input type="text" name="options[]" class="form-control mc-input" placeholder="Choice {{ i + 1 }}">
                         </div>
                         {% endfor %}
                     </div>
+
+                    <!-- TRUE/FALSE SECTION -->
                     <div id="section_tf" style="display:none;">
-                        <select name="tf_correct" class="form-control">
+                        <label class="small font-weight-bold text-primary mb-2">Correct Answer Selection</label>
+                        <select name="tf_correct" class="form-control shadow-sm">
                             <option value="True">True</option>
                             <option value="False">False</option>
                         </select>
                     </div>
+
+                    <!-- IDENTIFICATION SECTION -->
                     <div id="section_ident" style="display:none;">
-                        <input type="text" name="ident_answer" class="form-control" placeholder="Correct Answer">
+                        <label class="small font-weight-bold text-primary mb-2">Acceptable Answer (Strict match)</label>
+                        <input type="text" name="ident_answer" class="form-control shadow-sm id-input" placeholder="Type the exact correct response...">
                     </div>
                 </div>
-                <div class="modal-footer"><button type="submit" class="btn btn-primary btn-block shadow">Save to Exam &
-                        Bank</button></div>
+                <div class="modal-footer bg-white border-top shadow-sm">
+                    <button class="btn btn-secondary btn-sm px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-5 shadow-sm font-weight-bold">
+                        <i class="fas fa-save mr-1"></i> Save to Exam
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Excel Modal -->
+<!-- EXCEL MODAL -->
 <div class="modal fade" id="excelModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title font-weight-bold">Excel Import</h5>
+        <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow">
+            <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
+            <input type="hidden" name="course_code" value="{{ exam.course_code }}">
+            <div class="modal-header bg-success text-white"><h5>Excel Import</h5></div>
+            <div class="modal-body">
+                <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
+                <div class="custom-control custom-switch mt-3"><input type="checkbox" class="custom-control-input" id="saveBankCheck" name="save_to_bank" checked><label class="custom-control-label" for="saveBankCheck">Save to Master Bank?</label></div>
             </div>
-            <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
-                <input type="hidden" name="course_id" value="{{ exam.course_id }}">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
-                    <input type="file" name="excel_file" class="form-control" accept=".xlsx" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success btn-block shadow-sm">Process Excel</button>
-                </div>
-            </form>
-        </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-success btn-block">Process</button></div>
+        </form>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -504,8 +530,6 @@
             updateUI();
         });
 
-        // Bank Modal Logic
-        // ── BANK MODAL FILTERING LOGIC ──
         function applyBankFilters() {
             const search = $('#bankSearch').val().toLowerCase();
             const typeF = $('#bankTypeFilter').val();
@@ -519,20 +543,23 @@
                 const matchesSearch = (search === '' || item.attr('data-search').includes(search));
 
                 if (matchesType && matchesDiff && matchesSearch) {
-                    item.attr('style', 'display: block !important'); // Force show
+                    item.attr('style', 'display: block !important');
                     visibleCount++;
                 } else {
-                    item.attr('style', 'display: none !important'); // Force hide
+                    item.attr('style', 'display: none !important');
                 }
             });
+
             $('.bank-section').each(function () {
                 const hasVisibleItems = $(this).find('.bank-item-card[style*="display: block"]').length > 0;
                 $(this).toggle(hasVisibleItems);
             });
+
             $('#bankEmptyState').toggleClass('d-none', visibleCount > 0);
             $('#bankMatchCount').text(visibleCount);
             $('#selectAllBank').prop('checked', false);
         }
+
         $('#bankSearch').on('input', applyBankFilters);
         $('#bankTypeFilter, #bankDifficultyFilter').on('change', applyBankFilters);
 
@@ -552,21 +579,34 @@
         $('#bankMatchCount').text($('.bank-item-card').length);
 
         function performMainFilter() {
-            var searchVal = $('#searchInput').val().toLowerCase(), typeVal = $('#typeFilter').val(), diffVal = $('#difficultyFilter').val();
+            var searchVal = $('#searchInput').val().toLowerCase(),
+                typeVal = $('#typeFilter').val(),
+                diffVal = $('#difficultyFilter').val();
+
             $('.question-card').each(function () {
                 var card = $(this);
-                var matches = (typeVal === '' || card.data('type') === typeVal) && (diffVal === '' || card.data('difficulty') === diffVal) && (searchVal === '' || card.data('text').indexOf(searchVal) > -1);
+                var matches = (typeVal === '' || card.data('type') === typeVal) &&
+                              (diffVal === '' || card.data('difficulty') === diffVal) &&
+                              (searchVal === '' || card.data('text').indexOf(searchVal) > -1);
                 card.toggle(matches);
             });
+
             updateUI();
         }
+
         $('#searchInput').on('keyup', performMainFilter);
         $('#typeFilter, #difficultyFilter').on('change', performMainFilter);
-        $('#resetFilters').on('click', function () { $('#searchInput, #typeFilter, #difficultyFilter').val(''); performMainFilter(); });
 
+        $('#resetFilters').on('click', function () {
+            $('#searchInput, #typeFilter, #difficultyFilter').val('');
+            performMainFilter();
+        });
+
+        // ✅ FIXED: Updated ID to #section_ident to match HTML ID
         $('#qTypeSelect').on('change', function () {
             const val = $(this).val();
             $('#section_mc, #section_tf, #section_ident').hide();
+
             if (val === 'multiple_choice') $('#section_mc').show();
             else if (val === 'true_false') $('#section_tf').show();
             else if (val === 'identification') $('#section_ident').show();

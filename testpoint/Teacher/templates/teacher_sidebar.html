@@ -1,28 +1,87 @@
 {# teacher_sidebar.html #}
 <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
+    <!-- Sidebar - Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
         <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
         <div class="sidebar-brand-text mx-3">Teacher Panel</div>
     </a>
+
     <hr class="sidebar-divider my-0">
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
-    <hr class="sidebar-divider">
-    <div class="sidebar-heading">Classroom</div>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Courses</span></a></li>
-    <hr class="sidebar-divider">
-    <div class="sidebar-heading">Exam Control</div>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
+
+    <!-- Dashboard -->
     <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
-        <div id="collapseQuestions" class="collapse"><div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">Manage Questions</a>
-            <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
-        </div></div>
+        <a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}">
+            <i class="fas fa-fw fa-tachometer-alt"></i>
+            <span>My Dashboard</span>
+        </a>
     </li>
+
     <hr class="sidebar-divider">
-    <div class="sidebar-heading">Results</div>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Item Analysis</span></a></li>
+
+    <!-- Classroom Management -->
+    <div class="sidebar-heading">Academic Operations</div>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('teacher.my_courses') }}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>My Classes / Enrollees</span>
+        </a>
+    </li>
+
+    <hr class="sidebar-divider">
+
+    <!-- Exam Control Section -->
+    <div class="sidebar-heading">Assessment Control</div>
+    
+    <!-- Exams Link -->
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('teacher.manage_exams') }}">
+            <i class="fas fa-fw fa-plus-circle"></i>
+            <span>Create/Edit Exams</span>
+        </a>
+    </li>
+
+    <!-- Master Question Bank (Collapsed Menu) -->
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"
+           aria-expanded="true" aria-controls="collapseQuestions">
+            <i class="fas fa-fw fa-database"></i>
+            <span>Question Bank</span>
+        </a>
+        <div id="collapseQuestions" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded shadow-sm border-left-danger">
+                <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">
+                    Manage Subject Bank
+                </a>
+                <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">
+                    Pool Overview
+                </a>
+            </div>
+        </div>
+    </li>
+
+    <hr class="sidebar-divider">
+
+    <!-- Results Section -->
+    <div class="sidebar-heading">Performance Insight</div>
+    
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('teacher.student_monitor') }}">
+            <i class="fas fa-fw fa-desktop"></i>
+            <span>Student Live Monitor</span>
+        </a>
+    </li>
+    
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}">
+            <i class="fas fa-fw fa-chart-pie"></i>
+            <span>Analytics & Scoring</span>
+        </a>
+    </li>
+
     <hr class="sidebar-divider d-none d-md-block">
-    <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
+
+    <!-- Sidebar Toggler (Sidebar) -->
+    <div class="text-center d-none d-md-inline">
+        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+    </div>
 </ul>

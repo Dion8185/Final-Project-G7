@@ -1,19 +1,43 @@
-{# teacher_navbar.html #}
 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
+    <!-- Sidebar Toggle (Mobile) -->
+    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger">
+        <i class="fa fa-bars"></i>
+    </button>
+
     <ul class="navbar-nav ml-auto">
-        <!-- PROFILE DROP DOWN -->
+        <!-- ROLE BADGE -->
+        <li class="nav-item d-none d-sm-flex align-items-center mr-3">
+            <span class="badge badge-danger p-2 px-3 shadow-sm font-weight-bold">
+                <i class="fas fa-chalkboard-teacher mr-1"></i> INSTRUCTOR
+            </span>
+        </li>
+
+        <div class="topbar-divider d-none d-sm-block"></div>
+
+        <!-- USER INFORMATION DROP DOWN -->
         <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ session['firstname'] }} {{ session['lastname'] }}</span>
-                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <!-- Dynamic name from refactored session storage -->
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold">
+                    {{ session.get('firstname', 'Professor') }} {{ session.get('lastname', '') }}
+                </span>
+                <img class="img-profile rounded-circle border shadow-sm" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
             </a>
+            
+            <!-- Dropdown Menu -->
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                <a class="dropdown-item" href="{{ url_for('teacher.profile') }}"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
+                <a class="dropdown-item" href="{{ url_for('teacher.profile') }}">
+                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                    Profile Settings
+                </a>
+                
                 <div class="dropdown-divider"></div>
-                <button type="button" class="dropdown-item border-0 bg-transparent w-100 text-left"
+                
+                <!-- This triggers the logoutModal defined in the global block/base -->
+                <button type="button" class="dropdown-item border-0 bg-transparent w-100 text-left text-danger"
                     data-toggle="modal" data-target="#logoutModal">
-                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-danger"></i>
+                    Logout
                 </button>
             </div>
         </li>

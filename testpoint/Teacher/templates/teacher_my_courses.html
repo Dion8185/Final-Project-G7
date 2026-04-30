@@ -5,27 +5,41 @@
 <div class="animate__animated animate__fadeIn">
     <h1 class="h3 mb-4 text-gray-800">My Assigned Courses</h1>
     <div class="card shadow mb-4">
-        <div class="card-body"><input type="text" id="searchInput" class="form-control" placeholder="Search courses..."></div>
+        <div class="card-body"><input type="text" id="searchInput" class="form-control" placeholder="Search courses...">
+        </div>
     </div>
 
     <div class="row" id="courseGrid">
         {% for course in courses %}
         <div class="col-xl-4 col-md-6 mb-4 course-card">
             <div class="card shadow h-100 border-left-danger">
-                <div class="card-header bg-white py-3"><h6 class="m-0 font-weight-bold text-danger">{{ course.course_code }}</h6></div>
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">{{ course.course_code }}</h6>
+                </div>
                 <div class="card-body">
                     <h5 class="font-weight-bold text-dark">{{ course.course_name }}</h5>
                     <p class="text-muted small">{{ course.description[:100] }}...</p>
+                    
+                    <!-- Class Details Section -->
+                    <div class="mb-3">
+                        <span class="badge badge-primary">Class: {{ course.class_code }}</span>
+                        <span class="badge badge-secondary">Section: {{ course.block_name }}</span>
+                    </div>
+
                     <hr>
                     <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('teacher.manage_enrollees', course_id=course.course_id) }}" class="btn btn-danger btn-sm shadow-sm"><i class="fas fa-users mr-1"></i> Students</a>
-                        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-outline-danger btn-sm"><i class="fas fa-file-alt mr-1"></i> Exams</a>
+                        <a href="{{ url_for('teacher.manage_enrollees', class_code=course.class_code) }}"
+                            class="btn btn-danger btn-sm shadow-sm"><i class="fas fa-users mr-1"></i> Students</a>
+                        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-outline-danger btn-sm"><i
+                                class="fas fa-file-alt mr-1"></i> Exams</a>
                     </div>
                 </div>
             </div>
         </div>
         {% else %}
-        <div class="col-12 text-center py-5"><h4 class="text-gray-500">No courses assigned yet.</h4></div>
+        <div class="col-12 text-center py-5">
+            <h4 class="text-gray-500">No courses assigned yet.</h4>
+        </div>
         {% endfor %}
     </div>
 </div>
@@ -33,9 +47,9 @@
 
 {% block extra_js %}
 <script>
-    $('#searchInput').on('keyup', function() {
+    $('#searchInput').on('keyup', function () {
         var query = $(this).val().toLowerCase();
-        $('.course-card').each(function() { $(this).toggle($(this).text().toLowerCase().indexOf(query) > -1); });
+        $('.course-card').each(function () { $(this).toggle($(this).text().toLowerCase().indexOf(query) > -1); });
     });
 </script>
 {% endblock %}

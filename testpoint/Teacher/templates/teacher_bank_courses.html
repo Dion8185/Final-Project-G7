@@ -16,7 +16,9 @@
                             <div class="mt-2 small text-muted font-italic">{{ course.question_count }} Questions</div>
                         </div>
                         <div class="col-auto">
-                            <a href="{{ url_for('teacher.course_question_bank', course_id=course.course_id) }}" class="btn btn-danger btn-circle btn-lg"><i class="fas fa-folder-open"></i></a>
+                            <a href="{{ url_for('teacher.course_question_bank', course_code=course.course_code) }}" class="btn btn-danger btn-circle btn-lg">
+                                <i class="fas fa-folder-open"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
