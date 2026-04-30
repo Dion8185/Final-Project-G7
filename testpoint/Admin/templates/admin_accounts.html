@@ -143,10 +143,12 @@
                             <button class="btn btn-info btn-circle btn-sm" title="Edit" data-toggle="modal" data-target="#editUserModal{{ user[0] }}">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            {% if user[5] != 'admin' %}
                             <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete" data-toggle="modal" data-target="#deleteUserModal" 
                                 data-id="{{ user[0] }}" data-name="{{ user[1] }} {{ user[3] }}">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
