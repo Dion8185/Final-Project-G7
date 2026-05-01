@@ -1,6 +1,8 @@
 {% extends 'student_base.html' %}
 {% block title %}{{ course.course_code }} - {{ course.course_name }}{% endblock %}
 {% set sidebar_active = 'course_view' %}
+<!-- Added current_course_id so the sidebar properly highlights this specific class block -->
+{% set current_course_id = course.class_code %}
 
 {% block content %}
 <div class="container-fluid animate__animated animate__fadeIn">
@@ -8,7 +10,11 @@
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">{{ course.course_name }}</h1>
-        <span class="badge badge-primary p-2">{{ course.course_code }}</span>
+        <div>
+            <span class="badge badge-primary p-2 mr-2">{{ course.course_code }}</span>
+            <!-- Added Class Code Badge to reflect the specific section/block -->
+            <span class="badge badge-info p-2">Class: {{ course.class_code }}</span>
+        </div>
     </div>
 
     <!-- Quick Stats Row -->
@@ -45,7 +51,8 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tests Finished</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_exams }} / {{ total_exams }}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_exams }} / {{ total_exams
+                                }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div>
                     </div>
@@ -162,10 +169,12 @@
                                         </a>
                                         {% endif %}
                                     </td>
-                                    {% endfor %}
-                                    {% else %}
+                                </tr> <!-- Added missing closing <tr> tag here -->
+                                {% endfor %}
+                                {% else %}
                                 <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">No exams have been posted for
+                                    <!-- Changed colspan from 4 to 5 to match the 5 table headers -->
+                                    <td colspan="5" class="text-center py-4 text-muted">No exams have been posted for
                                         this course yet.</td>
                                 </tr>
                                 {% endif %}

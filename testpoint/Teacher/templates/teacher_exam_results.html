@@ -2,26 +2,54 @@
 {% block title %}Results: {{ exam.title }}{% endblock %}
 
 {% block content %}
-<div class="animate__animated animate__fadeIn">
+<div class="container-fluid animate__animated animate__fadeIn">
+    <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-4 text-gray-800">Exam Performance: <span class="text-danger">{{ exam.title }}</span></h1>
+        <h1 class="h3 mb-0 text-gray-800">Exam Performance: <span class="text-danger">{{ exam.title }}</span></h1>
         <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>
+            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm mr-1"></i> Back to Exams
+            </a>
         </div>
     </div>
 
+    <!-- Summary Info -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-left-info shadow py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Course Context</div>
+                            <div class="h6 mb-0 font-weight-bold text-gray-800">{{ exam.course_name }} ({{
+                                exam.class_code }})</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table Card -->
     <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Student Submissions</h6>
+        </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="bg-light">
+                <table class="table table-bordered table-hover" id="resultsTable" width="100%" cellspacing="0">
+                    <thead class="bg-light text-dark">
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Score</th>
+                            <th>Student ID</th>
+                            <th>Student Name</th>
+                            <th>Score / Total</th>
+                            <th>Percentage</th>
                             <th>Violations</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -29,26 +57,59 @@
                         {% set percent = ((r.score / r.total_questions) * 100)|round(1) if r.total_questions > 0 else 0
                         %}
                         <tr>
-                            <td>{{ r.student_id }}</td>
-                            <td class="font-weight-bold text-dark">{{ r.firstname }} {{ r.lastname }}</td>
-                            <td>{{ r.score }} / {{ r.total_questions }} ({{ percent }}%)</td>
-                            <td class="text-center">{{ r.tab_switches }}</td>
-                            <td><span
-                                    class="badge {{ 'badge-success' if r.status == 'finished' else 'badge-primary' }}">{{
-                                    r.status }}</span></td>
-                            <td class="text-center d-flex justify-content-center gap-2 flex-wrap">
-                                <form
-                                    action="{{ url_for('teacher.reset_exam', attempt_id=r.attempt_id, exam_id=exam.exam_id) }}"
-                                    method="POST" onsubmit="return confirm('Reset this student\'s exam?')">
-                                    <button type="submit" class="btn btn-danger btn-sm shadow-sm rounded-pill"><i
-                                            class="fas fa-redo-alt mr-1"></i> Reset</button>
-                                </form>
-                                <span class="mx-1">
+                            <td class="align-middle small">{{ r.student_id }}</td>
+                            <td class="align-middle font-weight-bold text-dark">
+                                {{ r.firstname }} {{ r.lastname }}
+                            </td>
+                            <td class="align-middle">
+                                {{ r.score }} / {{ r.total_questions }}
+                            </td>
+                            <td class="align-middle">
+                                <span
+                                    class="font-weight-bold {% if percent >= exam.pass_percentage %}text-success{% else %}text-danger{% endif %}">
+                                    {{ percent }}%
+                                </span>
+                            </td>
+                            <td class="align-middle text-center">
+                                {% if r.tab_switches > 0 %}
+                                <span class="badge badge-warning text-dark px-2">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ r.tab_switches }}
+                                </span>
+                                {% else %}
+                                <span class="text-success small"><i class="fas fa-check-circle"></i> 0</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <span
+                                    class="badge {% if r.status == 'finished' %}badge-success{% else %}badge-primary{% endif %} px-3 py-2">
+                                    {{ r.status|upper }}
+                                </span>
+                            </td>
+                            <td class="align-middle text-center">
+                                <div class="d-flex justify-content-center align-items-center" style="gap: 8px;">
+                                    <!-- Reset Action -->
+                                    <form
+                                        action="{{ url_for('teacher.reset_exam', attempt_id=r.attempt_id, exam_id=exam.exam_id) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Reset this student\'s exam? All progress will be deleted.')">
+                                        <button type="submit" class="btn btn-danger btn-sm shadow-sm rounded-pill px-3">
+                                            <i class="fas fa-redo-alt mr-1"></i> Reset
+                                        </button>
+                                    </form>
+
+                                    <!-- Details Action -->
                                     <a href="{{ url_for('teacher.review_student_attempt', attempt_id=r.attempt_id) }}"
-                                    class="btn btn-sm btn-info shadow-sm rounded-pill px-3">
-                                    <i class="fas fa-search mr-1"></i> Details
-                                </a>
-                            </span>
+                                        class="btn btn-sm btn-info shadow-sm rounded-pill px-3">
+                                        <i class="fas fa-search mr-1"></i> Details
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i>
+                                <p class="text-muted">No students have attempted this exam yet.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -58,4 +119,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock %}  

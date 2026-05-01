@@ -77,7 +77,8 @@
                             <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}"
                                 class="btn btn-sm btn-info shadow-sm font-weight-bold">Questions</a>
                             <div>
-                                <a href="{{ url_for('teacher.view_results', exam_id=exam.exam_id) }}"
+                                <!-- FIXED: Changed from teacher.view_results to teacher.exam_results -->
+                                <a href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}"
                                     class="btn btn-sm btn-circle btn-primary" title="Scores"><i
                                         class="fas fa-list-ol"></i></a>
                                 <button class="btn btn-sm btn-circle btn-secondary mx-1" data-toggle="modal"

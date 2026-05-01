@@ -32,12 +32,14 @@ def inject_enrolled_courses():
             connection = mysql.connector.connect(**db_config)
             cursor = connection.cursor(dictionary=True)
             
-            # Query all courses the student is enrolled in
+            # Query all classes the student is enrolled in, linked to their respective courses
+            # Aliased cl.class_code as course_id to maintain backward compatibility with existing Jinja templates
             cursor.execute("""
-                SELECT c.course_id, c.course_name, c.course_code 
-                FROM courses c
-                JOIN enrollments e ON c.course_id = e.course_id
-                WHERE e.student_id = %s
+                SELECT cl.class_code as course_id, cl.class_code, c.course_name, c.course_code 
+                FROM classes cl
+                JOIN courses c ON cl.course_code = c.course_code
+                JOIN enrollments e ON cl.class_code = e.class_code
+                WHERE e.student_id = %s AND e.status = 'active'
             """, (student_id,))
             courses = cursor.fetchall()
             
@@ -60,8 +62,8 @@ def student_dashboard():
         cursor = connection.cursor(dictionary=True)
 
         try:
-            # Stats 1: Enrolled Courses
-            cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s", (student_id,))
+            # Stats 1: Enrolled Courses (Active)
+            cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s AND status = 'active'", (student_id,))
             course_count = cursor.fetchone()['count']
 
             # Stats 2: Completed Exams (exclude archived exams)
@@ -75,21 +77,77 @@ def student_dashboard():
             """, (student_id,))
             completed_count = cursor.fetchone()['count']
             
-            # Stats 3: Available Exams (Active exams in enrolled courses not yet finished)
+            # Stats 3: Available Exams (Active exams in enrolled classes not yet finished)
             cursor.execute("""
                 SELECT COUNT(*) as count FROM exams e
-                JOIN enrollments en ON e.course_id = en.course_id
+                JOIN enrollments en ON e.class_code = en.class_code
                 LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-                WHERE en.student_id = %s AND e.is_active = 1 AND (ea.status IS NULL OR ea.status = 'in-progress') AND e.archived = 0;
+                WHERE en.student_id = %s AND en.status = 'active' AND e.is_active = 1 
+                AND (ea.status IS NULL OR ea.status = 'in-progress') AND e.archived = 0;
             """, (student_id, student_id))
             available_count = cursor.fetchone()['count']
+
+            # --- ANALYSIS: Performance Trend ---
+            cursor.execute("""
+                SELECT e.title, 
+                       COALESCE((ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100), 0) as percentage
+                FROM exam_attempts ea
+                JOIN exams e ON ea.exam_id = e.exam_id
+                WHERE ea.student_id = %s AND ea.status = 'finished'
+                ORDER BY ea.end_time ASC LIMIT 5
+            """, (student_id,))
+            performance_trend = cursor.fetchall()
+            trend_labels = [p['title'] for p in performance_trend]
+            trend_scores = [round(float(p['percentage']), 1) for p in performance_trend]
+
+            # --- RANKING: Class Standing (Fixed GROUP BY for ONLY_FULL_GROUP_BY mode) ---
+            cursor.execute("""
+                SELECT 
+                    rank_data.class_code,
+                    c.course_name,
+                    rank_data.student_avg,
+                    rank_data.class_rank,
+                    rank_data.total_students
+                FROM (
+                    SELECT 
+                        t.class_code,
+                        t.student_id,
+                        t.student_avg,
+                        RANK() OVER (PARTITION BY t.class_code ORDER BY t.student_avg DESC) as class_rank,
+                        COUNT(*) OVER (PARTITION BY t.class_code) as total_students
+                    FROM (
+                        SELECT 
+                            en.class_code, 
+                            en.student_id, 
+                            AVG(COALESCE(ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100, 0)) as student_avg
+                        FROM enrollments en
+                        LEFT JOIN exams e ON en.class_code = e.class_code
+                        LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND en.student_id = ea.student_id
+                        WHERE (ea.status = 'finished' OR ea.status IS NULL)
+                        GROUP BY en.class_code, en.student_id
+                    ) t
+                ) rank_data
+                JOIN classes cl ON rank_data.class_code = cl.class_code
+                JOIN courses c ON cl.course_code = c.course_code
+                WHERE rank_data.student_id = %s
+                GROUP BY 
+                    rank_data.class_code, 
+                    c.course_name, 
+                    rank_data.student_avg, 
+                    rank_data.class_rank, 
+                    rank_data.total_students
+            """, (student_id,))
+            rankings = cursor.fetchall()
 
             return render_template('student_dashboard.html', 
                                    course_count=course_count, 
                                    completed_count=completed_count, 
                                    available_count=available_count,
                                    student_firstname=student_firstname,
-                                   student_lastname = student_lastname
+                                   student_lastname=student_lastname,
+                                   trend_labels=trend_labels,
+                                   trend_scores=trend_scores,
+                                   rankings=rankings
                                    )
         finally:
             cursor.close()
@@ -171,10 +229,11 @@ def student_exams():
         cursor = connection.cursor(dictionary=True)
 
         cursor.execute("""
-            SELECT e.*, c.course_name, c.course_code, ea.status as attempt_status
+            SELECT e.*, c.course_name, c.course_code, ea.status as attempt_status, cl.class_code as course_id
             FROM exams e
-            JOIN courses c ON e.course_id = c.course_id
-            JOIN enrollments en ON e.course_id = en.course_id
+            JOIN classes cl ON e.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            JOIN enrollments en ON e.class_code = en.class_code
             LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
             WHERE en.student_id = %s AND e.archived = 0;
         """, (student_id, student_id))
@@ -270,13 +329,14 @@ def take_exam(exam_id):
         attempt_id = cursor.lastrowid
         
         # Pick the randomized subset from the total pool and save them to attempt_questions
+        limit = exam.get('question_limit') or 50
         cursor.execute("""
             INSERT INTO attempt_questions (attempt_id, question_id)
             SELECT %s, question_id FROM exam_questions 
             WHERE exam_id = %s 
             ORDER BY RAND() 
             LIMIT %s
-        """, (attempt_id, exam_id, exam['question_limit']))
+        """, (attempt_id, exam_id, limit))
         connection.commit()
         current_q = 0
         tab_switches = 0
@@ -364,7 +424,8 @@ def review_exam(attempt_id):
         SELECT ea.*, e.title, e.pass_percentage, c.course_name 
         FROM exam_attempts ea
         JOIN exams e ON ea.exam_id = e.exam_id
-        JOIN courses c ON e.course_id = c.course_id
+        JOIN classes cl ON e.class_code = cl.class_code
+        JOIN courses c ON cl.course_code = c.course_code
         WHERE ea.attempt_id = %s AND ea.student_id = %s
     """, (attempt_id, student_id))
     attempt = cursor.fetchone()
@@ -423,7 +484,6 @@ def submit_exam(attempt_id):
     session.pop('active_exam_id', None)
     
     connection = mysql.connector.connect(**db_config)
-    # FIX: Added buffered=True to allow multiple queries within the loop
     cursor = connection.cursor(dictionary=True, buffered=True)
     
     try:
@@ -432,11 +492,9 @@ def submit_exam(attempt_id):
         attempt_info = cursor.fetchone()
         if not attempt_info:
             return redirect(url_for('student.student_dashboard'))
-            
-        exam_id = attempt_info['exam_id']
         
-        # 2. Get all questions that belong to this exam
-        cursor.execute("SELECT question_id FROM exam_questions WHERE exam_id = %s", (exam_id,))
+        # 2. Get only the questions that were specifically served during THIS attempt
+        cursor.execute("SELECT question_id FROM attempt_questions WHERE attempt_id = %s", (attempt_id,))
         questions = cursor.fetchall()
 
         total_score = 0
@@ -522,7 +580,8 @@ def student_results():
                 (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_served
             FROM exam_attempts ea
             JOIN exams e ON ea.exam_id = e.exam_id
-            JOIN courses c ON e.course_id = c.course_id
+            JOIN classes cl ON e.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
             WHERE ea.student_id = %s 
               AND ea.status = 'finished' 
               AND e.archived = 0
@@ -540,38 +599,39 @@ def student_results():
     return render_template('student_results.html', results=results)
 
 #! 5. COURSE CONTENT
-@student.route('/course/<int:course_id>')
+@student.route('/course/<string:course_id>')
 def view_course(course_id):
     if not user_logged_in():
         return redirect(url_for('auth.login'))
     
     student_id = session.get('user_id')
+    # Use class_code variable conceptually as it represents the unique class linked in the database
+    class_code = course_id
+    
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
     
     try:
-        # 1. Fetch Course & Teacher Details
+        # 1. Fetch Course & Teacher Details mapped through the classes table
         cursor.execute("""
-            SELECT c.*, t.firstname as t_fname, t.lastname as t_lname, t.email as t_email 
-            FROM courses c
-            LEFT JOIN teachers t ON c.teacher_id = t.teacher_id
-            WHERE c.course_id = %s
-        """, (course_id,))
+            SELECT c.*, cl.class_code, t.firstname as t_fname, t.lastname as t_lname, t.email as t_email 
+            FROM classes cl
+            JOIN courses c ON cl.course_code = c.course_code
+            LEFT JOIN teachers t ON cl.teacher_id = t.teacher_id
+            WHERE cl.class_code = %s
+        """, (class_code,))
         course = cursor.fetchone()
     
         # 2. Fetch Student Progress stats for the header
-        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE course_id = %s AND archived = 0", (course_id,))
+        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE class_code = %s AND archived = 0", (class_code,))
         total_exams = cursor.fetchone()['total']
 
         # 3. Fetch how many of those active exams the student has completed
-        cursor.execute("SELECT COUNT(*) as completed FROM exam_attempts WHERE student_id = %s AND status = 'finished'", (student_id,))
-        completed_exams = cursor.fetchone()['completed']
-
         cursor.execute("""
             SELECT COUNT(*) as completed FROM exam_attempts ea
             JOIN exams e ON ea.exam_id = e.exam_id
-            WHERE e.course_id = %s AND ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0;
-        """, (course_id, student_id))
+            WHERE e.class_code = %s AND ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0;
+        """, (class_code, student_id))
         completed_exams = cursor.fetchone()['completed']
 
         progress_pct = int((completed_exams / total_exams) * 100) if total_exams > 0 else 0
@@ -588,8 +648,8 @@ def view_course(course_id):
                 ) as total_q
             FROM exams e
             LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-            WHERE e.course_id = %s AND e.archived = 0
-        """, (student_id, course_id))
+            WHERE e.class_code = %s AND e.archived = 0
+        """, (student_id, class_code))
         course_exams = cursor.fetchall()
         
         now = datetime.now()
