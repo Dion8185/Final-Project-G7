@@ -13,7 +13,8 @@
         <div class="topbar-divider d-none d-sm-block"></div>
         <li class="nav-item dropdown no-arrow">
             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{student_firstname student_lastname}}</span>
+                <!-- Fixed Jinja syntax error here. Used session.get() as a fallback so the name still shows up on pages where you don't explicitly pass student_firstname from the backend -->
+                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ session.get('firstname', student_firstname) }} {{ session.get('lastname', student_lastname) }}</span>
                 <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_1.svg">
             </a>
             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">

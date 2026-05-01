@@ -4,189 +4,514 @@
 {% block head %}
 <style>
     /* ── BASE ── */
-    body { background-color: #f4f4f2; user-select: none; -webkit-user-select: none; -moz-user-select: none; }
+    body {
+        background-color: #f4f4f2;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+    }
 
     /* ── LOCKDOWN OVERLAY ── */
     #lockdown-overlay {
-        position: fixed; inset: 0; background: rgba(10,10,10,0.96); z-index: 99999;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        text-align: center; padding: 24px; gap: 16px;
+        position: fixed;
+        inset: 0;
+        background: rgba(10, 10, 10, 0.96);
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        gap: 16px;
     }
+
     #lockdown-overlay .lock-icon {
-        width: 64px; height: 64px; border-radius: 50%;
-        background: rgba(239,80,80,0.15);
-        display: flex; align-items: center; justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(239, 80, 80, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-    #lockdown-overlay h2 { color: #fff; font-size: 22px; font-weight: 600; margin: 0; }
-    #lockdown-overlay p  { color: #b4b2a9; font-size: 15px; margin: 0; max-width: 380px; line-height: 1.6; }
+
+    #lockdown-overlay h2 {
+        color: #fff;
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    #lockdown-overlay p {
+        color: #b4b2a9;
+        font-size: 15px;
+        margin: 0;
+        max-width: 380px;
+        line-height: 1.6;
+    }
+
     #lockdown-overlay .btn-enter {
-        margin-top: 8px; padding: 12px 32px; background: #e24b4a; color: #fff;
-        border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
-        cursor: pointer; transition: background .15s;
+        margin-top: 8px;
+        padding: 12px 32px;
+        background: #e24b4a;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s;
     }
-    #lockdown-overlay .btn-enter:hover { background: #a32d2d; }
+
+    #lockdown-overlay .btn-enter:hover {
+        background: #a32d2d;
+    }
 
     /* ── LAYOUT ── */
     .exam-grid {
-        display: grid; grid-template-columns: 1fr 320px;
-        gap: 30px; padding: 20px; max-width: 1100px; margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 30px;
+        padding: 20px;
+        max-width: 1100px;
+        margin: 0 auto;
     }
+
     @media (max-width: 900px) {
-        .exam-grid { grid-template-columns: 1fr; }
-        .exam-sidebar { order: -1; }
+        .exam-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .exam-sidebar {
+            order: -1;
+        }
     }
 
     /* ── CARD ── */
     .exam-card {
-        background: #fff; border: 0.5px solid rgba(0,0,0,.1);
-        border-radius: 12px; overflow: hidden; position: relative;
+        background: #fff;
+        border: 0.5px solid rgba(0, 0, 0, .1);
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
     }
 
     /* ── PROGRESS BAR ── */
-    .progress-bar-track { height: 4px; background: #e5e4e0; }
-    .progress-bar-fill  { height: 100%; background: #1d9e75; transition: width .4s ease; }
+    .progress-bar-track {
+        height: 4px;
+        background: #e5e4e0;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: #1d9e75;
+        transition: width .4s ease;
+    }
 
     /* ── CARD HEAD / FOOT ── */
     .card-head {
-        padding: 14px 20px; display: flex; align-items: center;
-        justify-content: space-between; gap: 12px;
-        background: #fff; border-bottom: 0.5px solid rgba(0,0,0,.08);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: #fff;
+        border-bottom: 0.5px solid rgba(0, 0, 0, .08);
     }
+
     .card-foot {
-        padding: 14px 20px; display: flex; align-items: center;
-        justify-content: space-between; gap: 8px; flex-wrap: wrap;
-        background: #f9f9f7; border-top: 0.5px solid rgba(0,0,0,.08);
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        background: #f9f9f7;
+        border-top: 0.5px solid rgba(0, 0, 0, .08);
     }
-    .q-counter { font-size: 14px; color: #888; }
-    .q-counter strong { color: #1a1a1a; font-weight: 600; }
+
+    .q-counter {
+        font-size: 14px;
+        color: #888;
+    }
+
+    .q-counter strong {
+        color: #1a1a1a;
+        font-weight: 600;
+    }
 
     /* ── FLAG BUTTON ── */
     .btn-flag {
-        font-size: 13px; font-weight: 500; padding: 7px 14px; border-radius: 8px;
-        border: 0.5px solid #ef9f27; background: #faeeda; color: #854f0b;
-        cursor: pointer; transition: background .15s;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 7px 14px;
+        border-radius: 8px;
+        border: 0.5px solid #ef9f27;
+        background: #faeeda;
+        color: #854f0b;
+        cursor: pointer;
+        transition: background .15s;
     }
-    .btn-flag:hover  { background: #fac775; }
-    .btn-flag.active { background: #ef9f27; color: #fff; border-color: #ba7517; }
+
+    .btn-flag:hover {
+        background: #fac775;
+    }
+
+    .btn-flag.active {
+        background: #ef9f27;
+        color: #fff;
+        border-color: #ba7517;
+    }
 
     /* ── QUESTION BODY ── */
-    .card-body { padding: 24px 20px; min-height: 320px; }
-    .question-step { display: none; }
-    .question-step.active { display: block; }
+    .card-body {
+        padding: 24px 20px;
+        min-height: 320px;
+    }
 
-    .q-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .question-step {
+        display: none;
+    }
+
+    .question-step.active {
+        display: block;
+    }
+
+    .q-badges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
     .badge-difficulty {
-        font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
-        text-transform: uppercase; letter-spacing: .04em;
-    }
-    .badge-difficulty.easy   { background: #eaf3de; color: #3b6d11; }
-    .badge-difficulty.medium { background: #faeeda; color: #854f0b; }
-    .badge-difficulty.hard   { background: #fcebeb; color: #a32d2d; }
-    .badge-type {
-        font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
-        background: #e6f1fb; color: #185fa5;
-        text-transform: uppercase; letter-spacing: .04em;
-    }
-    .badge-pts {
-        font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px;
-        background: #f4f4f2; color: #666; border: 0.5px solid rgba(0,0,0,.1);
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
     }
 
-    .q-text { font-size: 17px; font-weight: 500; line-height: 1.55; color: #1a1a1a; margin-bottom: 20px; }
-    .q-divider { border: none; border-top: 0.5px solid rgba(0,0,0,.08); margin-bottom: 20px; }
+    .badge-difficulty.easy {
+        background: #eaf3de;
+        color: #3b6d11;
+    }
+
+    .badge-difficulty.medium {
+        background: #faeeda;
+        color: #854f0b;
+    }
+
+    .badge-difficulty.hard {
+        background: #fcebeb;
+        color: #a32d2d;
+    }
+
+    .badge-type {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #e6f1fb;
+        color: #185fa5;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .q-text {
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1.55;
+        color: #1a1a1a;
+        margin-bottom: 20px;
+    }
+
+    .q-divider {
+        border: none;
+        border-top: 0.5px solid rgba(0, 0, 0, .08);
+        margin-bottom: 20px;
+    }
 
     /* ── RADIO OPTIONS ── */
-    .options-wrap { display: flex; flex-direction: column; gap: 10px; }
-    .option-label {
-        display: flex; align-items: center; gap: 14px; padding: 13px 16px;
-        border-radius: 8px; border: 0.5px solid rgba(0,0,0,.12);
-        cursor: pointer; transition: border-color .15s, background .15s;
-        font-size: 15px; color: #1a1a1a;
+    .options-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
-    .option-label:hover { border-color: #b5d4f4; background: #eef6fd; }
-    .option-label input[type="radio"] { display: none; }
+
+    .option-label {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 16px;
+        border-radius: 8px;
+        border: 0.5px solid rgba(0, 0, 0, .12);
+        cursor: pointer;
+        transition: border-color .15s, background .15s;
+        font-size: 15px;
+        color: #1a1a1a;
+    }
+
+    .option-label:hover {
+        border-color: #b5d4f4;
+        background: #eef6fd;
+    }
+
+    .option-label input[type="radio"] {
+        display: none;
+    }
+
     .radio-custom {
-        width: 18px; height: 18px; flex-shrink: 0; border-radius: 50%;
-        border: 2px solid rgba(0,0,0,.25);
-        display: flex; align-items: center; justify-content: center;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 0, 0, .25);
+        display: flex;
+        align-items: center;
+        justify-content: center;
         transition: border-color .15s, background .15s;
     }
-    .option-label:has(input:checked) { border-color: #378add; background: #eef6fd; font-weight: 500; }
-    .option-label:has(input:checked) .radio-custom { border-color: #378add; background: #378add; }
+
+    .option-label:has(input:checked) {
+        border-color: #378add;
+        background: #eef6fd;
+        font-weight: 500;
+    }
+
+    .option-label:has(input:checked) .radio-custom {
+        border-color: #378add;
+        background: #378add;
+    }
+
     .option-label:has(input:checked) .radio-custom::after {
-        content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff;
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #fff;
     }
 
     /* ── TEXT INPUT ── */
     .id-input {
-        width: 100%; padding: 11px 14px; font-size: 15px;
-        border: 0.5px solid rgba(0,0,0,.2); border-left: 3px solid #378add;
-        border-radius: 8px; background: #fff; color: #1a1a1a;
-        outline: none; transition: box-shadow .15s;
+        width: 100%;
+        padding: 11px 14px;
+        font-size: 15px;
+        border: 0.5px solid rgba(0, 0, 0, .2);
+        border-left: 3px solid #378add;
+        border-radius: 8px;
+        background: #fff;
+        color: #1a1a1a;
+        outline: none;
+        transition: box-shadow .15s;
     }
-    .id-input:focus { box-shadow: 0 0 0 3px rgba(55,138,221,.14); border-color: #378add; }
-    .id-label { font-size: 13px; font-weight: 500; color: #666; margin-bottom: 8px; display: block; }
+
+    .id-input:focus {
+        box-shadow: 0 0 0 3px rgba(55, 138, 221, .14);
+        border-color: #378add;
+    }
+
+    .id-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #666;
+        margin-bottom: 8px;
+        display: block;
+    }
 
     /* ── NAV BUTTONS ── */
     .btn-nav {
-        font-size: 14px; font-weight: 500; padding: 10px 22px; border-radius: 8px;
-        border: 0.5px solid rgba(0,0,0,.18); background: #fff; color: #1a1a1a;
-        cursor: pointer; transition: background .15s;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 10px 22px;
+        border-radius: 8px;
+        border: 0.5px solid rgba(0, 0, 0, .18);
+        background: #fff;
+        color: #1a1a1a;
+        cursor: pointer;
+        transition: background .15s;
     }
-    .btn-nav:hover:not(:disabled) { background: #f4f4f2; }
-    .btn-nav:disabled { opacity: .4; cursor: not-allowed; }
-    .btn-nav-primary { background: #378add; color: #fff; border-color: #378add; }
-    .btn-nav-primary:hover:not(:disabled) { background: #185fa5; border-color: #185fa5; }
-    .btn-nav-success { background: #1d9e75; color: #fff; border-color: #1d9e75; }
-    .btn-nav-success:hover:not(:disabled) { background: #0f6e56; }
+
+    .btn-nav:hover:not(:disabled) {
+        background: #f4f4f2;
+    }
+
+    .btn-nav:disabled {
+        opacity: .4;
+        cursor: not-allowed;
+    }
+
+    .btn-nav-primary {
+        background: #378add;
+        color: #fff;
+        border-color: #378add;
+    }
+
+    .btn-nav-primary:hover:not(:disabled) {
+        background: #185fa5;
+        border-color: #185fa5;
+    }
+
+    .btn-nav-success {
+        background: #1d9e75;
+        color: #fff;
+        border-color: #1d9e75;
+    }
+
+    .btn-nav-success:hover:not(:disabled) {
+        background: #0f6e56;
+    }
 
     /* ── VIOLATION BANNER ── */
     #violation-banner {
-        display: none; background: #fcebeb; color: #a32d2d;
-        border: 0.5px solid #f09595; border-radius: 8px;
-        padding: 10px 16px; font-size: 13px;
+        display: none;
+        background: #fcebeb;
+        color: #a32d2d;
+        border: 0.5px solid #f09595;
+        border-radius: 8px;
+        padding: 10px 16px;
+        font-size: 13px;
     }
 
     /* ── SIDEBAR: TIMER ── */
-    .timer-section { padding: 18px; text-align: center; border-bottom: 0.5px solid rgba(0,0,0,.08); }
-    .timer-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #a32d2d; margin-bottom: 4px; }
-    .timer-value { font-size: 36px; font-weight: 600; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: #1a1a1a; }
-    .timer-value.warning { color: #a32d2d; animation: blink 1s infinite; }
-    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+    .timer-section {
+        padding: 18px;
+        text-align: center;
+        border-bottom: 0.5px solid rgba(0, 0, 0, .08);
+    }
+
+    .timer-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: #a32d2d;
+        margin-bottom: 4px;
+    }
+
+    .timer-value {
+        font-size: 36px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        font-variant-numeric: tabular-nums;
+        color: #1a1a1a;
+    }
+
+    .timer-value.warning {
+        color: #a32d2d;
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: .45;
+        }
+    }
 
     /* ── SIDEBAR: MAP ── */
     .map-section-header {
-        padding: 10px 16px; font-size: 12px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: .05em; color: #888;
-        border-bottom: 0.5px solid rgba(0,0,0,.08);
+        padding: 10px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: #888;
+        border-bottom: 0.5px solid rgba(0, 0, 0, .08);
     }
-    
-    .map-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 38px);
-    justify-content: center;
-    gap: 8px;
-    padding: 16px;
-    max-height: 260px;
-    overflow-y: auto;
-    }   
-    
-    .q-indicator {
-        width: 40px; height: 40px; border-radius: 8px; border: 0.5px solid rgba(0,0,0,.15);
-        background: #fff; color: #888; font-size: 13px; font-weight: 600;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: all .15s;
-    }
-    .q-indicator:hover  { border-color: #378add; color: #378add; }
-    .q-indicator.active { border: 2px solid #378add; color: #378add; background: #eef6fd; transform: scale(1.1); }
-    .q-indicator.answered { background: #1d9e75 !important; color: #fff !important; border-color: #0f6e56 !important; }
-    .q-indicator.flagged  { background: #ef9f27 !important; color: #fff !important; border-color: #ba7517 !important; }
-    .q-indicator.answered.active, .q-indicator.flagged.active { box-shadow: 0 0 0 2px #378add; }
 
-    .map-legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 14px; border-top: 0.5px solid rgba(0,0,0,.08); }
-    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #888; }
-    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
-    .map-footer { padding: 10px 16px; font-size: 12px; color: #999; text-align: center; border-top: 0.5px solid rgba(0,0,0,.08); }
+    .map-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 38px);
+        justify-content: center;
+        gap: 8px;
+        padding: 16px;
+        max-height: 260px;
+        overflow-y: auto;
+    }
+
+    .q-indicator {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        border: 0.5px solid rgba(0, 0, 0, .15);
+        background: #fff;
+        color: #888;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+    .q-indicator:hover {
+        border-color: #378add;
+        color: #378add;
+    }
+
+    .q-indicator.active {
+        border: 2px solid #378add;
+        color: #378add;
+        background: #eef6fd;
+        transform: scale(1.1);
+    }
+
+    .q-indicator.answered {
+        background: #1d9e75 !important;
+        color: #fff !important;
+        border-color: #0f6e56 !important;
+    }
+
+    .q-indicator.flagged {
+        background: #ef9f27 !important;
+        color: #fff !important;
+        border-color: #ba7517 !important;
+    }
+
+    .q-indicator.answered.active,
+    .q-indicator.flagged.active {
+        box-shadow: 0 0 0 2px #378add;
+    }
+
+    .map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 14px;
+        border-top: 0.5px solid rgba(0, 0, 0, .08);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #888;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+    }
+
+    .map-footer {
+        padding: 10px 16px;
+        font-size: 12px;
+        color: #999;
+        text-align: center;
+        border-top: 0.5px solid rgba(0, 0, 0, .08);
+    }
 </style>
 {% endblock %}
 
@@ -226,13 +551,12 @@
             <div class="card-body">
                 <form id="exam-form" action="{{ url_for('student.submit_exam', attempt_id=attempt_id) }}" method="POST">
                     {% for q in questions %}
-                    <div class="question-step" id="step-{{ loop.index0 }}"
-                         data-q-id="{{ q.question_id }}" data-q-type="{{ q.question_type }}">
+                    <div class="question-step" id="step-{{ loop.index0 }}" data-q-id="{{ q.question_id }}"
+                        data-q-type="{{ q.question_type }}">
 
                         <div class="q-badges">
                             <span class="badge-difficulty {{ q.difficulty|lower }}">{{ q.difficulty }}</span>
                             <span class="badge-type">{{ q.question_type.replace('_',' ') }}</span>
-                        
                         </div>
 
                         <p class="q-text">{{ q.question_text }}</p>
@@ -242,9 +566,8 @@
                         <div class="options-wrap">
                             {% for opt in q.options %}
                             <label class="option-label">
-                                <input type="radio" name="question_{{ q.question_id }}"
-                                       value="{{ opt.option_text }}" class="ajax-save"
-                                       {% if q.saved_answer == opt.option_text %}checked{% endif %}>
+                                <input type="radio" name="question_{{ q.question_id }}" value="{{ opt.option_text }}"
+                                    class="ajax-save" {% if q.saved_answer==opt.option_text %}checked{% endif %}>
                                 <span class="radio-custom"></span>
                                 {{ opt.option_text }}
                             </label>
@@ -252,11 +575,8 @@
                         </div>
                         {% else %}
                         <label class="id-label">Type your answer:</label>
-                        <input type="text" name="question_{{ q.question_id }}"
-                               class="id-input ajax-save"
-                               placeholder="Type answer..."
-                               value="{{ q.saved_answer }}"
-                               autocomplete="off">
+                        <input type="text" name="question_{{ q.question_id }}" class="id-input ajax-save"
+                            placeholder="Type answer..." value="{{ q.saved_answer }}" autocomplete="off">
                         {% endif %}
                     </div>
                     {% endfor %}
@@ -267,7 +587,7 @@
                 <button class="btn-nav" id="btn-prev">← Previous</button>
                 <button class="btn-nav btn-nav-primary" id="btn-next">Next question →</button>
                 <button class="btn-nav btn-nav-success" id="btn-submit" style="display:none"
-                        onclick="confirmFinalSubmit()">
+                    onclick="confirmFinalSubmit()">
                     <i class="fas fa-check-double mr-1"></i> Finalize &amp; submit
                 </button>
             </div>
@@ -287,9 +607,8 @@
                 {% for q in questions %}
                 <div class="q-indicator
                             {% if q.saved_answer %}answered{% endif %}
-                            {% if q.is_flagged %}flagged{% endif %}"
-                     id="map-{{ loop.index0 }}"
-                     onclick="jumpTo({{ loop.index0 }})">
+                            {% if q.is_flagged %}flagged{% endif %}" id="map-{{ loop.index0 }}"
+                    onclick="jumpTo({{ loop.index0 }})">
                     {{ loop.index }}
                 </div>
                 {% endfor %}
@@ -318,19 +637,26 @@
 
 {% block scripts %}
 <script>
-$(document).ready(function () {
-    "use strict";
+    $(document).ready(function () {
+        "use strict";
 
-    let currentIdx  = {{ current_q }};
-    const totalQ    = {{ questions|length }};
-    let timeLeft    = {{ remaining_seconds }};
+        let currentIdx = {{ current_q }};
+        
+    const totalQ = {{ questions| length }};
+    let timeLeft = {{ remaining_seconds }};
     let isUnloading = false;
 
     /* ── LOCKDOWN ── */
+    // Define startLockdown inside global scope so HTML can find it
     window.startLockdown = function () {
         const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        if (el.requestFullscreen) {
+            el.requestFullscreen();
+        } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+        } else if (el.msRequestFullscreen) {
+            el.msRequestFullscreen();
+        }
         $('#lockdown-overlay').fadeOut(300);
     };
 
@@ -346,7 +672,7 @@ $(document).ready(function () {
         const m = Math.floor(timeLeft / 60);
         const s = timeLeft % 60;
         const $t = $('#timer');
-        $t.text(String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'));
+        $t.text(String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'));
         $t.toggleClass('warning', timeLeft < 300);
     }
     renderTimer();
@@ -375,51 +701,76 @@ $(document).ready(function () {
         $('#btn-submit').toggle(idx === totalQ - 1);
         $('#btn-flag').toggleClass('active', $(`#map-${idx}`).hasClass('flagged'));
         currentIdx = idx;
-        syncProgress();
+        updateProgressBar();
     }
 
-    window.jumpTo = idx => showStep(idx);
-    $('#btn-next').click(() => showStep(currentIdx + 1));
-    $('#btn-prev').click(() => showStep(currentIdx - 1));
+    window.jumpTo = idx => {
+        saveCurrentProgress();
+        showStep(idx);
+    };
+
+    $('#btn-next').click(() => {
+        saveCurrentProgress();
+        showStep(currentIdx + 1);
+    });
+
+    $('#btn-prev').click(() => {
+        saveCurrentProgress();
+        showStep(currentIdx - 1);
+    });
 
     /* ── FLAG ── */
     $('#btn-flag').click(function () {
         $(`#map-${currentIdx}`).toggleClass('flagged');
         $(this).toggleClass('active');
-        syncProgress();
+        saveCurrentProgress();
     });
 
     /* ── SYNC / SAVE ── */
-    function syncProgress() {
+    function updateProgressBar() {
+        const progress = Math.round(($('.q-indicator.answered').length / totalQ) * 100);
+        $('#progress-fill').css('width', progress + '%');
+    }
+
+    function saveCurrentProgress() {
         if (isUnloading) return;
         const $step = $(`#step-${currentIdx}`);
-        const qId   = $step.data('q-id');
+        const qId = $step.data('q-id');
         const qType = $step.data('q-type');
-        let val = (qType === 'identification')
-            ? $step.find('input[type="text"]').val()
-            : $step.find('input:checked').val();
+
+        let val = "";
+        if (qType === 'identification') {
+            val = $step.find('input[type="text"]').val();
+        } else {
+            val = $step.find('input:checked').val();
+        }
         val = val || '';
 
         const $indicator = $(`#map-${currentIdx}`);
-        if (val.trim()) $indicator.addClass('answered');
+        if (val.trim() !== "") {
+            $indicator.addClass('answered');
+        } else {
+            $indicator.removeClass('answered');
+        }
 
-        const progress = Math.round(($('.q-indicator.answered').length / totalQ) * 100);
-        $('#progress-fill').css('width', progress + '%');
+        updateProgressBar();
 
         fetch("{{ url_for('student.save_progress') }}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                attempt_id:  {{ attempt_id }},
-                question_id: qId,
-                answer:      val,
-                is_flagged:  $indicator.hasClass('flagged') ? 1 : 0,
-                current_idx: currentIdx
-            })
-        });
-    }
+                attempt_id: {{ attempt_id }},
+            question_id: qId,
+            answer: val,
+            is_flagged: $indicator.hasClass('flagged') ? 1 : 0,
+            current_idx: currentIdx
+                })
+            });
+        }
 
-    $(document).on('change keyup', '.ajax-save', syncProgress);
+    $(document).on('change keyup', '.ajax-save', function () {
+        saveCurrentProgress();
+    });
 
     /* ── VIOLATIONS ── */
     function handleViolation(reason) {
@@ -429,8 +780,8 @@ $(document).ready(function () {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ attempt_id: {{ attempt_id }} })
-        });
-    }
+            });
+        }
 
     let violationCooldown = false;
     function throttledViolation(reason) {
@@ -448,26 +799,31 @@ $(document).ready(function () {
     });
 
     /* ── UTILITIES ── */
-    window.onbeforeunload = () => { isUnloading = true; };
+    window.onbeforeunload = (e) => {
+        if (!isUnloading) {
+            return "Are you sure you want to leave? Your exam progress is saved but the timer continues.";
+        }
+    };
+
     history.pushState(null, null, location.href);
     window.onpopstate = () => history.go(1);
     document.addEventListener('contextmenu', e => e.preventDefault());
 
     window.confirmFinalSubmit = () => {
-    violationCooldown = true;
-    const confirmed = confirm('Finalize and submit your answers? This cannot be undone.');
-    if (confirmed) {
-        isUnloading = true;
-        document.getElementById('exam-form').submit();
-    } else {
-        setTimeout(() => { violationCooldown = false; }, 500);
-    }
-    }  ;
+        violationCooldown = true;
+        const confirmed = confirm('Finalize and submit your answers? This cannot be undone.');
+        if (confirmed) {
+            isUnloading = true;
+            document.getElementById('exam-form').submit();
+        } else {
+            setTimeout(() => { violationCooldown = false; }, 500);
+        }
+    };
 
     /* ── INIT ── */
     if (!document.fullscreenElement) $('#lockdown-overlay').show();
     showStep(currentIdx);
-});
+    updateProgressBar();
+    });
 </script>
-
 {% endblock %}

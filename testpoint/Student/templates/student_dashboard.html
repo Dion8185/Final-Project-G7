@@ -1,19 +1,25 @@
 {% extends 'student_base.html' %}
-{% block title %}Dashboard{% endblock %}
+
+{% block title %}Student Dashboard{% endblock %}
+
 {% set sidebar_active = 'dashboard' %}
 
 {% block content %}
 <div class="container-fluid animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">Welcome, {{ session.get('firstname') }}!</h1>
-    
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Welcome, {{ student_firstname }} {{ student_lastname }}!</h1>
+    </div>
+
+    <!-- Summary Cards Row -->
     <div class="row">
-        <!-- Enrolled Courses Card -->
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">My Courses</div>
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Enrolled Courses
+                            </div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course_count }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-university fa-2x text-gray-300"></i></div>
@@ -22,13 +28,12 @@
             </div>
         </div>
 
-        <!-- Available Exams Card -->
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-success shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Exams</div>
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Available Exams</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_count }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-edit fa-2x text-gray-300"></i></div>
@@ -37,13 +42,12 @@
             </div>
         </div>
 
-        <!-- Completed Exams Card -->
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Finished Tests</div>
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Completed Exams</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }}</div>
                         </div>
                         <div class="col-auto"><i class="fas fa-check-double fa-2x text-gray-300"></i></div>
@@ -53,13 +57,111 @@
         </div>
     </div>
 
-    <!-- Recent Activity Placeholder -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Student Progress</h6></div>
-        <div class="card-body">
-            <p>You are currently enrolled in {{ course_count }} course(s). Make sure to check your available exams regularly.</p>
-            <a href="{{ url_for('student.student_exams') }}" class="btn btn-primary btn-sm">View Exams</a>
+    <div class="row">
+        <!-- Performance Analysis Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance Analysis (Recent Exams)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area" style="height: 300px;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <hr>
+                    <small class="text-muted">This chart shows your score percentage across your last 5 completed
+                        examinations.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Rankings Table -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Class Standings</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table m-0">
+                            <thead class="bg-light small text-uppercase">
+                                <tr>
+                                    <th>Course</th>
+                                    <th class="text-center">Rank</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rank in rankings %}
+                                <tr>
+                                    <td>
+                                        <div class="small font-weight-bold text-dark">{{ rank.course_name }}</div>
+                                        {# FIXED: Added default(0) filter before rounding #}
+                                        <div class="text-xs text-muted">Avg: {{ rank.student_avg|default(0)|round(1) }}%
+                                        </div>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span
+                                            class="badge {% if rank.class_rank == 1 %}badge-warning{% else %}badge-primary{% endif %} p-2">
+                                            #{{ rank.class_rank }} / {{ rank.total_students }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center py-4 text-muted small">No ranking data available.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer small text-center">
+                    Rank is based on your average score vs classmates.
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    const labels = {{ trend_labels | tojson }};
+    const scores = {{ trend_scores | tojson }};
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Score Percentage (%)',
+                data: scores,
+                fill: true,
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointRadius: 5,
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: 'rgba(78, 115, 223, 1)',
+                pointHoverRadius: 7,
+                tension: 0.3
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { callback: function (value) { return value + "%"; } }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script>
 {% endblock %}

@@ -18,8 +18,11 @@ def teacher_dashboard():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         try:
+            # 1. Course Count
             cursor.execute("SELECT COUNT(DISTINCT course_code) as count FROM classes WHERE teacher_id = %s", (teacher_id,))
             course_count = cursor.fetchone()['count']
+
+            # 2. Active Examinees
             cursor.execute("""
                 SELECT COUNT(*) as count FROM exam_attempts ea 
                 JOIN exams ex ON ea.exam_id = ex.exam_id 
@@ -28,8 +31,11 @@ def teacher_dashboard():
             """, (teacher_id,))
             active_examinees = cursor.fetchone()['count']
             
+            # 3. Question Bank Count (Total Questions)
             cursor.execute("SELECT COUNT(*) as count FROM questions WHERE teacher_id = %s AND is_isolated = 0", (teacher_id,))
-            bank_count = cursor.fetchone()['count']
+            total_q = cursor.fetchone()['count']
+
+            # 4. Total Violations
             cursor.execute("""
                 SELECT SUM(ea.tab_switches) as total FROM exam_attempts ea 
                 JOIN exams ex ON ea.exam_id = ex.exam_id 
@@ -37,6 +43,8 @@ def teacher_dashboard():
                 WHERE cl.teacher_id = %s
             """, (teacher_id,))
             total_violations = cursor.fetchone()['total'] or 0
+
+            # 5. Class Average
             cursor.execute("""
                 SELECT AVG((ea.score / (SELECT COUNT(*) FROM exam_questions WHERE exam_id = ea.exam_id)) * 100) as avg_score
                 FROM exam_attempts ea
@@ -45,11 +53,15 @@ def teacher_dashboard():
                 WHERE cl.teacher_id = %s AND ea.status = 'finished'
             """, (teacher_id,))
             class_avg = cursor.fetchone()['avg_score'] or 0
+
+            # 6. Question Type Distribution
             cursor.execute("SELECT question_type, COUNT(*) as count FROM questions WHERE teacher_id = %s AND is_isolated = 0 GROUP BY question_type", (teacher_id,))
             dist_data = cursor.fetchall()
             type_mapping = {'multiple_choice': 'MCQ', 'true_false': 'T/F', 'identification': 'Ident.', 'essay': 'Essay'}
             dist_labels = [type_mapping.get(d['question_type'], d['question_type']) for d in dist_data]
             dist_values = [int(d['count']) for d in dist_data]
+
+            # 7. Recent Submissions
             cursor.execute("""
                 SELECT ea.score, s.firstname, s.lastname, ex.title, ea.end_time
                 FROM exam_attempts ea
@@ -60,9 +72,21 @@ def teacher_dashboard():
                 ORDER BY ea.end_time DESC LIMIT 5
             """, (teacher_id,))
             recent_submissions = cursor.fetchall()
-            return render_template('teacher_dashboard.html', firstname=session.get('firstname'), active_examinees=active_examinees, bank_count=bank_count, total_violations=total_violations, class_avg=round(class_avg, 1), dist_labels=dist_labels, dist_values=dist_values, recent_submissions=recent_submissions)
+
+            return render_template('teacher_dashboard.html', 
+                                   firstname=session.get('firstname'), 
+                                   course_count=course_count,
+                                   active_examinees=active_examinees,
+                                   total_q=total_q, 
+                                   total_violations=total_violations, 
+                                   class_avg=round(class_avg, 1), 
+                                   dist_labels=dist_labels, 
+                                   dist_values=dist_values, 
+                                   recent_submissions=recent_submissions)
         finally:
-            cursor.close(); connection.close()
+            cursor.close()
+            connection.close()
+            
     return redirect(url_for('auth.login'))
 
 @teacher.route('/question_bank')
@@ -184,7 +208,7 @@ def add_exam():
         class_code = request.form.get('class_code'); title = request.form.get('title'); duration = request.form.get('duration')
         pass_percent = request.form.get('pass_percentage'); schedule = request.form.get('schedule'); q_limit = request.form.get('question_limit', 50)
         connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        cursor.execute("INSERT INTO exams (class_code, title, duration_minutes, pass_percentage, date_time, created_by, question_limit, is_active) VALUES (%s, %s, %s, %s, %s, %s, %s, 1)", (class_code, title, duration, pass_percent, schedule, session.get('user_id'), q_limit))
+        cursor.execute("INSERT INTO exams (class_code, title, duration_minutes, pass_percentage, date_time, created_by, question_limit, is_active) VALUES (%s, %s, %s, %s, %s, %s, %s, 0)", (class_code, title, duration, pass_percent, schedule, session.get('user_id'), q_limit))
         new_id = cursor.lastrowid; connection.commit(); cursor.close(); connection.close()
         return redirect(url_for('teacher.manage_questions', exam_id=new_id))
     return redirect(url_for('auth.login'))
@@ -394,37 +418,85 @@ def delete_isolated_question(q_id, exam_id):
 
 @teacher.route('/import_questions', methods=['POST'])
 def import_questions():
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+    
     file = request.files.get('excel_file')
+    exam_id = request.form.get('exam_id')
     save_to_bank = request.form.get('save_to_bank') == 'on'
-    is_iso = 0 if save_to_bank else 1
+    
+    if not exam_id or save_to_bank:
+        is_iso = 0
+    else:
+        is_iso = 1
     
     if file:
         try:
+            import pandas as pd
             df = pd.read_excel(file)
             df = df.fillna('')
-            connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+            
+            connection = mysql.connector.connect(**db_config)
+            cursor = connection.cursor()
+            
             for _, row in df.iterrows():
-                # Logic: Ensure is_isolated is applied
-                cursor.execute("INSERT INTO questions (course_code, teacher_id, question_text, question_type, difficulty, is_isolated) VALUES (%s, %s, %s, %s, %s, %s)", 
-                               (request.form.get('course_code'), session.get('user_id'), str(row['Question']), str(row['Type']), str(row['Difficulty']), is_iso))
+                # 1. Insert into questions table
+                cursor.execute("""
+                    INSERT INTO questions (course_code, teacher_id, question_text, question_type, difficulty, is_isolated) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (
+                    request.form.get('course_code'), 
+                    session.get('user_id'), 
+                    str(row['Question']), 
+                    str(row['Type']), 
+                    str(row['Difficulty']), 
+                    is_iso
+                ))
+                
                 q_id = cursor.lastrowid
-                cursor.execute("INSERT INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (request.form.get('exam_id'), q_id))
+                
+                # 2. Only link to exam_questions if an exam_id was provided
+                if exam_id and str(exam_id).strip():
+                    cursor.execute("""
+                        INSERT INTO exam_questions (exam_id, question_id) 
+                        VALUES (%s, %s)
+                    """, (exam_id, q_id))
                 
                 ans = str(row['Answer']).strip()
-                if str(row['Type']).lower() == 'multiple_choice':
+                q_type = str(row['Type']).lower()
+
+                if q_type == 'multiple_choice':
                     opts = [str(row['OptA']), str(row['OptB']), str(row['OptC']), str(row['OptD'])]
                     for o in opts:
-                        if str(o) != '': cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, o, 1 if o.strip() == ans else 0))
-                elif str(row['Type']).lower() == 'true_false':
-                    cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, 'True', 1 if ans.lower() == 'true' else 0))
-                    cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, 'False', 1 if ans.lower() == 'false' else 0))
-                elif str(row['Type']).lower() == 'identification':
-                    cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, ans, 1))
-            connection.commit(); cursor.close(); connection.close()
+                        if str(o).strip() != '':
+                            cursor.execute("""
+                                INSERT INTO options (question_id, option_text, is_correct) 
+                                VALUES (%s, %s, %s)
+                            """, (q_id, o, 1 if o.strip() == ans else 0))
+                elif q_type == 'true_false':
+                    cursor.execute("""
+                        INSERT INTO options (question_id, option_text, is_correct) 
+                        VALUES (%s, %s, %s)
+                    """, (q_id, 'True', 1 if ans.lower() == 'true' else 0))
+                    cursor.execute("""
+                        INSERT INTO options (question_id, option_text, is_correct) 
+                        VALUES (%s, %s, %s)
+                    """, (q_id, 'False', 1 if ans.lower() == 'false' else 0))
+                elif q_type == 'identification':
+                    cursor.execute("""
+                        INSERT INTO options (question_id, option_text, is_correct) 
+                        VALUES (%s, %s, %s)
+                    """, (q_id, ans, 1))
+            connection.commit()
+            cursor.close()
+            connection.close()
             flash("Import successful!", "success")
         except Exception as e:
+            if 'connection' in locals() and connection.is_connected():
+                connection.rollback()
             flash(f"Import Error: {e}", "danger")
+    else:
+        flash("No file selected.", "warning")        
     return redirect(request.referrer)
 
 @teacher.route('/link_from_bank/<int:exam_id>/<int:q_id>', methods=['POST'])
@@ -479,20 +551,54 @@ def student_monitor():
     attempts = cursor.fetchall(); cursor.close(); connection.close()
     return render_template('teacher_monitor.html', attempts=attempts)
 
-@teacher.route('/view_results/<int:exam_id>')
-def view_results(exam_id):
+@teacher.route('/exam_results/<int:exam_id>')
+def exam_results(exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT ea.*, s.firstname, s.lastname FROM exam_attempts ea JOIN students s ON ea.student_id = s.student_id WHERE ea.exam_id = %s", (exam_id,))
-    results = cursor.fetchall(); cursor.close(); connection.close()
-    return render_template('teacher_exam_results.html', results=results)
+    teacher_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT e.*, c.course_name 
+            FROM exams e
+            JOIN classes cl ON e.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            WHERE e.exam_id = %s AND cl.teacher_id = %s
+        """, (exam_id, teacher_id))
+        exam = cursor.fetchone()
+        
+        if not exam:
+            flash("Exam not found or access denied.", "danger")
+            return redirect(url_for('teacher.manage_exams'))
 
+        # 2. Fetch Student Results
+        cursor.execute("""
+            SELECT ea.*, s.firstname, s.lastname, s.student_id,
+                (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_questions
+            FROM exam_attempts ea
+            JOIN students s ON ea.student_id = s.student_id
+            WHERE ea.exam_id = %s
+            ORDER BY s.lastname ASC
+        """, (exam_id,))
+        results = cursor.fetchall()
+        
+        return render_template('teacher_exam_results.html', exam=exam, results=results)
+    finally:
+        cursor.close()
+        connection.close()
+
+# Updated Reset Route: Redirects to the correct exam_results route
 @teacher.route('/reset_exam/<int:attempt_id>/<int:exam_id>', methods=['POST'])
 def reset_exam(attempt_id, exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-    cursor.execute("DELETE FROM exam_attempts WHERE attempt_id = %s", (attempt_id,)); connection.commit(); cursor.close(); connection.close()
-    return redirect(url_for('teacher.view_results', exam_id=exam_id))
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    # Redirect to the route that provides the 'exam' object
+    return redirect(url_for('teacher.exam_results', exam_id=exam_id))
 
 @teacher.route('/teacher_review/<int:attempt_id>')
 def teacher_review(attempt_id):
@@ -504,13 +610,47 @@ def teacher_review(attempt_id):
 
 @teacher.route('/review_student_attempt/<int:attempt_id>')
 def review_student_attempt(attempt_id):
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True, buffered=True)
-    cursor.execute("SELECT ea.*, s.firstname, s.lastname, e.title FROM exam_attempts ea JOIN students s ON ea.student_id = s.student_id JOIN exams e ON ea.exam_id = e.exam_id WHERE ea.attempt_id = %s", (attempt_id,))
-    attempt = cursor.fetchone()
-    cursor.execute("SELECT q.*, sa.submitted_answer FROM questions q JOIN attempt_questions aq ON q.question_id = aq.question_id LEFT JOIN student_answers sa ON q.question_id = sa.question_id AND sa.attempt_id = %s WHERE aq.attempt_id = %s", (attempt_id, attempt_id))
-    questions = cursor.fetchall(); cursor.close(); connection.close()
-    return render_template('teacher_review_attempt.html', attempt=attempt, questions=questions)
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True, buffered=True)
+    
+    try:
+        # 1. Fetch Attempt, Student, and Exam Metadata (including pass_percentage)
+        cursor.execute("""
+            SELECT ea.*, s.firstname, s.lastname, e.title, e.pass_percentage 
+            FROM exam_attempts ea 
+            JOIN students s ON ea.student_id = s.student_id 
+            JOIN exams e ON ea.exam_id = e.exam_id 
+            WHERE ea.attempt_id = %s
+        """, (attempt_id,))
+        attempt = cursor.fetchone()
+
+        if not attempt:
+            flash("Attempt not found.", "danger")
+            return redirect(url_for('teacher.manage_exams'))
+
+        # 2. Fetch questions served during this attempt along with the student's answer
+        cursor.execute("""
+            SELECT q.*, sa.submitted_answer, sa.is_correct 
+            FROM questions q 
+            JOIN attempt_questions aq ON q.question_id = aq.question_id 
+            LEFT JOIN student_answers sa ON q.question_id = sa.question_id AND sa.attempt_id = %s 
+            WHERE aq.attempt_id = %s
+        """, (attempt_id, attempt_id))
+        questions = cursor.fetchall()
+
+        # 3. Fetch options for each question so we can show the correct answer
+        for q in questions:
+            cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
+            q['options'] = cursor.fetchall()
+
+        return render_template('teacher_review_attempt.html', attempt=attempt, questions=questions)
+    
+    finally:
+        cursor.close()
+        connection.close()
 
 #! 7. PROFILE
 @teacher.route('/profile', methods=['GET', 'POST'])
