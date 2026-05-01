@@ -306,6 +306,10 @@ def login():
 #! 2. REGISTER STUDENT
 @auth.route('/register/student', methods=['GET', 'POST'])
 def register_student():
+    
+    if user_logged_in() or admin_logged_in() or teacher_logged_in() or pending_user_logged_in():
+        return redirect(url_for('auth.login'))
+    
     if request.method == 'POST':
         email = request.form.get('email'); fname = request.form.get('firstname'); lname = request.form.get('lastname'); password = request.form.get('password')
         if not (validate_name('First Name', fname) and validate_name('Last Name', lname) and validate_email(email)):
@@ -370,21 +374,51 @@ def register_teacher():
 #! 4. VERIFY REGISTRATION (OTP)
 @auth.route('/verify_register', methods=['GET', 'POST'])
 def verify_register():
+    
     email = session.get('pending_email')
-    if not email: return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    if not email:
+        return redirect(url_for('auth.login'))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
     cursor.execute("SELECT * FROM pending_users WHERE email = %s", (email,))
     p_user = cursor.fetchone()
-    if not p_user: cursor.close(); connection.close(); return redirect(url_for('auth.login'))
+
+    if not p_user:
+        cursor.close()
+        connection.close()
+        return redirect(url_for('auth.login'))
+
+    if p_user.get('is_otp_verified') == 1:
+        cursor.close()
+        connection.close()
+        return redirect(url_for('auth.upload_verification'))
+
     remaining_seconds = max(0, int((p_user['otp_expires_at'] - datetime.now()).total_seconds()))
+
     if request.method == 'POST':
         pin = "".join([request.form.get(f'pin{i}', '') for i in range(1, 7)]).strip()
+
         if p_user['otp_code'] == pin and datetime.now() < p_user['otp_expires_at']:
-            cursor.execute("UPDATE pending_users SET is_otp_verified = 1 WHERE email = %s", (email,))
-            connection.commit(); flash("OTP Verified. Please upload documents.", "success")
-            cursor.close(); connection.close(); return redirect(url_for('auth.upload_verification'))
-        else: flash("Invalid or expired code.", "danger")
-    cursor.close(); connection.close()
+            cursor.execute(
+                "UPDATE pending_users SET is_otp_verified = 1 WHERE email = %s",
+                (email,)
+            )
+            connection.commit()
+
+            flash("OTP Verified. Please upload documents.", "success")
+
+            cursor.close()
+            connection.close()
+
+            return redirect(url_for('auth.upload_verification'))
+        else:
+            flash("Invalid or expired code.", "danger")
+
+    cursor.close()
+    connection.close()
+
     return render_template('verify.html', remaining_seconds=remaining_seconds)
 
 #! 5. DOCUMENT UPLOAD (Modified to show Admin Notes)
