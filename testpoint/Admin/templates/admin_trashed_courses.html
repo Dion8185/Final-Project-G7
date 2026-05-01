@@ -22,15 +22,11 @@
 
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Subject Trash
-        Bin</h1>
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Courses</h1>
     <div style="display: flex; gap: 10px;">
         <button class="btn btn-sm btn-danger shadow-sm px-3" data-toggle="modal" data-target="#emptyTrashModal">
             <i class="fas fa-eraser fa-sm text-white-50 mr-1"></i> Empty Trash
         </button>
-        <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-secondary shadow-sm px-3">
-            <i class="fas fa-arrow-left fa-sm mr-1"></i> Back to Catalog
-        </a>
     </div>
 </div>
 
@@ -38,7 +34,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb bg-white shadow-sm small">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_courses') }}">Subject Catalog</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_courses') }}">Courses</a></li>
         <li class="breadcrumb-item active" aria-current="page">Trash Bin</li>
     </ol>
 </nav>

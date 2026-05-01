@@ -1,52 +1,45 @@
 {% extends "admin_base.html" %}
-{% block title %}Block Enrollees - Admin{% endblock %}
+{% block title %}Block Enrollees - Admin Control{% endblock %}
 
 {% block content %}
+<!-- HEADER -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Enrollees: <span class="text-primary">{{ block.block_name }}</span></h1>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#assignStudentModal">
+            <i class="fas fa-user-plus fa-sm mr-2"></i> Assign Students
+        </button>
+    </div>
+</div>
+
+<!-- BREADCRUMBS -->
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_blocks') }}">Blocks</a></li>
-        <li class="breadcrumb-item active">{{ block.program_name }} - {{ block.block_name }}</li>
+        <li class="breadcrumb-item active">{{ block.program_name }} {{ block.block_name }} Enrollees</li>
     </ol>
 </nav>
 
-<div class="alert {% if students|length >= block.capacity %}alert-danger{% else %}alert-info{% endif %} shadow-sm small">
+<!-- CAPACITY ALERT -->
+<div class="alert {% if students|length >= block.capacity %}alert-danger{% else %}alert-info{% endif %} shadow-sm small mb-4">
     <i class="fas fa-info-circle mr-2"></i>
-    <strong>Capacity Status:</strong> {{ students|length }} / {{ block.capacity }} slots occupied.
-    {% if students|length >= block.capacity %}
-        <strong>This block is full.</strong> You cannot assign more students.
-    {% else %}
-        {{ block.capacity - students|length }} slots remaining.
-    {% endif %}
+    <strong>Capacity:</strong> {{ students|length }} / {{ block.capacity }} slots occupied.
 </div>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">
-        Block: <span class="text-primary">{{ block.block_name }}</span> 
-        <small class="text-muted">({{ block.program_name }})</small>
-    </h1>
-    <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#assignStudentModal">
-        <i class="fas fa-user-plus fa-sm mr-2"></i> Assign Student
-    </button>
-</div>
-
+<!-- TABLE CARD -->
 <div class="card shadow mb-4">
     <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
-        <h6 class="m-0 font-weight-bold text-dark">Current Students ({{ students|length }})</h6>
-        
-        <!-- Bulk Action Button (Initially Hidden) -->
-        <button type="button" id="btnBulkUnenroll" class="btn btn-danger btn-sm shadow-sm px-3 d-none" 
-                onclick="confirmBulkUnenroll()">
-            <i class="fas fa-user-minus mr-1"></i> Remove Selected (<span id="selectedCount">0</span>)
+        <h6 class="m-0 font-weight-bold text-dark">Active Students ({{ students|length }})</h6>
+        <button type="button" id="btnBulkUnenroll" class="btn btn-danger btn-sm shadow-sm px-3 d-none animate__animated animate__fadeIn" onclick="confirmBulkUnenroll()">
+            <i class="fas fa-user-minus mr-1"></i> Unenroll Selected (<span id="selectedCount">0</span>)
         </button>
     </div>
-    
     <div class="card-body p-0">
-        <!-- Main Unenroll Form -->
         <form id="bulkUnenrollForm" action="{{ url_for('admin.bulk_remove_from_block') }}" method="POST">
             <input type="hidden" name="block_id" value="{{ block.block_id }}">
-            
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="studentTable">
                     <thead class="thead-light">
                         <tr>
                             <th width="40" class="text-center">
@@ -63,38 +56,28 @@
                     </thead>
                     <tbody>
                         {% for s in students %}
-                        <tr>
+                        <tr class="student-row">
                             <td class="text-center">
                                 <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" name="student_ids" value="{{ s.student_id }}" 
-                                           class="custom-control-input student-unenroll-check" id="un_{{ s.student_id }}">
+                                    <input type="checkbox" name="student_ids" value="{{ s.student_id }}" class="custom-control-input student-unenroll-check" id="un_{{ s.student_id }}">
                                     <label class="custom-control-label" for="un_{{ s.student_id }}"></label>
                                 </div>
                             </td>
                             <td class="font-weight-bold">{{ s.student_id }}</td>
                             <td>{{ s.firstname }} {{ s.lastname }}</td>
                             <td class="small">{{ s.email }}</td>
-                            <td class="text-center">
-                                <!-- Keep single remove for quick actions -->
-                                <button type="button" class="btn btn-link text-danger p-0 small" 
-                                        onclick="singleUnenroll('{{ s.student_id }}')">Remove</button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5 text-muted italic">No students assigned to this block yet.</td>
+                            <td class="text-center"><button type="button" class="btn btn-link text-danger p-0 small" onclick="singleUnenroll('{{ s.student_id }}')">Remove</button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </form>
+        <div class="p-3 bg-light border-top">
+            <nav aria-label="Page navigation"><ul class="pagination pagination-sm justify-content-center mb-0" id="student-pagination"></ul></nav>
+        </div>
     </div>
 </div>
-
-<form id="singleUnenrollForm" 
-    action="{{ url_for('admin.remove_from_block', student_id='TMP', block_id=block.block_id) }}" method="POST" class="d-none">
-</form>
 {% endblock %}
 
 {% block modals %}

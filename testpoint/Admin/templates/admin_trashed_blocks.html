@@ -1,15 +1,38 @@
 {% extends "admin_base.html" %}
-{% block title %}Trashed Blocks - Admin{% endblock %}
+{% block title %}Trashed Blocks - Admin Control{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Block Trash Bin</h1>
+<!-- 1. HEADER & ACTIONS -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Blocks</h1>
 </div>
 
+<!-- 2. BREADCRUMBS -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_blocks') }}">Blocks</a></li>
+        <li class="breadcrumb-item active">Trash Bin</li>
+    </ol>
+</nav>
+
+<!-- 3. FILTER CARD -->
+<div class="card shadow mb-4 border-bottom-dark">
+    <div class="card-body py-3">
+        <div class="input-group">
+            <div class="input-group-prepend">
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+            </div>
+            <input type="text" id="blockTrashSearch" class="form-control border-left-0" placeholder="Search trashed blocks...">
+        </div>
+    </div>
+</div>
+
+<!-- 4. TABLE CARD -->
 <div class="card shadow mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0" id="blockTrashTable">
                 <thead class="thead-light">
                     <tr>
                         <th>Program</th>
@@ -19,42 +42,51 @@
                 </thead>
                 <tbody>
                     {% for b in trashed_blocks %}
-                    <tr>
-                        <td><span class="badge badge-secondary">{{ b.program_name }}</span></td>
+                    <tr class="trash-row">
+                        <td><span class="badge badge-secondary px-3">{{ b.program_name }}</span></td>
                         <td class="font-weight-bold">{{ b.block_name }}</td>
                         <td class="text-center">
                             <form action="{{ url_for('admin.restore_block', block_id=b.block_id) }}" method="POST" class="d-inline">
-                                <button class="btn btn-success btn-sm px-3 mr-2" type="submit">Restore</button>
+                                <button class="btn btn-success btn-sm px-3 shadow-sm mr-1" type="submit">
+                                    <i class="fas fa-undo mr-1"></i> Restore
+                                </button>
                             </form>
-                            <button class="btn btn-danger btn-sm px-3" data-toggle="modal" data-target="#permDeleteBlock{{ b.block_id }}">Delete Forever</button>
+                            <button class="btn btn-danger btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#permDeleteBlockModal{{ b.block_id }}">
+                                <i class="fas fa-times-circle mr-1"></i> Destroy
+                            </button>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3" class="text-center py-5 text-muted">Trash is empty.</td>
+                        <td colspan="3" class="text-center py-5 text-muted italic">Trash bin is empty.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        <!-- Pagination -->
+        <div class="p-3 bg-light border-top">
+            <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="block-trash-pagination"></ul>
+            </nav>
+        </div>
     </div>
 </div>
-<a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left mr-1"></i> Back</a>
 {% endblock %}
 
 {% block modals %}
 {% for b in trashed_blocks %}
-<div class="modal fade" id="permDeleteBlock{{ b.block_id }}" tabindex="-1" role="dialog">
+<div class="modal fade" id="permDeleteBlockModal{{ b.block_id }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-body text-center p-5">
-                <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
-                <h5>Permanent Delete?</h5>
-                <p>Deleting <strong>{{ b.block_name }}</strong> cannot be undone.</p>
+                <i class="fas fa-bomb fa-4x text-danger mb-4"></i>
+                <h4 class="font-weight-bold">Destroy Block Forever?</h4>
+                <p>Deleting <strong>{{ b.block_name }}</strong> is irreversible. Students in this block will be left without a section.</p>
                 <div class="mt-4">
-                    <button class="btn btn-light btn-sm mr-2" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-light px-4 mr-2" data-dismiss="modal">Cancel</button>
                     <form action="{{ url_for('admin.delete_block_permanently', block_id=b.block_id) }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-sm px-4">Delete Forever</button>
+                        <button type="submit" class="btn btn-danger px-4">Destroy Permanently</button>
                     </form>
                 </div>
             </div>
@@ -62,4 +94,22 @@
     </div>
 </div>
 {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        const rows = Array.from(document.querySelectorAll('#blockTrashTable tbody tr.trash-row'));
+        let filtered = [...rows];
+        const paginator = createPaginator({ tableBodySelector: '#blockTrashTable tbody', paginationSelector: '#block-trash-pagination', rowsPerPage: 10, getVisibleRows: () => filtered });
+        paginator.render();
+
+        $('#blockTrashSearch').on('keyup', function() {
+            const val = $(this).val().toLowerCase();
+            filtered = rows.filter(r => r.textContent.toLowerCase().includes(val));
+            paginator.reset();
+        });
+    });
+</script>
 {% endblock %}

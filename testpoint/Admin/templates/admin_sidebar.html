@@ -1,88 +1,97 @@
 <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
+
     <!-- Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center"
-        href="{{url_for('admin.admin_dashboard')}}">
+    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
         <div class="sidebar-brand-icon"><i class="fas fa-user-shield"></i></div>
-        <div class="sidebar-brand-text mx-3">System Admin</div>
+        <div class="sidebar-brand-text mx-3">TestPoint Admin</div>
     </a>
 
-    <hr class="sidebar-divider">
-
-    <!-- User Management Section -->
-    <div class="sidebar-heading">User Management</div>
-    <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.manage_accounts')}}">
-            <i class="fas fa-fw fa-users-cog"></i>
-            <span>Manage Users</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.view_verifications')}}">
-            <i class="fas fa-fw fa-user-check"></i>
-            <span>Verify New Users</span>
-        </a>
-    </li>
+    <hr class="sidebar-divider my-0">
 
     <hr class="sidebar-divider">
 
-    <!-- Academic Structure (NEW) -->
-    <div class="sidebar-heading">Academic Structure</div>
+    <div class="sidebar-heading">Management</div>
+
+    <!-- Section 1: User Management -->
     <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.manage_programs')}}">
-            <i class="fas fa-fw fa-graduation-cap"></i>
-            <span>Programs</span>
+        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseUsers" aria-expanded="false" aria-controls="collapseUsers">
+            <div>
+                <i class="fas fa-fw fa-users-cog"></i>
+                <span>User Accounts</span>
+            </div>
+            <i class="fas fa-chevron-down fa-xs dropdown-chevron"></i>
         </a>
+        <!-- Removed data-parent to allow independent opening -->
+        <div id="collapseUsers" class="collapse" aria-labelledby="headingTwo">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">User Controls:</h6>
+                <a class="collapse-item" href="{{url_for('admin.manage_accounts')}}">Account Manager</a>
+                <a class="collapse-item" href="{{url_for('admin.view_verifications')}}">Verification Requests</a>
+            </div>
+        </div>
     </li>
+
+    <!-- Section 2: Academic Structure -->
     <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.manage_blocks')}}">
-            <i class="fas fa-fw fa-layer-group"></i>
-            <span>Blocks</span>
+        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseAcademic" aria-expanded="false" aria-controls="collapseAcademic">
+            <div>
+                <i class="fas fa-fw fa-graduation-cap"></i>
+                <span>Academic Setup</span>
+            </div>
+            <i class="fas fa-chevron-down fa-xs dropdown-chevron"></i>
         </a>
+        <div id="collapseAcademic" class="collapse">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Hierarchy:</h6>
+                <a class="collapse-item" href="{{url_for('admin.manage_programs')}}">Programs</a>
+                <a class="collapse-item" href="{{url_for('admin.manage_blocks')}}">Blocks</a>
+                <a class="collapse-item" href="{{url_for('admin.manage_courses')}}">Courses</a>
+            </div>
+        </div>
+    </li>
+
+    <!-- Section 3: Class Control -->
+    <li class="nav-item">
+        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseClasses" aria-expanded="false" aria-controls="collapseClasses">
+            <div>
+                <i class="fas fa-fw fa-chalkboard-teacher"></i>
+                <span>Class & Exams</span>
+            </div>
+            <i class="fas fa-chevron-down fa-xs dropdown-chevron"></i>
+        </a>
+        <div id="collapseClasses" class="collapse">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Operations:</h6>
+                <a class="collapse-item" href="{{url_for('admin.manage_classes')}}">Classes</a>
+                <a class="collapse-item" href="{{url_for('admin.oversee_exams')}}">Exam Monitor</a>
+            </div>
+        </div>
     </li>
 
     <hr class="sidebar-divider">
 
-    <!-- Class Control (NEW HIERARCHY) -->
-    <div class="sidebar-heading">Class Control</div>
-    <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.manage_courses')}}">
-            <i class="fas fa-fw fa-book"></i>
-            <span>Courses</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.manage_classes')}}">
-            <i class="fas fa-fw fa-chalkboard-teacher"></i>
-            <span>Classes</span>
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.oversee_exams')}}">
-            <i class="fas fa-fw fa-eye"></i>
-            <span>Oversee All Exams</span>
-        </a>
-    </li>
-
-    <hr class="sidebar-divider">
-
-    <!-- System Section -->
     <div class="sidebar-heading">System</div>
+
+    <!-- Section 4: Maintenance -->
     <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.user_logs')}}">
-            <i class="fas fa-fw fa-history"></i>
-            <span>Account Logs</span>
+        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseSystem" aria-expanded="false" aria-controls="collapseSystem">
+            <div>
+                <i class="fas fa-fw fa-tools"></i>
+                <span>Maintenance</span>
+            </div>
+            <i class="fas fa-chevron-down fa-xs dropdown-chevron"></i>
         </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="{{url_for('admin.settings')}}">
-            <i class="fas fa-fw fa-cogs"></i>
-            <span>System Settings</span>
-        </a>
+        <div id="collapseSystem" class="collapse">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <h6 class="collapse-header">Utility:</h6>
+                <a class="collapse-item" href="{{url_for('admin.user_logs')}}">Activity Logs</a>
+                <a class="collapse-item" href="{{url_for('admin.settings')}}">Config Settings</a>
+            </div>
+        </div>
     </li>
 
     <hr class="sidebar-divider d-none d-md-block">
 
-    <!-- Sidebar Toggler -->
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
     </div>

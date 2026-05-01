@@ -10,51 +10,125 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
 <style>
-    /* 1. SIDEBAR: Sticky Logic */
+    /* 1. LAYOUT RESET */
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+
+    #wrapper {
+        display: flex;
+        min-height: 100vh;
+        align-items: stretch;
+    }
+
+    /* 2. SIDEBAR: Fixed & Scrollable Logic */
     .sidebar { 
-        transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; 
         position: -webkit-sticky;
         position: sticky;
         top: 0;
         height: 100vh;
         z-index: 1020;
         overflow-y: auto; 
+        overflow-x: hidden;
+        transition: width 0.2s ease-in-out !important; 
     }
 
-    /* Hide Sidebar Scrollbar for Chrome, Safari and Opera */
-    .sidebar::-webkit-scrollbar {
+    /* Chevron Rotation Logic */
+    .dropdown-chevron {
+        transition: transform 0.3s ease;
+        opacity: 0.5;
+    }
+
+    /* When the link is NOT collapsed (meaning it's open) */
+    .nav-link:not(.collapsed) .dropdown-chevron {
+        transform: rotate(180deg);
+        opacity: 1;
+    }
+
+    /* Layout adjustment to keep text and chevron apart */
+    .nav-link div {
+        display: inline-block;
+    }
+
+    /* Hide chevron when sidebar is minimized to icons only */
+    .sidebar.toggled .dropdown-chevron {
         display: none;
     }
 
-    /* Hide Sidebar Scrollbar for IE, Edge and Firefox */
-    .sidebar {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
+    /* Fix for SB Admin 2 clipping during toggle */
+    .sidebar.toggled {
+        width: 6.5rem !important;
+        overflow: visible; /* Allows tooltips to show correctly */
     }
 
-    /* 2. NAVBAR: Sticky Logic */
+    /* Custom thin scrollbar for Sidebar */
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+    /* 3. CONTENT & FOOTER: Sticky Footer Logic */
+    #content-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-width: 0; /* Prevents flex items from overflowing */
+    }
+
+    #content {
+        flex: 1 0 auto; /* This makes the content area expand to fill space */
+    }
+
+    .sticky-footer {
+        flex-shrink: 0; /* Prevents the footer from squishing */
+        padding: 2rem 0;
+        background-color: white;
+    }
+
+    /* 4. NAVBAR: Sticky Logic */
     .topbar {
         position: -webkit-sticky;
         position: sticky;
         top: 0;
-        z-index: 1030; /* Higher than sidebar to stay on top */
+        z-index: 1030;
     }
 
-    /* 3. LAYOUT FIXES */
-    #content-wrapper {
-        overflow-x: visible !important;
-    }
-
-    #wrapper {
-        display: flex;
-        align-items: flex-start;
-    }
-
-    /* 4. CARD ANIMATIONS */
+    /* 5. CARD ANIMATIONS */
     .card { 
         transition: all 0.3s cubic-bezier(.25, .8, .25, 1); 
         border: none; 
     }
+
+    /* Sidebar Collapse Item Styling */
+    .collapse-item {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
+        color: #3a3b45 !important;
+    }
+
+    .collapse-item:hover {
+        background-color: #eaecf4 !important;
+        color: #4e73df !important;
+        text-decoration: none;
+    }
+
+    .collapse-header {
+        font-size: 0.7rem !important;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: #b7b9cc;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Ensure sidebar stays scrollable but clean */
+    .sidebar {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+
+    /* Hide arrow icons when sidebar is toggled small */
+    .sidebar.toggled .nav-link::after {
+        display: none;
+    }    
 </style>
     {% block head %}{% endblock %}
 </head>
@@ -69,11 +143,12 @@
                 <div class="container-fluid animate__animated animate__fadeIn">
                     {% block content %}{% endblock %}
                 </div>
-
-                <footer class="sticky-footer bg-white">
-                    <div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div>
-                </footer>
             </div>
+            <footer class="sticky-footer bg-white border-top">
+                <div class="container my-auto text-center">
+                    <span class="text-muted small">TestPoint Online Examination System &copy; 2026</span>
+                </div>
+            </footer>
         </div>
     </div>
 

@@ -1,11 +1,9 @@
 {% extends "admin_base.html" %}
 
+{% block title %}System Activity Logs - Admin Control{% endblock %}
+
 {% block head %}
 <style>
-    .sidebar {
-        transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important;
-    }
-
     .card {
         border: none;
     }
@@ -13,135 +11,105 @@
     .table-responsive {
         overflow-x: auto;
     }
-
-    /* Badge styling for specific log types */
-    .badge-security {
-        background-color: #e74a3b;
-        color: white;
-    }
-
-    /* Red */
-    .badge-user {
-        background-color: #4e73df;
-        color: white;
-    }
-
-    /* Blue */
-    .badge-exam {
-        background-color: #1cc88a;
-        color: white;
-    }
-
-    /* Green */
-    .badge-system {
-        background-color: #f6c23e;
-        color: white;
-    }
-
-    /* Yellow */
 </style>
 {% endblock %}
 
 {% block content %}
-<body id="page-top">
-    <div id="wrapper">
-        <div id="content-wrapper" class="d-flex flex-column">
-            <div id="content">
-                <div class="container-fluid animate__animated animate__fadeIn">
-                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">System Activity Logs</h1>
-                        <button class="d-none d-sm-inline-block btn btn-sm btn-dark shadow-sm"><i
-                                class="fas fa-download fa-sm text-white-50"></i> Export CSV</button>
-                    </div>
+<!-- 1. HEADER & ACTIONS -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">System Activity Logs</h1>
+    <div style="display: flex; gap: 10px;">
+        <button onclick="window.print()" class="btn btn-sm btn-dark shadow-sm px-3">
+            <i class="fas fa-print fa-sm mr-1"></i> Print Logs
+        </button>
+    </div>
+</div>
 
-                    <!-- Filter Options -->
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <form class="row" onsubmit="return false;">
-                                <div class="col-md-3 mb-2">
-                                    <select class="form-control" name="category">
-                                        <option value="">All Categories</option>
-                                        <option value="student">Student Accounts</option>
-                                        <option value="teacher">Teacher Accounts</option>
-                                        <option value="admin">Admin Accounts</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3 mb-2">
-                                    <input type="date" class="form-control" name="date">
-                                </div>
-                                <div class="col-md-4 mb-2">
-                                    <input type="text" class="form-control" name="search" placeholder="Search by username or IP...">
-                                </div>
-                                <div class="col-md-2 mb-2">
-                                    <button type="submit" class="btn btn-dark btn-block">Reset</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+<!-- 2. BREADCRUMBS -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Activity Logs</li>
+    </ol>
+</nav>
 
-                    <!-- Logs Table -->
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th>Date Created</th>
-                                            <th>Role</th>
-                                            <th>User ID</th>
-                                            <th>Email</th>
-                                            <th>Time Since Creation</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {% for log in user_logs %}
-                                        <tr>
-                                            <td class="small text-muted">
-                                                {{ log.created_at }}
-                                            </td>
-
-                                            <td>
-                                                <span class="badge text-white bg-{{ log.role_class }} text-uppercase">
-                                                    {{ log.role }}
-                                                </span>
-                                            </td>
-
-                                            <td>
-                                                <strong>{{ log.user_id }}</strong>
-                                            </td>
-
-                                            <td>
-                                                {{ log.email }}
-                                            </td>
-
-                                            <td>
-                                                <span class="time-since small" data-created="{{ log.created_at }}">—</span>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- Pagination (controlled by paginator.js) -->
-                            <nav class="mt-4" aria-label="Logs pagination">
-                                <ul class="pagination justify-content-center" id="logs-pagination"></ul>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
+<!-- 3. FILTER CARD -->
+<div class="card shadow mb-4 border-bottom-secondary">
+    <div class="card-body py-3">
+        <form class="row" onsubmit="return false;">
+            <div class="col-md-3 mb-2 mb-md-0">
+                <select class="form-control" name="category" id="categorySelect">
+                    <option value="">All Categories</option>
+                    <option value="student">Student Accounts</option>
+                    <option value="teacher">Teacher Accounts</option>
+                    <option value="admin">Admin Accounts</option>
+                </select>
             </div>
+            <div class="col-md-3 mb-2 mb-md-0">
+                <input type="date" class="form-control" name="date" id="dateInput">
+            </div>
+            <div class="col-md-4 mb-2 mb-md-0">
+                <input type="text" class="form-control" name="search" id="searchInput" placeholder="Search by user ID or email...">
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="resetFilters" class="btn btn-secondary btn-block">Reset</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 4. TABLE CARD -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 bg-white">
+        <h6 class="m-0 font-weight-bold text-dark text-uppercase small">Recent Account Creations</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="logsTable">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Date Created</th>
+                        <th>Role</th>
+                        <th>User ID</th>
+                        <th>Email Address</th>
+                        <th>Time Since Creation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in user_logs %}
+                    <tr class="log-row">
+                        <td class="small text-muted">{{ log.created_at }}</td>
+                        <td>
+                            <span class="badge text-white bg-{{ log.role_class }} text-uppercase px-2 py-1">
+                                {{ log.role }}
+                            </span>
+                        </td>
+                        <td><strong>{{ log.user_id }}</strong></td>
+                        <td class="small">{{ log.email }}</td>
+                        <td><span class="time-since small" data-created="{{ log.created_at }}">—</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">No system logs recorded yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Pagination -->
+        <div class="p-3 bg-light border-top">
+            <nav aria-label="Logs pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="logs-pagination"></ul>
+            </nav>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<!-- Load the reusable paginator (adjust path to wherever you serve static files) -->
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
-
 <script>
-    // ── Time Since ───────────────────────────────────────────────────────────
+    // ── Time Since Calculator ──
     function timeSince(dateStr) {
         const iso = dateStr.trim().replace(' ', 'T');
         const created = new Date(iso);
@@ -171,58 +139,50 @@
     renderTimestamps();
     setInterval(renderTimestamps, 30000);
 
-    // ── Filtering ─────────────────────────────────────────────────────────────
-    const categorySelect = document.querySelector('select[name="category"]');
-    const dateInput      = document.querySelector('input[name="date"]');
-    const searchInput    = document.querySelector('input[name="search"]');
-    const resetButton    = document.querySelector('button[type="submit"]');
-    const tableBody      = document.querySelector('tbody');
-    const allRows        = Array.from(tableBody.querySelectorAll('tr'));
+    $(document).ready(function() {
+        "use strict";
 
-    // Tracks which rows survive the current filter (paginator reads this)
-    let filteredRows = [...allRows];
+        // ── Filtering Logic ──
+        const logsTableBody = document.querySelector('#logsTable tbody');
+        const allRows = Array.from(logsTableBody.querySelectorAll('tr.log-row'));
+        let filteredRows = [...allRows];
 
-    function applyFilters() {
-        const category = categorySelect.value.toLowerCase();
-        const dateVal  = dateInput.value;
-        const search   = searchInput.value.trim().toLowerCase();
+        function applyFilters() {
+            const category = $('#categorySelect').val().toLowerCase();
+            const dateVal  = $('#dateInput').val();
+            const search   = $('#searchInput').val().trim().toLowerCase();
 
-        filteredRows = allRows.filter(row => {
-            const role    = (row.querySelector('td:nth-child(2) span')?.textContent || '').trim().toLowerCase();
-            const userId  = (row.querySelector('td:nth-child(3)')?.textContent     || '').trim().toLowerCase();
-            const email   = (row.querySelector('td:nth-child(4)')?.textContent     || '').trim().toLowerCase();
-            const rowDate = (row.querySelector('td:nth-child(1)')?.textContent     || '').trim().slice(0, 10);
+            filteredRows = allRows.filter(row => {
+                const role    = $(row).find('td:nth-child(2) span').text().trim().toLowerCase();
+                const userId  = $(row).find('td:nth-child(3)').text().trim().toLowerCase();
+                const email   = $(row).find('td:nth-child(4)').text().trim().toLowerCase();
+                const rowDate = $(row).find('td:nth-child(1)').text().trim().slice(0, 10);
 
-            return (!category || role === category)
-                && (!dateVal  || rowDate === dateVal)
-                && (!search   || userId.includes(search) || email.includes(search));
+                return (!category || role === category)
+                    && (!dateVal  || rowDate === dateVal)
+                    && (!search   || userId.includes(search) || email.includes(search));
+            });
+
+            paginator.reset();
+        }
+
+        $('#categorySelect, #dateInput').on('change', applyFilters);
+        $('#searchInput').on('input', applyFilters);
+
+        $('#resetFilters').on('click', function() {
+            $('#categorySelect, #dateInput, #searchInput').val('');
+            applyFilters();
         });
 
-        // Reset pagination and re-render with the new filtered set
-        paginator.reset();
-    }
+        // ── Paginator Implementation ──
+        const paginator = createPaginator({
+            tableBodySelector  : '#logsTable tbody',
+            paginationSelector : '#logs-pagination',
+            rowsPerPage        : 10,
+            getVisibleRows     : () => filteredRows,
+        });
 
-    categorySelect.addEventListener('change', applyFilters);
-    dateInput.addEventListener('change', applyFilters);
-    searchInput.addEventListener('input', applyFilters);
-
-    resetButton.addEventListener('click', e => {
-        e.preventDefault();
-        categorySelect.value = '';
-        dateInput.value      = '';
-        searchInput.value    = '';
-        applyFilters();
+        paginator.render();
     });
-
-    // ── Paginator ─────────────────────────────────────────────────────────────
-    const paginator = createPaginator({
-        tableBodySelector  : 'tbody',
-        paginationSelector : '#logs-pagination',
-        rowsPerPage        : 10,
-        // Tells the paginator to only page over rows that passed the filter
-        getVisibleRows     : () => filteredRows,
-    });
-
-    paginator.render();
 </script>
 {% endblock %}

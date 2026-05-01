@@ -1,36 +1,70 @@
 {% extends "admin_base.html" %}
-{% block title %}Manage Blocks - Admin{% endblock %}
+{% block title %}Manage Blocks - Admin Control{% endblock %}
 
 {% block content %}
+<!-- 1. HEADER & ACTIONS -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Blocks & Sections</h1>
-    <div>
-        <a href="{{ url_for('admin.trashed_blocks') }}" class="btn btn-sm btn-outline-danger shadow-sm px-3 mr-2">
-            <i class="fas fa-trash-alt fa-sm mr-1"></i> View Trash
-        </a>
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Blocks</h1>
+    <div style="display: flex; gap: 10px;">
         <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addBlockModal">
-            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> New Block
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add New Block
         </button>
+        <a href="{{ url_for('admin.trashed_blocks') }}" class="btn btn-sm btn-danger shadow-sm px-3">
+            <i class="fas fa-trash-alt fa-sm mr-1"></i> View Trash
+        </a>        
     </div>
 </div>
 
-<!-- Table Card -->
+<!-- 2. BREADCRUMBS -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb bg-white shadow-sm small">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Blocks</li>
+    </ol>
+</nav>
+
+<!-- 3. FILTER CARD -->
+<div class="card shadow mb-4 border-bottom-secondary">
+    <div class="card-body py-3">
+        <div class="row">
+            <div class="col-md-8 mb-2 mb-md-0">
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                    </div>
+                    <input type="text" id="blockSearch" class="form-control border-left-0" placeholder="Search by block name or program...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select id="yearFilter" class="form-control">
+                    <option value="">All Year Levels</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. TABLE CARD -->
 <div class="card shadow mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" width="100%">
+            <table class="table table-hover align-middle mb-0" id="blockTable">
                 <thead class="thead-light">
                     <tr>
-                        <th>Program</th>
-                        <th>Block Name</th>
-                        <th>Capacity Status</th>
-                        <th class="text-center">Actions</th>
+                        <th width="20%">Program</th>
+                        <th width="20%">Block Name</th>
+                        <th width="30%">Capacity Status</th>
+                        <th class="text-center" width="30%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for b in blocks %}
-                    <tr>
-                        <td><span class="badge badge-primary px-3">{{ b.program_name }}</span></td>
+                    <tr class="block-row" data-year="{{ b.block_name[0] }}">
+                        <td><span class="badge badge-primary px-3 shadow-sm">{{ b.program_name }}</span></td>
                         <td class="font-weight-bold text-dark">{{ b.program_name }} {{ b.block_name }}</td>
                         <td>
                             <div class="small font-weight-bold mb-1">
@@ -41,7 +75,7 @@
                             </div>
                             <div class="progress progress-sm" style="height: 8px;">
                                 {% set percent = (b.current_count / b.capacity * 100)|round %}
-                                <div class="progress-bar {% if percent > 90 %}bg-danger{% elif percent > 70 %}bg-danger{% else %}bg-success{% endif %}" 
+                                <div class="progress-bar {% if percent > 90 %}bg-danger{% elif percent > 70 %}bg-warning{% else %}bg-success{% endif %}" 
                                      role="progressbar" style="width: {{ percent }}%"></div>
                             </div>
                         </td>
@@ -51,29 +85,35 @@
                                 <i class="fas fa-users"></i>
                             </a>
                             <button class="btn btn-info btn-sm btn-circle shadow-sm mr-1" 
-                                    data-toggle="modal" data-target="#editBlockModal{{ b.block_id }}" title="Edit">
+                                    data-toggle="modal" data-target="#editBlockModal{{ b.block_id }}" title="Edit Settings">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-danger btn-sm btn-circle shadow-sm" 
-                                    data-toggle="modal" data-target="#archiveBlockModal{{ b.block_id }}" title="Archive">
+                                    data-toggle="modal" data-target="#archiveBlockModal{{ b.block_id }}" title="Archive Block">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td> 
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="4" class="text-center py-5 text-muted italic">No active blocks found.</td>
+                        <td colspan="4" class="text-center py-5 text-muted italic">No active blocks found in the system.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+        <!-- Pagination Footer -->
+        <div class="p-3 bg-light border-top">
+            <nav aria-label="Block pagination">
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="block-pagination"></ul>
+            </nav>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- 1. ADD BLOCK MODAL (Outside Loop) -->
+<!-- 1. ADD BLOCK MODAL -->
 <div class="modal fade" id="addBlockModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
@@ -93,7 +133,6 @@
                         </select>
                     </div>
                     
-                    <!-- NEW: Year Level Selection -->
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Year Level</label>
                         <select name="year_level" class="form-control" required>
@@ -106,7 +145,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Capacity (Max 50)</label>
+                        <label class="small font-weight-bold text-dark">Max Capacity (Slots)</label>
                         <select name="capacity" class="form-control">
                             {% for i in range(1, 51) %}
                             <option value="{{ i }}" {% if i == 40 %}selected{% endif %}>{{ i }} Students</option>
@@ -125,7 +164,7 @@
 
 <!-- 2. DYNAMIC MODALS (Inside loop to fix 'b is undefined') -->
 {% for b in blocks %}
-    <!-- EDIT MODAL -->
+    <!-- EDIT BLOCK SETTINGS MODAL -->
     <div class="modal fade" id="editBlockModal{{ b.block_id }}" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content border-0 shadow-lg">
@@ -134,22 +173,22 @@
                     <button class="close text-white" data-dismiss="modal"><span>×</span></button>
                 </div>
                 <form action="{{ url_for('admin.edit_block', block_id=b.block_id) }}" method="POST">
-                    <div class="modal-body">
+                    <div class="modal-body bg-light">
                         <div class="form-group">
                             <label class="small font-weight-bold">Block Name</label>
                             <input type="text" name="block_name" class="form-control" value="{{ b.block_name }}" required>
                         </div>
                         <div class="form-group">
-                            <label class="small font-weight-bold">Capacity Limit</label>
+                            <label class="small font-weight-bold">Adjust Capacity Limit</label>
                             <select name="capacity" class="form-control">
                                 {% for i in range(1, 51) %}
                                 <option value="{{ i }}" {% if i == b.capacity %}selected{% endif %}>{{ i }} Students</option>
                                 {% endfor %}
                             </select>
-                            <small class="text-muted">Current enrollment: {{ b.current_count }}</small>
+                            <small class="text-muted">Current enrollment: <strong>{{ b.current_count }}</strong> students.</small>
                         </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer bg-white">
                         <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
                         <button class="btn btn-info btn-sm px-4" type="submit">Update Block</button>
                     </div>
@@ -158,7 +197,7 @@
         </div>
     </div>
 
-    <!-- ARCHIVE MODAL -->
+    <!-- ARCHIVE BLOCK MODAL -->
     <div class="modal fade" id="archiveBlockModal{{ b.block_id }}" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content border-0 shadow-lg">
@@ -166,13 +205,15 @@
                     <h5 class="modal-title font-weight-bold">Archive Block</h5>
                     <button class="close" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <div class="modal-body text-center py-4">
-                    <p>Move <strong>{{ b.block_name }}</strong> to trash?</p>
+                <div class="modal-body text-center py-4 bg-light">
+                    <i class="fas fa-archive fa-3x text-danger mb-3"></i>
+                    <p class="text-dark">Move <strong>{{ b.block_name }}</strong> to trash?</p>
+                    <p class="small text-muted">You can restore this later from the Trashed Blocks bin.</p>
                 </div>
-                <div class="modal-footer border-0 pt-0">
+                <div class="modal-footer border-0 pt-0 bg-white">
                     <button class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Cancel</button>
                     <form action="{{ url_for('admin.archive_block', block_id=b.block_id) }}" method="POST">
-                        <button type="submit" class="btn btn-danger btn-sm px-4">Move to Trash</button>
+                        <button type="submit" class="btn btn-danger btn-sm px-4 shadow-sm">Move to Trash</button>
                     </form>
                 </div>
             </div>
@@ -182,16 +223,43 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
 <script>
     $(document).ready(function() {
         "use strict";
-        // Simple search filter for the blocks table
-        $('#blockSearch').on('keyup', function () {
-            var val = $(this).val().toLowerCase();
-            $('tbody tr').each(function () {
-                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+
+        // Filter and Pagination Logic
+        const blockTableBody = document.querySelector('#blockTable tbody');
+        const allRows = Array.from(blockTableBody.querySelectorAll('tr.block-row'));
+        let filteredRows = [...allRows];
+
+        function performFilter() {
+            var searchVal = $('#blockSearch').val().toLowerCase();
+            var yearVal = $('#yearFilter').val();
+
+            filteredRows = allRows.filter(row => {
+                var text = row.textContent.toLowerCase();
+                var rowYear = row.dataset.year;
+
+                var matchesSearch = text.indexOf(searchVal) > -1;
+                var matchesYear = yearVal === "" || rowYear === yearVal;
+
+                return matchesSearch && matchesYear;
             });
+            paginator.reset();
+        }
+
+        $('#blockSearch').on('keyup', performFilter);
+        $('#yearFilter').on('change', performFilter);
+
+        const paginator = createPaginator({
+            tableBodySelector: '#blockTable tbody',
+            paginationSelector: '#block-pagination',
+            rowsPerPage: 10,
+            getVisibleRows: () => filteredRows,
         });
+
+        paginator.render();
     });
 </script>
 {% endblock %}

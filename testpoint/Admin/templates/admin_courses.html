@@ -1,6 +1,6 @@
 {% extends "admin_base.html" %}
 
-{% block title %}Subject Catalog - Admin Control{% endblock %}
+{% block title %}Courses - Admin Control{% endblock %}
 
 {% block head %}
 <style>
@@ -42,14 +42,14 @@
 {% block content %}
 <!-- Page Header -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Subject Catalog</h1>
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Courses</h1>
     <div style="display: flex; gap: 10px;">
         <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addCourseModal">
-            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add New Subject
+            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add New Course
         </button>
-        <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-dark shadow-sm">
-            <i class="fas fa-trash-restore fa-sm text-white-50 mr-1"></i> Subject Trash
-        </a>
+        <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-danger shadow-sm px-3">
+            <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> View Trash
+        </a>        
     </div>
 </div>
 
@@ -57,7 +57,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb bg-white shadow-sm small">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Subject Catalog</li>
+        <li class="breadcrumb-item active" aria-current="page">Courses</li>
     </ol>
 </nav>
 
@@ -76,7 +76,7 @@
 {% endwith %}
 
 <!-- Filter Card -->
-<div class="card shadow mb-4 border-bottom-primary">
+<div class="card shadow mb-4 border-bottom-secondary">
     <div class="card-body py-3">
         <div class="input-group">
             <div class="input-group-prepend">
@@ -91,9 +91,6 @@
 
 <!-- Subjects Table -->
 <div class="card shadow mb-4">
-    <div class="card-header py-3 bg-white">
-        <h6 class="m-0 font-weight-bold text-primary">Global Subject List</h6>
-    </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover align-middle" id="courseTable" width="100%">
@@ -115,9 +112,9 @@
                         </td>
                         <td class="text-center">
                             <!-- Trigger Edit Modal -->
-                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1" title="Edit"
-                                data-toggle="modal"
-                                data-target="#editCourseModal{{ course.course_code|replace(' ', '_')|replace('-', '_') }}">
+                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1" 
+                                    data-toggle="modal" 
+                                    data-target="#editCourseModal{{ loop.index }}">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <!-- Trigger Delete Modal -->
@@ -184,8 +181,7 @@
 
 <!-- 2. Edit Subject Modals (Loop) -->
 {% for course in courses %}
-<div class="modal fade validate-modal" id="editCourseModal{{ course.course_code|replace(' ', '_')|replace('-', '_') }}"
-    tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="editCourseModal{{ loop.index }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-info text-white">
@@ -195,12 +191,6 @@
             </div>
             <form action="{{ url_for('admin.update_course', old_code=course.course_code) }}" method="POST" novalidate>
                 <div class="modal-body bg-light px-4">
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Subject Code</label>
-                        <input type="text" class="form-control" name="course_code" value="{{ course.course_code }}"
-                            required>
-                        <span class="field-feedback"></span>
-                    </div>
                     <div class="form-group">
                         <label class="small font-weight-bold text-dark">Subject Title</label>
                         <input type="text" class="form-control" name="course_name" value="{{ course.course_name }}"
@@ -252,11 +242,11 @@
     $(document).ready(function () {
         "use strict";
 
-        // Search Filter
         $('#searchInput').on('keyup', function () {
             var value = $(this).val().toLowerCase();
             $(".course-row").each(function () {
-                var rowText = $(this).find('.search-data').text().toLowerCase();
+                // Search the WHOLE row text for better results
+                var rowText = $(this).text().toLowerCase();
                 $(this).toggle(rowText.indexOf(value) > -1);
             });
         });

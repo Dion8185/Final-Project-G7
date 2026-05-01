@@ -67,13 +67,11 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Account Manager</h1>
     <div style="display: flex; gap: 10px;">
-        <span class="badge badge-dark p-2 shadow-sm"><i class="fas fa-users mr-1"></i>Total Users: {{ users|length
-            }}</span>
         <button class="btn btn-sm btn-primary shadow-sm px-3" data-toggle="modal" data-target="#addUserModal">
             <i class="fas fa-user-plus fa-sm text-white-50 mr-1"></i> Add New User
         </button>
         <a href="{{ url_for('admin.trashed_accounts') }}" class="btn btn-sm btn-danger shadow-sm px-3">
-            <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Accounts
+            <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> View Trash
         </a>
     </div>
 </div>
@@ -82,7 +80,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb bg-white shadow-sm small">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item active">User Registry</li>
+        <li class="breadcrumb-item active">Account Manager</li>
     </ol>
 </nav>
 
@@ -100,7 +98,7 @@
 {% endwith %}
 
 <!-- Filter Card -->
-<div class="card shadow mb-4 border-bottom-primary">
+<div class="card shadow mb-4 border-bottom-secondary">
     <div class="card-body">
         <form id="filterForm" class="row">
             <div class="col-md-3 mb-2">
@@ -130,15 +128,14 @@
 
 <!-- Users Table -->
 <div class="card shadow mb-4">
-    <div class="card-body p-0">
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="userTable" width="100%">
+            <table class="table table-hover align-middle" id="userTable" width="100%">
                 <thead class="thead-light">
                     <tr>
                         <th>Role</th>
                         <th>ID</th>
                         <th>Full Name</th>
-                        <th>Group (Program/Block)</th>
                         <th>Email</th>
                         <th>Status</th>
                         <th class="text-center">Actions</th>
@@ -156,18 +153,6 @@
                         <td><span class="font-weight-bold text-dark search-data">{{ user.user_id }}</span></td>
                         <td class="search-data text-capitalize">
                             {{ user.firstname }} {{ user.middlename if user.middlename else '' }} {{ user.lastname }}
-                        </td>
-                        <td>
-                            {% if user.role == 'student' %}
-                            <small class="font-weight-bold text-dark">{{ user.program_name if user.program_name else
-                                'N/A' }}</small><br>
-                            <span class="badge badge-light border">{{ user.block_name if user.block_name else
-                                'Unassigned' }}</span>
-                            {%elif user.role == 'teacher' %}
-                            <span class="text-muted small italic">Faculty</span>
-                            {% else %}
-                            <span class="text-muted small italic">Staff/Admin</span>
-                            {% endif %}
                         </td>
                         <td class="search-data small">{{ user.email }}</td>
                         <td>
@@ -197,12 +182,10 @@
                 </tbody>
             </table>
         </div>
-        <!-- Pagination -->
-        <div class="p-3 bg-light border-top">
-            <nav aria-label="Accounts pagination">
-                <ul class="pagination pagination-sm justify-content-center mb-0" id="accounts-pagination"></ul>
-            </nav>
-        </div>
+        <!-- Pagination (controlled by paginator.js) -->
+        <nav class="mt-4" aria-label="Accounts pagination">
+            <ul class="pagination justify-content-center" id="accounts-pagination"></ul>
+        </nav>
     </div>
 </div>
 {% endblock %}

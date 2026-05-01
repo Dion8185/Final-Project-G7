@@ -1,10 +1,10 @@
 {% extends "admin_base.html" %}
-{% block title %}Trashed Programs - Admin Control{% endblock %}
+{% block title %}Trashed Classes - Admin Control{% endblock %}
 
 {% block content %}
 <!-- 1. HEADER & ACTIONS -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Programs</h1>
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Classes</h1>
     <div style="display: flex; gap: 10px;">
     </div>
 </div>
@@ -13,7 +13,7 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb bg-white shadow-sm small">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_programs') }}">Programs</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_classes') }}">Classes</a></li>
         <li class="breadcrumb-item active">Trash Bin</li>
     </ol>
 </nav>
@@ -25,7 +25,7 @@
             <div class="input-group-prepend">
                 <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
             </div>
-            <input type="text" id="progTrashSearch" class="form-control border-left-0" placeholder="Search trashed programs by name...">
+            <input type="text" id="classTrashSearch" class="form-control border-left-0" placeholder="Search by class code, subject, or block...">
         </div>
     </div>
 </div>
@@ -34,42 +34,46 @@
 <div class="card shadow mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="progTrashTable">
+            <table class="table table-hover align-middle mb-0" id="classTrashTable">
                 <thead class="thead-light">
                     <tr>
-                        <th width="30%">Program Abbreviation</th>
-                        <th width="40%">Program Name</th>
+                        <th width="15%">Class Code</th>
+                        <th width="30%">Subject Title</th>
+                        <th width="25%">Assigned Block</th>
                         <th class="text-center" width="30%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for p in trashed_programs %}
+                    {% for c in trashed_classes %}
                     <tr class="trash-row">
-                        <td class="font-weight-bold text-dark">{{ p.program_name }}</td>
-                        <td class="small text-muted">{{ p.description }}</td>
+                        <td><strong class="text-danger">{{ c.class_code }}</strong></td>
+                        <td>{{ c.course_name }}</td>
+                        <td><span class="badge badge-light border text-dark">{{ c.program_name }} - {{ c.block_name }}</span></td>
                         <td class="text-center">
-                            <form action="{{ url_for('admin.restore_program', program_id=p.program_id) }}" method="POST" class="d-inline">
-                                <button class="btn btn-success btn-sm px-3 shadow-sm mr-1" type="submit" title="Restore">
+                            <!-- Restore Action -->
+                            <form action="{{ url_for('admin.restore_class', class_code=c.class_code) }}" method="POST" class="d-inline">
+                                <button class="btn btn-success btn-sm px-3 shadow-sm mr-1" type="submit" title="Restore Class">
                                     <i class="fas fa-undo mr-1"></i> Restore
                                 </button>
                             </form>
-                            <button class="btn btn-danger btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#permDeleteProgModal{{ p.program_id }}" title="Delete Forever">
+                            <!-- Trigger Permanent Delete Modal -->
+                            <button class="btn btn-danger btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#permDeleteClassModal{{ loop.index }}" title="Delete Forever">
                                 <i class="fas fa-times-circle mr-1"></i> Destroy
                             </button>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="3" class="text-center py-5 text-muted italic">Trash bin is empty.</td>
+                        <td colspan="4" class="text-center py-5 text-muted italic">Trash bin is empty.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination -->
+        <!-- Pagination Footer -->
         <div class="p-3 bg-light border-top">
             <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm justify-content-center mb-0" id="prog-trash-pagination"></ul>
+                <ul class="pagination pagination-sm justify-content-center mb-0" id="class-trash-pagination"></ul>
             </nav>
         </div>
     </div>
@@ -77,17 +81,18 @@
 {% endblock %}
 
 {% block modals %}
-{% for p in trashed_programs %}
-<div class="modal fade" id="permDeleteProgModal{{ p.program_id }}" tabindex="-1" role="dialog">
+<!-- DYNAMIC PERMANENT DELETE MODALS -->
+{% for c in trashed_classes %}
+<div class="modal fade" id="permDeleteClassModal{{ loop.index }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-body text-center p-5">
                 <i class="fas fa-exclamation-triangle fa-4x text-danger mb-4"></i>
-                <h4 class="font-weight-bold">Destroy Program?</h4>
-                <p>You are about to permanently delete <strong>{{ p.program_name }}</strong>. All blocks linked to this program will be lost forever.</p>
+                <h4 class="font-weight-bold text-dark">Destroy Class Forever?</h4>
+                <p class="text-muted">You are about to permanently delete <strong>Class {{ c.class_code }}</strong> ({{ c.course_name }}). All student enrollment records associated with this session will be wiped. This action is irreversible.</p>
                 <div class="mt-4">
                     <button class="btn btn-light px-4 mr-2" data-dismiss="modal">Cancel</button>
-                    <form action="{{ url_for('admin.delete_program_permanently', program_id=p.program_id) }}" method="POST" class="d-inline">
+                    <form action="{{ url_for('admin.delete_class_permanently', class_code=c.class_code) }}" method="POST" class="d-inline">
                         <button type="submit" class="btn btn-danger px-4">Confirm Destruction</button>
                     </form>
                 </div>
@@ -102,12 +107,23 @@
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
 <script>
     $(document).ready(function() {
-        const rows = Array.from(document.querySelectorAll('#progTrashTable tbody tr.trash-row'));
+        "use strict";
+
+        // Logic for Filter & Pagination
+        const rows = Array.from(document.querySelectorAll('#classTrashTable tbody tr.trash-row'));
         let filtered = [...rows];
-        const paginator = createPaginator({ tableBodySelector: '#progTrashTable tbody', paginationSelector: '#prog-trash-pagination', rowsPerPage: 10, getVisibleRows: () => filtered });
+
+        const paginator = createPaginator({ 
+            tableBodySelector: '#classTrashTable tbody', 
+            paginationSelector: '#class-trash-pagination', 
+            rowsPerPage: 10, 
+            getVisibleRows: () => filtered 
+        });
+        
         paginator.render();
 
-        $('#progTrashSearch').on('keyup', function() {
+        // Search filtering logic
+        $('#classTrashSearch').on('keyup', function() {
             const val = $(this).val().toLowerCase();
             filtered = rows.filter(r => r.textContent.toLowerCase().includes(val));
             paginator.reset();

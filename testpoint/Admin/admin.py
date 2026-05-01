@@ -16,55 +16,76 @@ def admin_dashboard():
         cursor = connection.cursor(dictionary=True)
 
         try:
-            # 1. Summary Card Data
+            # 1. Main Summary Stats
             cursor.execute("SELECT COUNT(*) as count FROM users WHERE is_active = 1")
             total_users = cursor.fetchone()['count']
+            
+            cursor.execute("SELECT COUNT(*) as count FROM programs WHERE is_active = 1")
+            total_programs = cursor.fetchone()['count']
+            
+            cursor.execute("SELECT COUNT(*) as count FROM blocks WHERE is_active = 1")
+            total_blocks = cursor.fetchone()['count']
+            
+            cursor.execute("SELECT COUNT(*) as count FROM classes WHERE is_active = 1")
+            total_classes = cursor.fetchone()['count']
 
-            cursor.execute("SELECT COUNT(*) as count FROM courses WHERE is_active = 1")
-            total_courses = cursor.fetchone()['count']
-
-            cursor.execute("SELECT COUNT(*) as count FROM exams")
-            total_exams = cursor.fetchone()['count']
-
-            # Live Data: Students currently taking an exam
+            # 2. Live Data
             cursor.execute("SELECT COUNT(*) as count FROM exam_attempts WHERE status = 'in-progress'")
             live_sessions = cursor.fetchone()['count']
 
-            # System Integrity: Total cheating violations detected
             cursor.execute("SELECT SUM(tab_switches) as total FROM exam_attempts")
             global_violations = cursor.fetchone()['total'] or 0
 
-            # 2. Pie Chart: User Distribution
+            # 3. Pie Chart: User Distribution
             cursor.execute("SELECT role, COUNT(*) as count FROM users WHERE is_active = 1 GROUP BY role")
             role_data = cursor.fetchall()
             pie_labels = [r['role'].capitalize() for r in role_data]
             pie_values = [r['count'] for r in role_data]
 
-            # 3. Dynamic Progress Bars: Course Popularity (Joined via Classes)
+            # 4. Bar Chart: Year Level Distribution (Derived from block names like '1A', '2B')
             cursor.execute("""
-                SELECT c.course_name, COUNT(e.enrollment_id) as student_count 
-                FROM courses c 
-                JOIN classes cl ON c.course_code = cl.course_code
-                LEFT JOIN enrollments e ON cl.class_code = e.class_code 
-                GROUP BY c.course_code 
-                ORDER BY student_count DESC LIMIT 3
+                SELECT LEFT(block_name, 1) as year, COUNT(s.student_id) as count 
+                FROM blocks b
+                JOIN students s ON b.block_id = s.block_id
+                WHERE b.is_active = 1
+                GROUP BY year ORDER BY year
             """)
-            top_courses = cursor.fetchall()
+            year_data = cursor.fetchall()
+            year_labels = [f"Year {y['year']}" for y in year_data]
+            year_values = [y['count'] for y in year_data]
+
+            cursor.execute("""
+                SELECT 
+                    b.block_id,      -- ADD THIS LINE
+                    b.block_name, 
+                    p.program_name, 
+                    b.capacity, 
+                    (SELECT COUNT(*) FROM students WHERE block_id = b.block_id) as current_count
+                FROM blocks b
+                JOIN programs p ON b.program_id = p.program_id
+                WHERE b.is_active = 1
+                HAVING (current_count / b.capacity) >= 0.8
+                ORDER BY (current_count / b.capacity) DESC 
+                LIMIT 5
+            """)
+            watchlist = cursor.fetchall()
 
         finally:
-            cursor.close()
-            connection.close()
+            cursor.close(); connection.close()
 
         return render_template('admin_dashboard.html', 
                                firstname=firstname,
                                total_users=total_users,
-                               total_courses=total_courses,
-                               total_exams=total_exams,
+                               total_programs=total_programs,
+                               total_blocks=total_blocks,
+                               total_classes=total_classes,
                                live_sessions=live_sessions,
                                global_violations=global_violations,
                                pie_labels=pie_labels,
                                pie_values=pie_values,
-                               top_courses=top_courses)
+                               year_labels=year_labels,
+                               year_values=year_values,
+                               watchlist=watchlist)
     return redirect(url_for('auth.login'))
 
 
@@ -284,6 +305,34 @@ def manage_programs():
     progs = cursor.fetchall()
     cursor.close(); connection.close()
     return render_template('admin_programs.html', programs=progs, firstname=session.get('firstname'))
+
+@admin.route('/view_program_blocks/<int:program_id>')
+def view_program_blocks(program_id):
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    
+    # 1. Fetch Program Details
+    cursor.execute("SELECT * FROM programs WHERE program_id = %s", (program_id,))
+    program = cursor.fetchone()
+    
+    if not program:
+        flash("Program not found.", "danger")
+        return redirect(url_for('admin.manage_programs'))
+
+    # 2. Fetch Active Blocks for this program
+    cursor.execute("""
+        SELECT b.*, 
+        (SELECT COUNT(*) FROM students WHERE block_id = b.block_id) as current_count
+        FROM blocks b 
+        WHERE b.program_id = %s AND b.is_active = 1
+    """, (program_id,))
+    blocks = cursor.fetchall()
+    
+    cursor.close(); connection.close()
+    return render_template('admin_program_blocks_view.html', 
+                           program=program, 
+                           blocks=blocks, 
+                           firstname=session.get('firstname'))
 
 @admin.route('/edit_program/<int:program_id>', methods=['POST'])
 def edit_program(program_id):
@@ -607,12 +656,27 @@ def add_course():
 @admin.route('/update_course/<string:old_code>', methods=['POST'])
 def update_course(old_code):
     if admin_logged_in():
-        new_code = request.form.get('course_code'); name = request.form.get('course_name'); desc = request.form.get('description')
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        # We no longer request 'course_code' from the form
+        name = request.form.get('course_name')
+        desc = request.form.get('description')
+        
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
         try:
-            cursor.execute("UPDATE courses SET course_code = %s, course_name = %s, description = %s WHERE course_code = %s", (new_code, name, desc, old_code))
-            connection.commit(); flash('Subject updated.', 'success')
-        finally: cursor.close(); connection.close()
+            # We ONLY update name and description. The code stays the same.
+            cursor.execute("""
+                UPDATE courses 
+                SET course_name = %s, description = %s 
+                WHERE course_code = %s
+            """, (name, desc, old_code))
+            
+            connection.commit()
+            flash(f'Subject {old_code} updated successfully.', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Error: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
         return redirect(url_for('admin.manage_courses'))
     return redirect(url_for('auth.login'))
 
@@ -665,34 +729,141 @@ def empty_course_trash():
 def manage_classes():
     if not admin_logged_in(): return redirect(url_for('auth.login'))
     connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    
     if request.method == 'POST':
-        cl_code = request.form.get('class_code'); co_code = request.form.get('course_code')
-        b_id = request.form.get('block_id'); t_id = request.form.get('teacher_id')
+        co_code = request.form.get('course_code')
+        b_id = request.form.get('block_id')
+        t_id = request.form.get('teacher_id')
+        
         try:
-            cursor.execute("INSERT INTO classes (class_code, course_code, block_id, teacher_id) VALUES (%s, %s, %s, %s)", (cl_code, co_code, b_id, t_id))
-            connection.commit(); flash("Class scheduled successfully.", "success")
-        except mysql.connector.Error as err: flash(f"Error: {err}", "danger")
+            # 1. DUPLICATION CHECK (Fixes the Anomaly)
+            # Check if this specific Block is already assigned this Course in an active class
+            cursor.execute("""
+                SELECT class_code FROM classes 
+                WHERE course_code = %s AND block_id = %s AND is_active = 1
+            """, (co_code, b_id))
+            
+            duplicate = cursor.fetchone()
+            if duplicate:
+                # EXPLICIT DISALLOWED MESSAGE
+                flash(f"Action Disallowed: This block is already scheduled for this subject in Class {duplicate['class_code']}. Duplicate sessions for the same block are not permitted.", "warning")
+                return redirect(url_for('admin.manage_classes'))
+
+            # 2. AUTO-GENERATE CLASS CODE (#101, #102...)
+            cursor.execute("SELECT class_code FROM classes WHERE class_code LIKE '#%'")
+            all_codes = cursor.fetchall()
+            
+            highest_num = 0
+            for row in all_codes:
+                try:
+                    # Strip the '#' and convert the remaining string to an integer
+                    num = int(row['class_code'][1:])
+                    if num > highest_num: highest_num = num
+                except (ValueError, IndexError):
+                    continue
+            
+            # Start at #101 if no classes exist, otherwise increment
+            new_code_val = 101 if highest_num == 0 else highest_num + 1
+            new_class_code = f"#{new_code_val}"
+
+            # 3. DATABASE INSERTION
+            cursor.execute("""
+                INSERT INTO classes (class_code, course_code, block_id, teacher_id, is_active) 
+                VALUES (%s, %s, %s, %s, 1)
+            """, (new_class_code, co_code, b_id, t_id))
+            
+            connection.commit()
+            flash(f"Successfully scheduled {new_class_code} for this block.", "success")
+
+        except mysql.connector.Error as err:
+            flash(f"Database Error: {err}", "danger")
+        finally:
+            cursor.close(); connection.close()
         return redirect(url_for('admin.manage_classes'))
 
+    # --- GET LOGIC: Fetch Data for the Table and Dropdowns ---
+    try:
+        # Fetch current active classes for the table view
+        cursor.execute("""
+            SELECT cl.*, c.course_name, b.block_name, p.program_name, t.firstname, t.lastname
+            FROM classes cl
+            JOIN courses c ON cl.course_code = c.course_code
+            JOIN blocks b ON cl.block_id = b.block_id
+            JOIN programs p ON b.program_id = p.program_id
+            LEFT JOIN teachers t ON cl.teacher_id = t.teacher_id
+            WHERE cl.is_active = 1
+        """)
+        classes_data = cursor.fetchall()
+        
+        # Fetch active Subjects (Catalog) for dropdown
+        cursor.execute("SELECT course_code, course_name FROM courses WHERE is_active = 1 ORDER BY course_name")
+        subjects = cursor.fetchall()
+        
+        # Fetch active Blocks for dropdown
+        cursor.execute("""
+            SELECT b.block_id, b.block_name, p.program_name 
+            FROM blocks b 
+            JOIN programs p ON b.program_id = p.program_id 
+            WHERE b.is_active = 1
+            ORDER BY p.program_name, b.block_name
+        """)
+        blocks_data = cursor.fetchall()
+        
+        # Fetch all Teachers for dropdown
+        cursor.execute("SELECT teacher_id, firstname, lastname FROM teachers ORDER BY lastname")
+        teachers = cursor.fetchall()
+
+    finally:
+        cursor.close(); connection.close()
+
+    return render_template('admin_classes.html', 
+                           classes=classes_data, 
+                           subjects=subjects, 
+                           blocks=blocks_data, 
+                           teachers=teachers, 
+                           firstname=session.get('firstname'))
+
+@admin.route('/archive_class/<string:class_code>', methods=['POST'])
+def archive_class(class_code):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("UPDATE classes SET is_active = 0 WHERE class_code = %s", (class_code,))
+        connection.commit(); cursor.close(); connection.close()
+        flash(f'Class {class_code} moved to trash.', 'warning')
+    return redirect(url_for('admin.manage_classes'))
+
+@admin.route('/trashed_classes')
+def trashed_classes():
+    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
     cursor.execute("""
-        SELECT cl.*, c.course_name, b.block_name, p.program_name, t.firstname, t.lastname
+        SELECT cl.*, c.course_name, b.block_name, p.program_name 
         FROM classes cl
         JOIN courses c ON cl.course_code = c.course_code
         JOIN blocks b ON cl.block_id = b.block_id
         JOIN programs p ON b.program_id = p.program_id
-        LEFT JOIN teachers t ON cl.teacher_id = t.teacher_id
+        WHERE cl.is_active = 0
     """)
-    classes = cursor.fetchall()
-    cursor.execute("SELECT course_code, course_name FROM courses WHERE is_active = 1")
-    subjects = cursor.fetchall()
-    cursor.execute("SELECT b.block_id, b.block_name, p.program_name FROM blocks b JOIN programs p ON b.program_id = p.program_id")
-    blocks = cursor.fetchall()
-    cursor.execute("SELECT teacher_id, firstname, lastname FROM teachers")
-    teachers = cursor.fetchall()
-    
-    cursor.close(); connection.close()
-    return render_template('admin_classes.html', classes=classes, subjects=subjects, blocks=blocks, teachers=teachers, firstname=session.get('firstname'))
+    trashed = cursor.fetchall(); cursor.close(); connection.close()
+    return render_template('admin_trashed_classes.html', trashed_classes=trashed, firstname=session.get('firstname'))
 
+@admin.route('/restore_class/<string:class_code>', methods=['POST'])
+def restore_class(class_code):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("UPDATE classes SET is_active = 1 WHERE class_code = %s", (class_code,))
+        connection.commit(); cursor.close(); connection.close()
+        flash(f'Class {class_code} restored.', 'success')
+    return redirect(url_for('admin.trashed_classes'))
+
+@admin.route('/delete_class_permanently/<string:class_code>', methods=['POST'])
+def delete_class_permanently(class_code):
+    if admin_logged_in():
+        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        cursor.execute("DELETE FROM classes WHERE class_code = %s", (class_code,))
+        connection.commit(); cursor.close(); connection.close()
+        flash(f'Class {class_code} deleted permanently.', 'danger')
+    return redirect(url_for('admin.trashed_classes'))
 
 #! 6. BULK ENROLLMENT (By Block)
 @admin.route('/enroll_block', methods=['POST'])

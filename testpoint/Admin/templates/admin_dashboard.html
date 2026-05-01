@@ -1,138 +1,187 @@
 {% extends "admin_base.html" %}
-{% block title %}Dashboard - TestPoint Admin{% endblock %}
+{% block title %}Admin Dashboard - Command Center{% endblock %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">System Oversight Dashboard</h1>
-        <div>
-            <span class="badge badge-dark p-2 shadow-sm mr-2"><i class="fas fa-calendar-alt mr-1"></i> Academic Year 2026</span>
-            <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload();"><i class="fas fa-sync-alt fa-sm"></i> Refresh Data</button>
+<!-- HEADER -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">System Command Center</h1>
+    <div>
+        <span class="badge badge-dark p-2 shadow-sm mr-2"><i class="fas fa-calendar-alt mr-1"></i> Term: Academic Year 2026</span>
+        <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload();"><i class="fas fa-sync-alt fa-sm"></i></button>
+    </div>
+</div>
+
+<!-- 1. QUICK ACTIONS ROW -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-body py-3 d-flex align-items-center overflow-auto">
+                <span class="small font-weight-bold text-muted text-uppercase mr-4">Quick Actions:</span>
+                <a href="{{ url_for('admin.add_user') }}" class="btn btn-sm btn-light border mr-2 text-nowrap"><i class="fas fa-user-plus mr-1 text-primary"></i> Create User</a>
+                <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-sm btn-light border mr-2 text-nowrap"><i class="fas fa-layer-group mr-1 text-success"></i> New Block</a>
+                <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-light border mr-2 text-nowrap"><i class="fas fa-calendar-plus mr-1 text-info"></i> Schedule Class</a>
+                <a href="{{ url_for('admin.view_verifications') }}" class="btn btn-sm btn-light border text-nowrap"><i class="fas fa-user-check mr-1 text-warning"></i> Verify Requests</a>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Summary Cards -->
-    <div class="row">
-        <!-- Registered Users -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Registered Accounts</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-users fa-2x text-gray-300"></i></div>
+<!-- 2. SUMMARY CARDS -->
+<div class="row">
+    <!-- Programs -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Programs</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_programs }}</div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Live Sessions -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Live Exam Sessions</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ live_sessions }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <div class="spinner-grow spinner-grow-sm text-success" role="status"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Total Subjects in Catalog -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Subject Catalog</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_courses }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-book fa-2x text-gray-300"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Global Violations -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Security Alerts (Global)</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ global_violations }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i></div>
-                    </div>
+                    <div class="col-auto"><i class="fas fa-graduation-cap fa-2x text-gray-300"></i></div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="row">
-        <!-- Pie Chart: Account Distribution -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-white">
-                    <h6 class="m-0 font-weight-bold text-primary">Account Distribution</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="userDistPie"></canvas>
+    <!-- Blocks -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Blocks</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_blocks }}</div>
                     </div>
-                    <div class="mt-4 text-center small">
-                        {% for label in pie_labels %}
-                        <span class="mr-2">
-                            <i class="fas fa-circle text-{% if label == 'Admin' %}dark{% elif label == 'Teacher' %}danger{% else %}primary{% endif %}"></i> {{ label }}
-                        </span>
-                        {% endfor %}
-                    </div>
+                    <div class="col-auto"><i class="fas fa-cubes fa-2x text-gray-300"></i></div>
                 </div>
             </div>
         </div>
-
-        <!-- Subject Popularity Progress Bars -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-white">
-                    <h6 class="m-0 font-weight-bold text-primary">Top Enrolled Subjects</h6>
+    </div>
+    <!-- Classes -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Active Classes</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_classes }}</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i></div>
                 </div>
-                <div class="card-body">
-                    {% for course in top_courses %}
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between">
-                            <h4 class="small font-weight-bold text-dark">{{ course.course_name }}</h4>
-                            <span class="small font-weight-bold text-primary">{{ course.student_count }} Students</span>
-                        </div>
-                        <div class="progress progress-sm">
-                            <!-- Percentage based on total registered users -->
-                            <div class="progress-bar bg-info shadow-sm" role="progressbar" 
-                                 style="width: {{ (course.student_count / total_users * 100)|int if total_users > 0 else 0 }}%">
-                            </div>
-                        </div>
+            </div>
+        </div>
+    </div>
+    <!-- Live Monitor -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Live Exams</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ live_sessions }}</div>
                     </div>
-                    {% endfor %}
-                    
-                    {% if not top_courses %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-layer-group fa-3x text-gray-200 mb-3"></i>
-                        <p class="text-gray-500 italic">No class enrollment data available yet.</p>
-                    </div>
-                    {% endif %}
+                    <div class="col-auto"><div class="spinner-grow spinner-grow-sm text-danger" role="status"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-                    <hr>
-                    <div class="text-center">
-                        <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-outline-dark rounded-pill px-4">
-                            <i class="fas fa-chalkboard-teacher mr-1"></i> Manage Active Classes
-                        </a>
+<!-- 3. CHARTS ROW -->
+<div class="row">
+    <!-- Bar Chart: Enrollment by Year -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Student Year-Level Distribution</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-bar">
+                    <canvas id="yearLevelBarChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie Chart: Roles -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-white">
+                <h6 class="m-0 font-weight-bold text-primary">Account Roles</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-4 pb-2">
+                    <canvas id="userDistPie"></canvas>
+                </div>
+                <hr>
+                <div class="text-center mb-2">
+                    <strong>Total Accounts: {{ pie_values | sum }}</strong>
+                </div>
+                <div class="text-center small">
+                    <span class="mr-2"><i class="fas fa-circle text-primary"></i> Students</span>
+                    <span class="mr-2"><i class="fas fa-circle text-danger"></i> Teachers</span>
+                    <span class="mr-2"><i class="fas fa-circle text-dark"></i> Admins</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. MONITORING ROW -->
+<div class="row">
+    <!-- Capacity Watchlist -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-white">
+                <h6 class="m-0 font-weight-bold text-dark">Capacity Watchlist <span class="badge badge-warning ml-2">Near Full</span></h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-items-center table-flush mb-0">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Block</th>
+                                <th>Enrollment</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in watchlist %}
+                            <tr>
+                                <td><span class="font-weight-bold">{{ b.block_name }}</span><br><small>{{ b.program_name }}</small></td>
+                                <td>
+                                    <div class="small font-weight-bold">{{ b.current_count }}/{{ b.capacity }}</div>
+                                    <div class="progress progress-sm"><div class="progress-bar bg-danger" style="width: {{ (b.current_count / b.capacity * 100)|int }}%"></div></div>
+                                </td>
+                                <td><a href="{{ url_for('admin.manage_block_students', block_id=b.block_id) }}" class="btn btn-sm btn-outline-primary">Manage</a></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-4 small text-muted italic">All blocks have sufficient remaining capacity.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Violations/Live Feed -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 bg-dark">
+                <h6 class="m-0 font-weight-bold text-white">Security & Alerts</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="icon-circle bg-danger mr-3"><i class="fas fa-exclamation-triangle text-white"></i></div>
+                    <div>
+                        <div class="small text-gray-500 text-uppercase">Total Academic Violations</div>
+                        <span class="h4 font-weight-bold text-danger">{{ global_violations }}</span>
                     </div>
+                </div>
+                <hr>
+                <p class="small text-muted mb-0"><i class="fas fa-info-circle mr-1"></i> Violations are tracked via automated tab-switch detection during active exam sessions.</p>
+                <div class="mt-4 text-center">
+                    <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-sm btn-dark rounded-pill px-4 shadow-sm">View Security Logs</a>
                 </div>
             </div>
         </div>
@@ -141,68 +190,72 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Load Chart.js 2.9.4 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
-
 <script>
-    // Set default styling
     Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
     Chart.defaults.global.defaultFontColor = '#858796';
 
-    var ctx = document.getElementById("userDistPie");
-    
-    // Dynamic color mapping based on labels to ensure consistency
-    var labels = {{ pie_labels|tojson }};
-    var values = {{ pie_values|tojson }};
-    var backgroundColors = labels.map(function(label) {
-        if (label === 'Admin') return '#5a5c69';   // Dark Gray
-        if (label === 'Teacher') return '#e74a3b'; // Danger Red
-        return '#4e73df';                         // Primary Blue (Students)
-    });
-    
-    var hoverColors = labels.map(function(label) {
-        if (label === 'Admin') return '#373840';
-        if (label === 'Teacher') return '#be2617';
-        return '#2e59d9';
+    // 1. Bar Chart: Year Distribution (Stay Blue)
+    var ctxBar = document.getElementById("yearLevelBarChart");
+    var myBarChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: {{ year_labels|tojson }},
+            datasets: [{
+                label: "Students",
+                backgroundColor: "#4e73df",
+                hoverBackgroundColor: "#2e59d9",
+                borderColor: "#4e73df",
+                data: {{ year_values|tojson }},
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }]
+            },
+            legend: { display: false }
+        }
     });
 
-    if (values.length > 0 && values.reduce((a, b) => a + b, 0) > 0) {
-        var myPieChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: values,
-                    backgroundColor: backgroundColors,
-                    hoverBackgroundColor: hoverColors,
-                    hoverBorderColor: "rgba(234, 236, 244, 1)",
-                }],
+    // 2. Pie Chart: Roles (FIXED COLOR CODING)
+    var ctxPie = document.getElementById("userDistPie");
+    var labels = {{ pie_labels|tojson }};
+    var values = {{ pie_values|tojson }};
+
+    // Correct Dynamic Mapping
+    var backgroundColors = labels.map(function(label) {
+        var l = label.toLowerCase();
+        if (l === 'admin') return '#5a5c69';   // Gray
+        if (l === 'teacher') return '#e74a3b'; // Red
+        return '#4e73df';                      // Blue (Student/Others)
+    });
+
+    var myPieChart = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: backgroundColors,
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            cutoutPercentage: 80,
+            legend: { display: false },
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
             },
-            options: {
-                maintainAspectRatio: false,
-                tooltips: {
-                    backgroundColor: "rgb(255,255,255)",
-                    bodyFontColor: "#858796",
-                    borderColor: '#dddfeb',
-                    borderWidth: 1,
-                    xPadding: 15,
-                    yPadding: 15,
-                    displayColors: true,
-                    caretPadding: 10,
-                },
-                legend: {
-                    display: false
-                },
-                cutoutPercentage: 80,
-            },
-        });
-    } else {
-        // Fallback for no data
-        var chartCtx = ctx.getContext("2d");
-        chartCtx.textAlign = 'center';
-        chartCtx.textBaseline = 'middle';
-        chartCtx.font = "14px Nunito";
-        chartCtx.fillText("No Account Data", ctx.width/2, ctx.height/2);
-    }
+        }
+    });
 </script>
 {% endblock %}
