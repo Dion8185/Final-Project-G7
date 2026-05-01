@@ -68,7 +68,11 @@ def generate_unique_otp():
 
 def send_otp_email(recipient_email, recipient_name, otp_code):
     try:
-        msg = Message(subject='Test Point - Account Verification Code', sender='verify@testpoint.com', recipients=[recipient_email])
+        msg = Message(
+            subject='Test Point - Email Verification',
+            sender=("TestPoint", "noreply@testpoint.com"),
+            recipients=[recipient_email]
+        )
         msg.html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -143,7 +147,12 @@ def send_otp_email(recipient_email, recipient_name, otp_code):
 
 def send_reset_otp_email(recipient_email, otp_code):
     try:
-        msg = Message(subject='Test Point - Password Reset', sender='verify@testpoint.com', recipients=[recipient_email])
+        msg = Message(
+            subject='Test Point - Password Reset',
+            sender=("TestPoint", "noreply@testpoint.com"),
+            recipients=[recipient_email]
+        )
+
         msg.html = f"""
 <!DOCTYPE html> 
 <html lang="en">
@@ -158,9 +167,11 @@ def send_reset_otp_email(recipient_email, otp_code):
             <td align="center">
                 <table width="100%" cellpadding="0" cellspacing="0" border="0"
                     style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    
                     <tr>
                         <td style="height: 6px; background-color: #dc2626; border-radius: 12px 12px 0 0;"></td>
                     </tr>
+
                     <tr>
                         <td align="center" style="padding: 40px 40px 20px;">
                             <h1 style="font-size: 42px; margin:0;">📑</h1>
@@ -169,12 +180,14 @@ def send_reset_otp_email(recipient_email, otp_code):
                             </div>
                         </td>
                     </tr>
+
                     <tr>
                         <td style="text-align: justify; padding: 0 40px 40px;">
                             <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;"> 
                                 Hello <strong>{recipient_email}</strong>, Use the one-time code below to reset your password. This code is valid for
                                 <strong style="color: #333;">10 minutes</strong> and should not be shared with anyone.
                             </p>
+
                             <table width="100%" cellpadding="0" cellspacing="0" border="0"
                                 style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
                                 <tr>
@@ -188,11 +201,13 @@ def send_reset_otp_email(recipient_email, otp_code):
                                     </td>
                                 </tr>
                             </table>
+
                             <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">
                                 If you did not request this code, you can safely disregard this email.
                             </p>
                         </td>
                     </tr>
+
                     <tr>
                         <td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
                             <p style="margin: 0; font-size: 11px; color: #94a3b8; letter-spacing: 1px;">
@@ -200,16 +215,19 @@ def send_reset_otp_email(recipient_email, otp_code):
                             </p>
                         </td>
                     </tr>
+
                 </table>
             </td>
         </tr>
     </table>
 </body>
-</html>"""
+</html>
+"""
         mail.send(msg)
-        print(f"📑:{otp_code}")
+        print(f"📑 OTP Sent: {otp_code}")
+
     except Exception as e:
-        print(f"Error sending email: {e}")     
+        print(f"Error sending email: {e}")
 
 #! 1. LOGIN ROUTE
 @auth.route('/login', methods=['GET', 'POST'])

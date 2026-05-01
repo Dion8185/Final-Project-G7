@@ -61,12 +61,10 @@
                     </div>
                     <div class="col-auto text-right">
                         {% set total_questions = questions|length %}
-                        {% set percent = (attempt.score / total_questions * 100)|round(1) if total_questions > 0 else 0
-                        %}
+                        {% set percent = (attempt.score / total_questions * 100)|round(1) if total_questions > 0 else 0 %}
 
-                        <div
-                            class="h5 mb-0 font-weight-bold {% if percent >= attempt.pass_percentage %}text-success{% else %}text-danger{% endif %}">
-                            Score: {{ attempt.score }} / {{ total_questions }}
+                        <div class="h5 mb-0 font-weight-bold {% if percent >= attempt.pass_percentage %}text-success{% else %}text-danger{% endif %}">
+                            Score: {{ attempt.score | int }} / {{ total_questions }}
                         </div>
                         <div class="text-xs text-muted font-weight-bold text-uppercase">
                             Result: {{ percent }}% (Passing: {{ attempt.pass_percentage }}%)
@@ -112,8 +110,7 @@
                 <!-- Student's Submission -->
                 <div class="col-md-6 mb-3">
                     <span class="answer-label text-muted font-weight-bold">Your Submitted Answer:</span>
-                    <div
-                        class="p-3 border rounded {% if q.is_correct %}bg-light text-success border-success{% else %}bg-light text-danger border-danger{% endif %} font-weight-bold">
+                    <div class="p-3 border rounded {% if q.is_correct %}bg-light text-success border-success{% else %}bg-light text-danger border-danger{% endif %} font-weight-bold">
                         {% if q.submitted_answer %}
                         {{ q.submitted_answer }}
                         {% else %}
@@ -130,10 +127,10 @@
                         <i class="fas fa-key mr-2"></i>
                         {% set found_correct = false %}
                         {% for opt in q.options %}
-                        {% if opt.is_correct %}
-                        {{ opt.option_text }}
-                        {% set found_correct = true %}
-                        {% endif %}
+                            {% if opt.is_correct %}
+                                {{ opt.option_text }}
+                                {% set found_correct = true %}
+                            {% endif %}
                         {% endfor %}
 
                         {% if not found_correct %}
@@ -151,7 +148,7 @@
                 </div>
             </div>
 
-            <!-- List of Options (Optional - for multiple choice review) -->
+            <!-- List of Options -->
             {% if q.question_type in ['multiple_choice', 'true_false'] %}
             <div class="mt-3">
                 <button class="btn btn-sm btn-link text-muted p-0" type="button" data-toggle="collapse"
@@ -161,24 +158,24 @@
                 <div class="collapse mt-2" id="options-{{ q.question_id }}">
                     <ul class="list-group list-group-flush small border rounded">
                         {% for opt in q.options %}
-                        <li
-                            class="list-group-item d-flex justify-content-between align-items-center {% if opt.is_correct %}bg-success text-white{% endif %}">
+                        <li class="list-group-item d-flex justify-content-between align-items-center {% if opt.is_correct %}bg-success text-white{% endif %}">
                             {{ opt.option_text }}
                             {% if opt.is_correct %}<i class="fas fa-check"></i>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-
-        <!-- Bottom Action -->
-        <div class="text-center pb-5">
-            <a href="{{ url_for('student.student_results') }}" class="btn btn-primary shadow">
-                <i class="fas fa-poll-h mr-2"></i> Return to All Results
-            </a>
+            </div> <!-- FIX: Eto yung nakalimutang closing div kanina -->
+            {% endif %}
         </div>
     </div>
-    {% endblock %}
+    {% endfor %}
+
+    <!-- Bottom Action -->
+    <div class="text-center pb-5">
+        <a href="{{ url_for('student.student_results') }}" class="btn btn-primary shadow">
+            <i class="fas fa-poll-h mr-2"></i> Return to All Results
+        </a>
+    </div>
+</div>
+{% endblock %}

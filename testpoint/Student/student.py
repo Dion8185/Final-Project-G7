@@ -93,8 +93,8 @@ def student_dashboard():
                        COALESCE((ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100), 0) as percentage
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
-                WHERE ea.student_id = %s AND ea.status = 'finished'
-                ORDER BY ea.end_time ASC LIMIT 5
+                WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
+                ORDER BY ea.end_time DESC LIMIT 5
             """, (student_id,))
             performance_trend = cursor.fetchall()
             trend_labels = [p['title'] for p in performance_trend]

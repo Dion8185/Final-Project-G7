@@ -208,7 +208,7 @@ def add_exam():
         class_code = request.form.get('class_code'); title = request.form.get('title'); duration = request.form.get('duration')
         pass_percent = request.form.get('pass_percentage'); schedule = request.form.get('schedule'); q_limit = request.form.get('question_limit', 50)
         connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        cursor.execute("INSERT INTO exams (class_code, title, duration_minutes, pass_percentage, date_time, created_by, question_limit, is_active) VALUES (%s, %s, %s, %s, %s, %s, %s, 1)", (class_code, title, duration, pass_percent, schedule, session.get('user_id'), q_limit))
+        cursor.execute("INSERT INTO exams (class_code, title, duration_minutes, pass_percentage, date_time, created_by, question_limit, is_active) VALUES (%s, %s, %s, %s, %s, %s, %s, 0)", (class_code, title, duration, pass_percent, schedule, session.get('user_id'), q_limit))
         new_id = cursor.lastrowid; connection.commit(); cursor.close(); connection.close()
         return redirect(url_for('teacher.manage_questions', exam_id=new_id))
     return redirect(url_for('auth.login'))
@@ -551,7 +551,6 @@ def student_monitor():
     attempts = cursor.fetchall(); cursor.close(); connection.close()
     return render_template('teacher_monitor.html', attempts=attempts)
 
-# Consolodated Route: Handles fetching both metadata (exam) and student data (results)
 @teacher.route('/exam_results/<int:exam_id>')
 def exam_results(exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
@@ -559,7 +558,6 @@ def exam_results(exam_id):
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
     try:
-        # 1. Fetch Exam Metadata (Fixes the 'exam is undefined' error)
         cursor.execute("""
             SELECT e.*, c.course_name 
             FROM exams e

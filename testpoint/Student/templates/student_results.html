@@ -65,7 +65,7 @@
                                 </span>
                                 {% endif %}
                             </td>
-                            <td class="font-weight-bold">{{ r.score }} / {{ total }}</td>
+                            <td class="font-weight-bold">{{ r.score | int }} / {{ total }}</td>
                             <td>
                                 <span
                                     class="font-weight-bold {% if percent >= r.pass_percentage %}text-success{% else %}text-danger{% endif %}">
