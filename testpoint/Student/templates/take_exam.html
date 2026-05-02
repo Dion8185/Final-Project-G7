@@ -640,14 +640,31 @@
     $(document).ready(function () {
         "use strict";
 
+        function shuffleOptions() {
+            $('.options-wrap').each(function () {
+                var container = $(this);
+                var options = container.children('.option-label').get();
+
+                for (var i = options.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = options[i];
+                    options[i] = options[j];
+                    options[j] = temp;
+                }
+
+                $.each(options, function (index, item) {
+                    container.append(item);
+                });
+            });
+        }
+
         let currentIdx = {{ current_q }};
-        
+
     const totalQ = {{ questions| length }};
     let timeLeft = {{ remaining_seconds }};
     let isUnloading = false;
 
     /* ── LOCKDOWN ── */
-    // Define startLockdown inside global scope so HTML can find it
     window.startLockdown = function () {
         const el = document.documentElement;
         if (el.requestFullscreen) {
@@ -821,6 +838,7 @@
     };
 
     /* ── INIT ── */
+    shuffleOptions(); // Run shuffle once on page load
     if (!document.fullscreenElement) $('#lockdown-overlay').show();
     showStep(currentIdx);
     updateProgressBar();
