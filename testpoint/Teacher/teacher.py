@@ -586,10 +586,35 @@ def delete_question(q_id, exam_id):
 #! 5. ENROLLEE MANAGEMENT
 @teacher.route('/manage_enrollees/<string:class_code>')
 def manage_enrollees(class_code):
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT e.enrollment_id, s.student_id, s.firstname, s.lastname FROM enrollments e JOIN students s ON e.student_id = s.student_id WHERE e.class_code = %s", (class_code,))
-    enrollees = cursor.fetchall(); cursor.close(); connection.close()
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+        
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # Concatenating Program Name and Block Name into one field
+        cursor.execute("""
+            SELECT 
+                s.student_id, 
+                s.firstname, 
+                s.middlename, 
+                s.lastname, 
+                s.email,
+                CONCAT(p.program_name, ' - ', b.block_name) AS academic_block
+            FROM enrollments e 
+            JOIN students s ON e.student_id = s.student_id 
+            LEFT JOIN blocks b ON s.block_id = b.block_id
+            LEFT JOIN programs p ON b.program_id = p.program_id
+            WHERE e.class_code = %s
+            ORDER BY s.lastname ASC
+        """, (class_code,))
+        enrollees = cursor.fetchall()
+        
+    finally:
+        cursor.close()
+        connection.close()
+        
     return render_template('teacher_enrollees.html', class_code=class_code, enrollees=enrollees)
 
 #! 6. MONITORING & RESULTS
