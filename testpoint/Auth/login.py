@@ -348,6 +348,10 @@ def register_student():
 #! 3. REGISTER TEACHER
 @auth.route('/register/teacher', methods=['GET', 'POST'])
 def register_teacher():
+    
+    if user_logged_in() or admin_logged_in() or teacher_logged_in() or pending_user_logged_in():
+        return redirect(url_for('auth.login'))
+    
     if request.method == 'POST':
         email = request.form.get('email'); fname = request.form.get('firstname'); lname = request.form.get('lastname'); password = request.form.get('password')
         if not (validate_name('First Name', fname) and validate_name('Last Name', lname) and validate_email(email)):
@@ -771,7 +775,6 @@ def reject_user(pending_id):
 
     if p:
         try:
-            # 1. Delete physical file if exists
             if p['document_path']:
                 file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
                 if os.path.exists(file_path):
