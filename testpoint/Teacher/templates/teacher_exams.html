@@ -1,92 +1,235 @@
 {% extends "teacher_base.html" %}
 {% block title %}Manage Exams - TestPoint{% endblock %}
 
+{% block head %}
+<style>
+    /* ── UI ENHANCEMENTS ── */
+    .exam-card {
+        transition: all 0.2s ease-in-out;
+        border: none !important;
+        border-radius: 12px;
+        border-top: 5px solid #d1d3e2 !important;
+    }
+
+    .exam-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* VIBRANT STATUS BORDERS & BADGES */
+    .card-status-active {
+        border-top: 5px solid #1cc88a !important;
+    }
+
+    .badge-vibrant-success {
+        background-color: #1cc88a;
+        color: white;
+        box-shadow: 0 2px 4px rgba(28, 200, 138, 0.3);
+    }
+
+    .card-status-inactive {
+        border-top: 5px solid #e74a3b !important;
+    }
+
+    .badge-vibrant-danger {
+        background-color: #e74a3b;
+        color: white;
+        box-shadow: 0 2px 4px rgba(231, 74, 59, 0.3);
+    }
+
+    .card-status-info {
+        border-top: 5px solid #36b9cc !important;
+    }
+
+    .badge-vibrant-info {
+        background-color: #36b9cc;
+        color: white;
+        box-shadow: 0 2px 4px rgba(54, 185, 204, 0.3);
+    }
+
+    .card-status-warning {
+        border-top: 5px solid #f6c23e !important;
+    }
+
+    .badge-vibrant-warning {
+        background-color: #f6c23e;
+        color: #5a4b01;
+        box-shadow: 0 2px 4px rgba(246, 194, 62, 0.3);
+    }
+
+    .course-section-title {
+        position: relative;
+        padding-left: 15px;
+    }
+
+    .course-section-title::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 5px;
+        bottom: 5px;
+        width: 4px;
+        background-color: #e74a3b;
+        border-radius: 2px;
+    }
+
+    .search-group {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e3e6f0;
+    }
+
+    .btn-circle-lg {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        font-size: 14px;
+        line-height: 36px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="animate__animated animate__fadeIn">
+<div class="container-fluid animate__animated animate__fadeIn">
+
+    <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Exam Management</h1>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-sm btn-danger shadow-sm px-3" data-toggle="modal" data-target="#createExamModal">
-                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Exam
+        <div>
+            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Exam Management</h1>
+            <p class="text-muted small mb-0">Create, configure, and monitor academic assessments.</p>
+        </div>
+        <div class="mt-3 mt-sm-0">
+            <button class="btn btn-danger btn-sm shadow-sm px-4 rounded-pill font-weight-bold" data-toggle="modal"
+                data-target="#createExamModal">
+                <i class="fas fa-plus fa-sm mr-1"></i> Create New Exam
             </button>
-            <a href="{{ url_for('teacher.trashed_exams') }}" class="btn btn-sm btn-dark shadow-sm">
-                <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> Trashed Exams
+            <a href="{{ url_for('teacher.trashed_exams') }}"
+                class="btn btn-outline-dark btn-sm shadow-sm px-3 rounded-pill ml-1">
+                <i class="fas fa-trash-alt fa-sm mr-1"></i> Trash Bin
             </a>
-            <a href="{{ url_for('teacher.my_courses') }}" class="btn btn-sm btn-secondary"><i
-                    class="fas fa-arrow-left fa-sm"></i> Back</a>
         </div>
     </div>
 
-    <div class="card shadow mb-4">
+    <!-- Filter Bar -->
+    <div class="card shadow-sm mb-4 border-0 rounded-lg">
         <div class="card-body py-3">
-            <div class="input-group">
-                <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i
-                            class="fas fa-search text-gray-400"></i></span></div>
-                <input type="text" id="searchInput" class="form-control border-left-0"
-                    placeholder="Quick find exam or course subject...">
+            <div class="input-group search-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white border-0"><i class="fas fa-search text-gray-400"></i></span>
+                </div>
+                <input type="text" id="searchInput" class="form-control border-0"
+                    placeholder="Filter by title, course name, or status...">
             </div>
         </div>
     </div>
 
+    <!-- Course Grouping -->
     {% for course_name, course_exams in exams|groupby('course_name') %}
     <div class="course-section mb-5">
-        <div class="course-section-header d-flex align-items-center mb-3">
-            <div class="icon-circle bg-danger text-white mr-3"><i class="fas fa-book"></i></div>
-            <h4 class="m-0 font-weight-bold text-dark">{{ course_name }}</h4>
+        <div class="d-flex align-items-center mb-3">
+            <h4 class="course-section-title m-0 font-weight-bold text-dark">{{ course_name }}</h4>
+            <span class="ml-3 badge badge-pill badge-light text-muted border small">{{ course_exams|length }}
+                Exam(s)</span>
         </div>
+
         <div class="row">
             {% for exam in course_exams %}
             <div class="col-xl-4 col-md-6 mb-4 exam-item">
-                <div class="card shadow h-100 border-left-danger border-0">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="font-weight-bold text-danger m-0">{{ exam.title }}</h5>
+                <div class="card shadow-sm h-100 exam-card 
+                    {% if exam.is_active %}card-status-active
+                    {% elif exam.attempt_count > 0 %}card-status-info
+                    {% elif exam.q_count == 0 %}card-status-warning
+                    {% else %}card-status-inactive{% endif %}">
 
-                            <!-- DYNAMIC STATUS LOGIC -->
-                            {% if exam.q_count == 0 %}
-                            <span class="badge badge-secondary shadow-sm" title="Add questions to enable this exam">
-                                <i class="fas fa-exclamation-triangle mr-1"></i> No Questions
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="font-weight-bold text-dark m-0">{{ exam.title }}</h5>
+
+                            {% if exam.is_active %}
+                            <span class="badge badge-vibrant-success py-1 px-3 rounded-pill small font-weight-bold">
+                                <i class="fas fa-lock mr-1"></i> ACTIVE
+                            </span>
+                            {% elif exam.attempt_count > 0 %}
+                            <span class="badge badge-vibrant-info py-1 px-3 rounded-pill small font-weight-bold">
+                                <i class="fas fa-history mr-1"></i> FINALIZED
+                            </span>
+                            {% elif exam.q_count == 0 %}
+                            <span class="badge badge-vibrant-warning py-1 px-3 rounded-pill small font-weight-bold">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> NO Q'S
                             </span>
                             {% else %}
-                            <span class="badge {{ 'badge-success' if exam.is_active else 'badge-warning' }} shadow-sm">
-                                {{ 'Active' if exam.is_active else 'Inactive' }}
+                            <span class="badge badge-vibrant-danger py-1 px-3 rounded-pill small font-weight-bold">
+                                <i class="fas fa-pause mr-1"></i> INACTIVE
                             </span>
                             {% endif %}
                         </div>
-                        <hr>
-                        <div class="small text-muted mb-4">
-                            <div class="mb-1">
-                                <i class="fas fa-database mr-2 text-danger"></i>
-                                <strong>Question Pool:</strong> {{ exam.q_count }} questions
-                            </div>
-                            <div class="mb-1">
-                                <i class="fas fa-calendar-alt mr-2 text-danger"></i>
-                                <strong>Schedule:</strong> {{ exam.date_time.strftime('%b %d, %Y | %I:%M %p') if
-                                exam.date_time else 'Unscheduled' }}
-                            </div>
-                            <div class="mb-1">
-                                <i class="fas fa-stopwatch mr-2 text-danger"></i>
-                                <strong>Duration:</strong> {{ exam.duration_minutes }} Minutes
-                            </div>
-                            <div>
-                                <i class="fas fa-check-circle mr-2 text-danger"></i>
-                                <strong>Passing:</strong> {{ exam.pass_percentage }}%
+
+                        <div class="bg-light rounded p-3 mb-4">
+                            <div class="row row-cols-2 no-gutters text-center">
+                                <div class="col mb-2 border-right">
+                                    <small class="text-muted d-block text-uppercase font-weight-bold"
+                                        style="font-size: 0.65rem;">Pool</small>
+                                    <span class="text-dark">{{ exam.q_count }}</span>
+                                </div>
+                                <div class="col mb-2">
+                                    <small class="text-muted d-block text-uppercase font-weight-bold"
+                                        style="font-size: 0.65rem;">Attempts</small>
+                                    <span class="text-primary font-weight-bold">{{ exam.attempt_count }}</span>
+                                </div>
+                                <div class="col border-right border-top pt-2">
+                                    <small class="text-muted d-block text-uppercase font-weight-bold"
+                                        style="font-size: 0.65rem;">Pass %</small>
+                                    <span class="text-dark">{{ exam.pass_percentage }}%</span>
+                                </div>
+                                <div class="col border-top pt-2">
+                                    <small class="text-muted d-block text-uppercase font-weight-bold"
+                                        style="font-size: 0.65rem;">Serve</small>
+                                    <span class="text-danger font-weight-bold">{{ exam.question_limit }}</span>
+                                </div>
                             </div>
                         </div>
+
+                        <div class="d-flex align-items-center text-muted small mb-4">
+                            <i class="fas fa-calendar-day mr-2 text-primary"></i>
+                            <span class="font-weight-bold">
+                                {{ exam.date_time.strftime('%b %d, %Y • %I:%M %p') if exam.date_time else 'Unscheduled'
+                                }}
+                            </span>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center">
                             <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}"
-                                class="btn btn-sm btn-info shadow-sm font-weight-bold">Questions</a>
-                            <div>
-                                <!-- FIXED: Changed from teacher.view_results to teacher.exam_results -->
+                                class="btn btn-sm {% if exam.is_active or exam.attempt_count > 0 %}btn-outline-secondary{% else %}btn-primary{% endif %} px-3 rounded-pill font-weight-bold shadow-sm">
+                                <i
+                                    class="fas {% if exam.is_active or exam.attempt_count > 0 %}fa-eye{% else %}fa-layer-group{% endif %} mr-1"></i>
+                                {{ 'View Questions' if exam.is_active or exam.attempt_count > 0 else 'Manage Questions'
+                                }}
+                            </a>
+                            <div class="d-flex" style="gap: 5px;">
                                 <a href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}"
-                                    class="btn btn-sm btn-circle btn-primary" title="Scores"><i
-                                        class="fas fa-list-ol"></i></a>
-                                <button class="btn btn-sm btn-circle btn-secondary mx-1" data-toggle="modal"
-                                    data-target="#editExamModal{{ exam.exam_id }}" title="Edit"><i
-                                        class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-circle btn-danger" data-toggle="modal"
-                                    data-target="#deleteExamModal" data-id="{{ exam.exam_id }}"
-                                    data-title="{{ exam.title }}" title="Delete"><i class="fas fa-trash"></i></button>
+                                    class="btn btn-light btn-circle-lg text-primary shadow-sm border"
+                                    title="View Results">
+                                    <i class="fas fa-poll"></i>
+                                </a>
+
+                                <form action="{{ url_for('teacher.duplicate_exam', exam_id=exam.exam_id) }}"
+                                    method="POST" class="d-inline">
+                                    <button type="submit"
+                                        class="btn btn-light btn-circle-lg text-success shadow-sm border"
+                                        title="Duplicate Exam">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </form>
+
+                                <button class="btn btn-light btn-circle-lg text-info shadow-sm border"
+                                    data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}" title="Settings">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <button class="btn btn-light btn-circle-lg text-danger shadow-sm border"
+                                    data-toggle="modal" data-target="#deleteExamModal" data-id="{{ exam.exam_id }}"
+                                    data-title="{{ exam.title }}" title="Trash">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -107,36 +250,46 @@
                 <button class="close text-white" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('teacher.add_exam') }}" method="POST">
-                <div class="modal-body bg-light">
-                    <div class="form-group"><label class="small font-weight-bold">Exam Title</label><input type="text"
-                            name="title" class="form-control" required></div>
+                <div class="modal-body">
                     <div class="form-group">
-                        <label class="small font-weight-bold">Assign to Class</label>
+                        <label class="small font-weight-bold text-uppercase">Exam Title</label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Midterm Examination"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Assign to Class</label>
                         <select name="class_code" class="form-control" required>
-                            <option value="">-- Select Class --</option>
-                            {% for class in classes %}<option value="{{ class.class_code }}">{{ class.course_name }} ({{
-                                class.class_code }})</option>{% endfor %}
+                            <option value="">-- Select Target Class --</option>
+                            {% for class in classes %}
+                            <option value="{{ class.class_code }}">{{ class.course_name }} ({{ class.class_code }})
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Availability Schedule</label>
+                        <input type="datetime-local" name="schedule" class="form-control" required>
+                    </div>
                     <div class="row">
-                        <div class="col-12 mb-3">
-                            <label class="small font-weight-bold">Schedule</label>
-                            <input type="datetime-local" name="schedule" class="form-control" required>
-                        </div>
-                        <div class="col-4"><label class="small font-weight-bold">Mins</label><input type="number"
-                                name="duration" class="form-control" value="60"></div>
-                        <div class="col-4"><label class="small font-weight-bold">Pass %</label><input type="number"
-                                name="pass_percentage" class="form-control" value="75"></div>
                         <div class="col-4">
-                            <label class="small font-weight-bold text-danger">Question Limit</label>
+                            <label class="small font-weight-bold text-uppercase">Duration</label>
+                            <input type="number" name="duration" class="form-control" value="60">
+                        </div>
+                        <div class="col-4">
+                            <label class="small font-weight-bold text-uppercase">Passing</label>
+                            <input type="number" name="pass_percentage" class="form-control" value="75">
+                        </div>
+                        <div class="col-4">
+                            <label class="small font-weight-bold text-uppercase text-danger">Serve Qty</label>
                             <input type="number" name="question_limit" class="form-control" value="50" min="1">
                         </div>
                     </div>
-                    <small class="text-muted mt-2 d-block italic"><i class="fas fa-info-circle mr-1"></i> Initially,
-                        exams with 0 questions will be <strong>Inactive</strong>.</small>
                 </div>
-                <div class="modal-footer"><button class="btn btn-danger btn-block shadow" type="submit">Create & Add
-                        Questions <i class="fas fa-arrow-right ml-2"></i></button></div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary btn-sm rounded-pill px-4" data-dismiss="modal"
+                        type="button">Cancel</button>
+                    <button class="btn btn-danger btn-sm rounded-pill px-4" type="submit">Create Exam</button>
+                </div>
             </form>
         </div>
     </div>
@@ -147,32 +300,50 @@
 <div class="modal fade" id="editExamModal{{ exam.exam_id }}" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">Edit: {{ exam.title }}</h5><button class="close text-white"
-                    data-dismiss="modal"><span>×</span></button>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title small text-uppercase">Exam Settings: {{ exam.title }}</h5>
+                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('teacher.update_exam') }}" method="POST">
                 <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
-                <div class="modal-body bg-light">
-
-                    {% if exam.q_count == 0 %}
-                    <div class="alert alert-warning py-2 small">
-                        <i class="fas fa-exclamation-circle mr-1"></i> You cannot set this exam to
-                        <strong>Active</strong> until questions are added.
+                <div class="modal-body">
+                    {% if exam.is_active %}
+                    <div class="alert alert-danger small py-2">
+                        <i class="fas fa-lock mr-2"></i> This exam is <b>Active</b>. Configuration is locked.
+                    </div>
+                    {% elif exam.attempt_count > 0 %}
+                    <div class="alert alert-info small py-2">
+                        <i class="fas fa-info-circle mr-2"></i> This exam has submissions. Certain fields are
+                        restricted.
                     </div>
                     {% endif %}
 
-                    <div class="form-group"><label class="small font-weight-bold">Title</label><input type="text"
-                            name="title" class="form-control" value="{{ exam.title }}" required></div>
-                    <div class="row">
-                        <div class="col-4"><label class="small font-weight-bold">Mins</label><input type="number"
-                                name="duration" class="form-control" value="{{ exam.duration_minutes }}"></div>
-                        <div class="col-4"><label class="small font-weight-bold">Pass %</label><input type="number"
-                                name="pass_percentage" class="form-control" value="{{ exam.pass_percentage }}"></div>
-                        <div class="col-4"><label class="small font-weight-bold">Question Limit</label><input type="number"
-                                name="question_limit" class="form-control" value="{{ exam.question_limit }}"></div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Title</label>
+                        <input type="text" name="title" class="form-control" value="{{ exam.title }}" required {% if
+                            exam.is_active %}readonly{% endif %}>
                     </div>
-                    <div class="form-group mt-3"><label class="small font-weight-bold">Status</label>
+
+                    <div class="row mb-3">
+                        <div class="col-4">
+                            <label class="small font-weight-bold text-uppercase">Mins</label>
+                            <input type="number" name="duration" class="form-control"
+                                value="{{ exam.duration_minutes }}" {% if exam.is_active %}readonly{% endif %}>
+                        </div>
+                        <div class="col-4">
+                            <label class="small font-weight-bold text-uppercase">Pass %</label>
+                            <input type="number" name="pass_percentage" class="form-control"
+                                value="{{ exam.pass_percentage }}" {% if exam.is_active %}readonly{% endif %}>
+                        </div>
+                        <div class="col-4">
+                            <label class="small font-weight-bold text-uppercase">Serve Qty</label>
+                            <input type="number" name="question_limit" class="form-control"
+                                value="{{ exam.question_limit }}" {% if exam.is_active %}readonly{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Status</label>
                         <select name="status" class="form-control" {% if exam.q_count==0 %}disabled{% endif %}>
                             <option value="inactive" {% if not exam.is_active or exam.q_count==0 %}selected{% endif %}>
                                 Inactive</option>
@@ -182,12 +353,20 @@
                         </select>
                         {% if exam.q_count == 0 %}<input type="hidden" name="status" value="inactive">{% endif %}
                     </div>
-                    <div class="form-group"><label class="small font-weight-bold">Schedule</label><input
-                            type="datetime-local" name="schedule" class="form-control"
-                            value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}"></div>
+
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Schedule</label>
+                        <input type="datetime-local" name="schedule" class="form-control"
+                            value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}" {% if
+                            exam.is_active %}readonly{% endif %}>
+                    </div>
                 </div>
-                <div class="modal-footer"><button class="btn btn-info btn-block shadow-sm" type="submit">Update
-                        Configuration</button></div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-primary btn-block rounded-pill" type="submit" {% if exam.is_active
+                        %}disabled{% endif %}>
+                        {{ 'Update Locked' if exam.is_active else 'Save Changes' }}
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -196,18 +375,20 @@
 
 <!-- DELETE MODAL -->
 <div class="modal fade" id="deleteExamModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-sm">
         <div class="modal-content shadow border-0">
             <form id="deleteExamForm" method="POST">
-                <div class="modal-body text-center py-5">
-                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
-                    <h4 class="font-weight-bold">Move to Trash?</h4>
-                    <p class="text-muted">You are moving <span id="delExamTitle"
-                            class="font-weight-bold text-dark"></span> to the trashed exams bin.</p>
+                <div class="modal-body text-center py-4">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-trash-alt fa-3x"></i>
+                    </div>
+                    <h5 class="font-weight-bold">Move to Trash?</h5>
+                    <p class="text-muted small">Moving <span id="delExamTitle"
+                            class="font-weight-bold text-dark"></span> to the trash bin.</p>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button class="btn btn-secondary" data-dismiss="modal" type="button">Cancel</button>
-                    <button class="btn btn-danger px-4" type="submit">Move to Trash</button>
+                <div class="modal-footer border-0 p-2">
+                    <button class="btn btn-light btn-sm flex-fill" data-dismiss="modal" type="button">Cancel</button>
+                    <button class="btn btn-danger btn-sm flex-fill" type="submit">Trash Exam</button>
                 </div>
             </form>
         </div>
@@ -222,6 +403,11 @@
             var val = $(this).val().toLowerCase();
             $('.exam-item').each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+            });
+
+            $('.course-section').each(function () {
+                var visibleItems = $(this).find('.exam-item:visible').length;
+                $(this).toggle(visibleItems > 0);
             });
         });
 

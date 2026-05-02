@@ -1,43 +1,117 @@
 {% extends 'student_base.html' %}
 {% block title %}My Exams{% endblock %}
 {% set sidebar_active = 'exams' %}
+
 {% block head %}
-<meta http-equiv="refresh" content="5">
+{# Refresh every 30 seconds to update 'Upcoming' or 'Expired' statuses automatically #}
+<meta http-equiv="refresh" content="30">
 <style>
+    /* ── UI ENHANCEMENTS ── */
     .exam-card {
         transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
-        border-radius: 12px;
+        border-radius: 15px;
         overflow: hidden;
-        border-left: 5px solid #4e73df;
+        border: none !important;
     }
 
     .exam-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, .175) !important;
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, .1) !important;
     }
 
     .course-header {
         border-bottom: 2px solid #e3e6f0;
         margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
+        padding-bottom: 0.8rem;
     }
 
-    .status-badge {
+    /* Soft Badges for Consistency */
+    .badge-soft-success {
+        background-color: #e1f7ec;
+        color: #0d6832;
+    }
+
+    .badge-soft-warning {
+        background-color: #fff4e5;
+        color: #8c5d03;
+    }
+
+    .badge-soft-secondary {
+        background-color: #f0f2f5;
+        color: #475467;
+    }
+
+    .badge-soft-danger {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .badge-soft-primary {
+        background-color: #e0e7ff;
+        color: #4e73df;
+    }
+
+    .badge-soft-info {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
+    /* Info Grid Styling */
+    .exam-info-grid {
+        background-color: #f8f9fc;
+        border-radius: 10px;
+        padding: 15px;
+    }
+
+    .info-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #858796;
+        display: block;
+        letter-spacing: 0.05em;
+    }
+
+    .info-value {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #3a3b45;
+    }
+
+    .status-badge-container {
         position: absolute;
-        top: 15px;
-        right: 15px;
+        top: 20px;
+        right: 20px;
+    }
+
+    .icon-box-sm {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">My Examinations</h1>
+
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">My Examinations</h1>
+        <div class="text-muted small">
+            <i class="fas fa-sync-alt fa-spin mr-1"></i> Auto-refreshing status...
+        </div>
+    </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
-    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
+    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}">
         {{ message }}
         <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
     </div>
@@ -48,82 +122,92 @@
     {# GROUP EXAMS BY COURSE #}
     {% for course_name, course_exams in exams|groupby('course_name') %}
     <div class="course-section mb-5">
-        <div class="course-header d-flex align-items-center">
-            <div class="icon-circle bg-primary text-white mr-3">
-                <i class="fas fa-book"></i>
+        <div class="course-header d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <div class="icon-circle bg-primary text-white mr-3 shadow-sm">
+                    <i class="fas fa-book-reader"></i>
+                </div>
+                <div>
+                    <h4 class="m-0 font-weight-bold text-dark">{{ course_name }}</h4>
+                    <div class="text-xs text-uppercase text-muted font-weight-bold mt-1">
+                        Course: <span class="text-primary">{{ course_exams[0].course_code }}</span>
+                        <span class="mx-2 text-gray-300">|</span>
+                        Class Code: <span class="text-danger">{{ course_exams[0].course_id }}</span>
+                    </div>
+                </div>
             </div>
-            <div>
-                <h4 class="m-0 font-weight-bold text-dark">{{ course_name }}</h4>
-                <span class="text-xs text-uppercase text-muted font-weight-bold">
-                    <!-- Added Class Code (aliased as course_id from the backend) to accurately reflect the student's specific block -->
-                    Course Code: {{ course_exams[0].course_code }} | Class: <span class="text-primary">{{
-                        course_exams[0].course_id }}</span>
-                </span>
-            </div>
+            <span class="badge badge-light border px-3 rounded-pill text-muted">{{ course_exams|length }} Exam(s)</span>
         </div>
 
         <div class="row">
             {% for exam in course_exams %}
             <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card shadow h-100 exam-card border-0">
+                <div class="card shadow-sm h-100 exam-card border-left-{{ exam.status_class }}">
                     <div class="card-body position-relative">
 
                         {# DYNAMIC STATUS BADGE #}
-                        <div class="status-badge">
-                            <span class="badge badge-{{ exam.status_class }} px-3 py-2 rounded-pill shadow-sm">
+                        <div class="status-badge-container">
+                            <span
+                                class="badge badge-soft-{{ exam.status_class }} px-3 py-2 rounded-pill font-weight-bold shadow-xs">
                                 <i
-                                    class="fas {% if exam.status_label == 'Completed' %}fa-check-circle{% else %}fa-info-circle{% endif %} mr-1"></i>
-                                {{ exam.status_label }}
+                                    class="fas {% if exam.status_label == 'Completed' %}fa-check-circle{% elif exam.status_label == 'Upcoming' %}fa-clock{% elif exam.status_label == 'Ongoing' %}fa-bolt{% else %}fa-info-circle{% endif %} mr-1"></i>
+                                {{ exam.status_label|upper }}
                             </span>
                         </div>
 
-                        <h5 class="font-weight-bold text-primary mb-3 pr-5">{{ exam.title }}</h5>
+                        <h5 class="font-weight-bold text-dark mb-4 pr-5">{{ exam.title }}</h5>
 
-                        <div class="mb-2 small">
-                            <i class="fas fa-calendar-alt text-gray-400 mr-2"></i>
-                            <span class="text-dark font-weight-bold">Schedule:</span>
-                            {{ exam.date_time.strftime('%b %d, %Y') }}
-                        </div>
-                        <div class="mb-2 small">
-                            <i class="fas fa-clock text-gray-400 mr-2"></i>
-                            <span class="text-dark font-weight-bold">Start Time:</span>
-                            {{ exam.date_time.strftime('%I:%M %p') }}
-                        </div>
-                        <div class="mb-4 small">
-                            <i class="fas fa-hourglass-half text-gray-400 mr-2"></i>
-                            <span class="text-dark font-weight-bold">Duration:</span>
-                            {{ exam.duration_minutes }} Minutes
+                        <!-- Information Grid -->
+                        <div class="exam-info-grid mb-4">
+                            <div class="row no-gutters">
+                                <div class="col-6 mb-3">
+                                    <span class="info-label">Date</span>
+                                    <span class="info-value"><i class="far fa-calendar-alt mr-1 text-primary"></i> {{
+                                        exam.date_time.strftime('%b %d, %Y') }}</span>
+                                </div>
+                                <div class="col-6 mb-3 pl-2">
+                                    <span class="info-label">Start Time</span>
+                                    <span class="info-value"><i class="far fa-clock mr-1 text-primary"></i> {{
+                                        exam.date_time.strftime('%I:%M %p') }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="info-label">Duration</span>
+                                    <span class="info-value"><i class="fas fa-hourglass-start mr-1 text-info"></i> {{
+                                        exam.duration_minutes }}m</span>
+                                </div>
+                                <div class="col-6 pl-2">
+                                    <span class="info-label">Passing Grade</span>
+                                    <span class="info-value"><i class="fas fa-award mr-1 text-warning"></i> {{
+                                        exam.pass_percentage }}%</span>
+                                </div>
+                            </div>
                         </div>
 
                         {# DYNAMIC BUTTON LOGIC #}
                         {% if exam.can_start %}
                         <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}"
-                            class="btn btn-block btn-primary font-weight-bold shadow-sm"
-                            onclick="return confirm('Note: Starting this exam triggers Lockdown Mode. Proceed?')">
+                            class="btn btn-block {% if exam.attempt_status == 'in-progress' %}btn-info{% else %}btn-primary{% endif %} font-weight-bold shadow rounded-pill py-2"
+                            onclick="return confirm('Attention: Starting this exam activates Secure Lockdown Mode. You must remain in Fullscreen. Proceed?')">
                             {% if exam.attempt_status == 'in-progress' %}
-                            <i class="fas fa-play mr-2"></i> Resume Examination
+                            <i class="fas fa-redo-alt mr-2"></i> RESUME EXAMINATION
                             {% else %}
-                            <i class="fas fa-play mr-2"></i> Start Examination
+                            <i class="fas fa-play mr-2"></i> START EXAMINATION
                             {% endif %}
                         </a>
                         {% else %}
-                        <button class="btn btn-block btn-light text-muted font-weight-bold shadow-sm" disabled>
+                        <button class="btn btn-block btn-light text-muted font-weight-bold border rounded-pill py-2"
+                            disabled>
                             {% if exam.status_label == 'Completed' %}
-                            <i class="fas fa-check-double mr-2"></i> Submitted
+                            <i class="fas fa-check-double mr-2 text-success"></i> ATTEMPT SUBMITTED
                             {% elif exam.status_label == 'Upcoming' %}
-                            <i class="fas fa-lock mr-2"></i> Locked Until {{ exam.date_time.strftime('%I:%M %p') }}
+                            <i class="fas fa-lock mr-2"></i> OPENS AT {{ exam.date_time.strftime('%I:%M %p') }}
                             {% elif exam.status_label == 'Expired' %}
-                            <i class="fas fa-times-circle mr-2"></i> Time Elapsed
+                            <i class="fas fa-calendar-times mr-2"></i> SESSION EXPIRED
                             {% else %}
-                            <i class="fas fa-ban mr-2"></i> Unavailable
+                            <i class="fas fa-ban mr-2"></i> CURRENTLY UNAVAILABLE
                             {% endif %}
                         </button>
                         {% endif %}
-                    </div>
-
-                    <div class="card-footer bg-white py-2">
-                        <small class="text-muted"><i class="fas fa-info-circle"></i> Passing Score: {{
-                            exam.pass_percentage }}%</small>
                     </div>
                 </div>
             </div>
@@ -131,10 +215,13 @@
         </div>
     </div>
     {% else %}
-    <div class="card shadow border-left-warning py-5 text-center">
+    <div class="card shadow-sm border-0 py-5 text-center rounded-lg">
         <div class="card-body">
-            <i class="fas fa-ghost fa-3x text-gray-300 mb-3"></i>
-            <h4 class="text-gray-500 font-weight-bold">No Exams Linked to Your Account</h4>
+            <div class="mb-4">
+                <i class="fas fa-clipboard-list fa-4x text-gray-200"></i>
+            </div>
+            <h4 class="text-gray-500 font-weight-bold">No Examinations Found</h4>
+            <p class="text-muted small">You are currently not enrolled in any classes with active exams.</p>
         </div>
     </div>
     {% endfor %}

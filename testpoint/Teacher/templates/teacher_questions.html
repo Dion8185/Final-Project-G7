@@ -102,19 +102,31 @@
     .text-xxs {
         font-size: 0.65rem;
     }
+
+    /* LOCK STYLES */
+    .lock-overlay-text {
+        font-weight: 700;
+        color: #e74a3b;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn py-4">
 
+    {# Define State Logic #}
+    {% set is_locked = (exam.is_active == 1 or exam.attempt_count > 0) %}
+
     <!-- Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <div>
-            <h1 class="h3 mb-0 text-gray-800">Manage Exam Pool</h1>
+            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Manage Exam Pool</h1>
             <p class="text-muted small mb-0">{{ exam.title }} ({{ exam.course_code }})</p>
         </div>
         <div style="display: flex; gap: 10px;">
+            {% if not is_locked %}
             <button class="btn btn-outline-primary btn-sm shadow-sm" data-toggle="modal" data-target="#bankModal">
                 <i class="fas fa-university mr-1"></i> Master Bank
             </button>
@@ -124,12 +136,41 @@
             <button class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal">
                 <i class="fas fa-plus mr-1"></i> New Question
             </button>
-            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i
-                    class="fas fa-arrow-left fa-sm"></i> Back</a>
+            {% else %}
+            <form action="{{ url_for('teacher.duplicate_exam', exam_id=exam.exam_id) }}" method="POST">
+                <button type="submit" class="btn btn-warning btn-sm shadow-sm text-dark font-weight-bold">
+                    <i class="fas fa-copy mr-1"></i> Duplicate to Edit
+                </button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm mr-1"></i> Back
+            </a>
         </div>
     </div>
 
-    <!-- SMART BULK ACTIONS BAR -->
+    <!-- LOCKDOWN WARNING BANNER -->
+    {% if is_locked %}
+    <div class="alert alert-danger shadow-sm border-left-danger animate__animated animate__shakeX" role="alert">
+        <div class="row align-items-center">
+            <div class="col-auto"><i class="fas fa-lock fa-2x"></i></div>
+            <div class="col">
+                <h5 class="alert-heading font-weight-bold mb-1">Editing Restricted</h5>
+                <p class="mb-0 small">
+                    {% if exam.is_active == 1 %}
+                    This exam is currently <strong>Active</strong>.
+                    {% else %}
+                    This exam has <strong>{{ exam.attempt_count }} student submissions</strong>.
+                    {% endif %}
+                    Modification is disabled to maintain assessment integrity. Duplicate the exam to make changes.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- SMART BULK ACTIONS BAR (Visible if not locked) -->
+    {% if not is_locked %}
     <div class="bulk-actions-bar shadow p-3 mb-4" id="bulkBar">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -140,12 +181,10 @@
             <div>
                 <button type="button" class="btn btn-sm btn-outline-dark mr-3" id="btnDeselectAll">Clear
                     Selection</button>
-
                 <button type="submit" form="bulkActionForm" name="action" value="unlink" id="btnBulkUnlink"
                     class="btn btn-primary btn-sm shadow-sm mr-1">
                     <i class="fas fa-link-slash mr-1"></i> Unlink Bank Questions (<span id="linkCount">0</span>)
                 </button>
-
                 <button type="submit" form="bulkActionForm" name="action" value="delete" id="btnBulkDelete"
                     class="btn btn-danger btn-sm shadow-sm">
                     <i class="fas fa-trash-alt mr-1"></i> Permanent Delete Isolated (<span id="deleteCount">0</span>)
@@ -153,6 +192,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- GLOBAL FILTERS -->
     <div class="card shadow mb-4 border-bottom-primary">
@@ -205,12 +245,14 @@
             <div class="d-flex justify-content-between align-items-end mb-3">
                 <h5 class="m-0 font-weight-bold text-dark"><i class="fas fa-university text-primary mr-2"></i>Master
                     Bank Questions</h5>
+                {% if not is_locked %}
                 <div class="custom-control custom-checkbox">
                     <input type="checkbox" class="custom-control-input section-select" id="selectBankAll"
                         data-target="bank">
                     <label class="custom-control-label small font-weight-bold" for="selectBankAll">Select All
                         Visible</label>
                 </div>
+                {% endif %}
             </div>
 
             <div class="container-items">
@@ -224,7 +266,7 @@
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}"
                                         class="custom-control-input q-checkbox bank-chk" id="chk-{{ q.question_id }}"
-                                        data-is-isolated="false">
+                                        data-is-isolated="false" {% if is_locked %}disabled{% endif %}>
                                     <label class="custom-control-label" for="chk-{{ q.question_id }}"></label>
                                 </div>
                             </div>
@@ -244,8 +286,12 @@
                                 </div>
                             </div>
                             <div class="col-auto">
+                                {% if is_locked %}
+                                <span class="lock-overlay-text small"><i class="fas fa-lock mr-1"></i>Read Only</span>
+                                {% else %}
                                 <button type="button" class="btn btn-sm btn-outline-primary"
                                     onclick="unlinkSingle({{ q.question_id }})">Unlink</button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -264,12 +310,14 @@
             <div class="d-flex justify-content-between align-items-end mb-3">
                 <h5 class="m-0 font-weight-bold text-dark"><i class="fas fa-lock text-info mr-2"></i>Isolated / New
                     Questions</h5>
+                {% if not is_locked %}
                 <div class="custom-control custom-checkbox">
                     <input type="checkbox" class="custom-control-input section-select" id="selectIsoAll"
                         data-target="isolated">
                     <label class="custom-control-label small font-weight-bold" for="selectIsoAll">Select All
                         Visible</label>
                 </div>
+                {% endif %}
             </div>
 
             <div class="container-items">
@@ -284,7 +332,7 @@
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}"
                                         class="custom-control-input q-checkbox iso-chk" id="chk-{{ q.question_id }}"
-                                        data-is-isolated="true">
+                                        data-is-isolated="true" {% if is_locked %}disabled{% endif %}>
                                     <label class="custom-control-label" for="chk-{{ q.question_id }}"></label>
                                 </div>
                             </div>
@@ -304,8 +352,12 @@
                                 </div>
                             </div>
                             <div class="col-auto">
+                                {% if is_locked %}
+                                <span class="lock-overlay-text small"><i class="fas fa-lock mr-1"></i>Read Only</span>
+                                {% else %}
                                 <button type="button" class="btn btn-sm btn-outline-danger"
                                     onclick="deleteSingleIsolated({{ q.question_id }})">Delete</button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -319,7 +371,8 @@
     </form>
 </div>
 
-<!-- ── BANK PICKER MODAL ── -->
+<!-- (Modals remain unchanged from previous response) -->
+{% if not is_locked %}
 <div class="modal fade" id="bankModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <form action="{{ url_for('teacher.bulk_link_from_bank', exam_id=exam.exam_id) }}" method="POST"
@@ -401,7 +454,6 @@
     </div>
 </div>
 
-<!-- EXCEL IMPORT MODAL -->
 <div class="modal fade" id="excelModal" tabindex="-1">
     <div class="modal-dialog">
         <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data"
@@ -424,7 +476,6 @@
     </div>
 </div>
 
-<!-- MANUAL ENTRY MODAL -->
 <div class="modal fade" id="manualModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST" class="modal-content">
@@ -483,33 +534,26 @@
         </form>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        const bulkBar = $('#bulkBar'),
-            countLabel = $('#selectedCount'),
-            linkBtn = $('#btnBulkUnlink'),
-            deleteBtn = $('#btnBulkDelete'),
-            linkSpan = $('#linkCount'),
-            deleteSpan = $('#deleteCount');
+        const bulkBar = $('#bulkBar'), countLabel = $('#selectedCount'),
+            linkBtn = $('#btnBulkUnlink'), deleteBtn = $('#btnBulkDelete'),
+            linkSpan = $('#linkCount'), deleteSpan = $('#deleteCount');
 
         function updateMainUI() {
             const selected = $('.q-checkbox:visible:checked');
             const total = selected.length;
-            let linkedCount = 0;
-            let isolatedCount = 0;
+            let linkedCount = 0; let isolatedCount = 0;
 
             selected.each(function () {
-                if ($(this).data('is-isolated') === true) isolatedCount++;
-                else linkedCount++;
+                if ($(this).data('is-isolated') === true) isolatedCount++; else linkedCount++;
             });
 
-            countLabel.text(total);
-            linkSpan.text(linkedCount);
-            deleteSpan.text(isolatedCount);
-
+            countLabel.text(total); linkSpan.text(linkedCount); deleteSpan.text(isolatedCount);
             linkedCount > 0 ? linkBtn.show() : linkBtn.hide();
             isolatedCount > 0 ? deleteBtn.show() : deleteBtn.hide();
 
@@ -546,25 +590,16 @@
                     (type === '' || card.data('type') === type) &&
                     (diff === '' || card.data('difficulty') === diff) &&
                     (search === '' || card.data('text').includes(search));
-
-                if (matches) {
-                    card.show();
-                } else {
-                    card.hide();
-                    card.find('.q-checkbox').prop('checked', false).trigger('change');
-                }
+                if (matches) card.show();
+                else { card.hide(); card.find('.q-checkbox').prop('checked', false).trigger('change'); }
             });
 
             $('.source-group').each(function () {
                 const group = $(this);
                 const visibleCount = group.find('.question-card:visible').length;
                 group.find('.no-results-msg').toggleClass('d-none', visibleCount > 0);
-
-                if (source !== '' && group.attr('id') !== (source + 'Section')) {
-                    group.hide();
-                } else {
-                    group.show();
-                }
+                if (source !== '' && group.attr('id') !== (source + 'Section')) group.hide();
+                else group.show();
             });
 
             $('#isolatedDivider').toggle($('#bankSection').is(':visible') && $('#isolatedSection').is(':visible'));
@@ -573,19 +608,12 @@
 
         $('#searchInput').on('keyup', applyMainFilters);
         $('#sourceFilter, #typeFilter, #difficultyFilter').on('change', applyMainFilters);
+        $('#resetFilters').on('click', function () { $('#filterForm')[0].reset(); applyMainFilters(); });
 
-        $('#resetFilters').on('click', function () {
-            $('#filterForm')[0].reset();
-            $('.section-select').prop('checked', false);
-            applyMainFilters();
-        });
-
-        // Bank Modal Logic
         $('#bankSearch, #bankTypeFilter, #bankDifficultyFilter').on('input change', function () {
             const search = $('#bankSearch').val().toLowerCase();
             const type = $('#bankTypeFilter').val();
             const diff = $('#bankDifficultyFilter').val();
-
             $('.bank-item-card').each(function () {
                 const item = $(this);
                 const matches = (type === '' || item.data('type') === type) &&
@@ -595,13 +623,8 @@
             });
         });
 
-        $('#selectAllBank').on('change', function () {
-            $('.bank-checkbox:visible').prop('checked', this.checked).trigger('change');
-        });
-
-        $(document).on('change', '.bank-checkbox', function () {
-            $(this).closest('.bank-item-card').toggleClass('is-selected', this.checked);
-        });
+        $('#selectAllBank').on('change', function () { $('.bank-checkbox:visible').prop('checked', this.checked).trigger('change'); });
+        $(document).on('change', '.bank-checkbox', function () { $(this).closest('.bank-item-card').toggleClass('is-selected', this.checked); });
 
         $('#qTypeSelect').on('change', function () {
             const val = $(this).val();
