@@ -146,9 +146,15 @@
                     <tr class="user-row" data-role="{{ user.role }}"
                         data-status="{% if user.is_verified == 1 %}verified{% else %}pending{% endif %}">
                         <td>
-                            {% if user.role == 'admin' %} <span class="badge badge-secondary">Admin</span>
-                            {% elif user.role == 'teacher' %} <span class="badge badge-danger">Teacher</span>
-                            {% else %} <span class="badge badge-primary">Student</span> {% endif %}
+                            {% if user.role == 'super_admin' %}
+                                <span class="badge badge-dark shadow-sm"><i class="fas fa-crown text-warning mr-1"></i>Super Admin</span>
+                            {% elif user.role == 'admin' %}
+                                <span class="badge badge-secondary">Admin</span>
+                            {% elif user.role == 'teacher' %}
+                                <span class="badge badge-danger">Teacher</span>
+                            {% else %}
+                                <span class="badge badge-primary">Student</span>
+                            {% endif %}
                         </td>
                         <td><span class="font-weight-bold text-dark search-data">{{ user.user_id }}</span></td>
                         <td class="search-data text-capitalize">
@@ -160,21 +166,43 @@
                             {% else %} <span class="badge badge-warning">Pending</span> {% endif %}
                         </td>
                         <td class="text-center">
+                            <!-- 1. Assignments Button (Everyone can see this) -->
                             <button class="btn btn-success btn-circle btn-sm view-details-btn mr-1 shadow-sm"
                                 title="View Assignments" data-id="{{ user.user_id }}"
                                 data-name="{{ user.firstname }} {{ user.lastname }}">
                                 <i class="fas fa-university"></i>
                             </button>
 
-                            <button class="btn btn-info btn-circle btn-sm mr-1 shadow-sm" title="Edit"
-                                data-toggle="modal" data-target="#editUserModal{{ user.user_id }}">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            {% if user[5] != 'admin' %}
-                            <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete" data-toggle="modal" data-target="#deleteUserModal" 
-                                data-id="{{ user[0] }}" data-name="{{ user[1] }} {{ user[3] }}">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <!-- 2. EDIT & DELETE Logic -->
+                            {% if user.role != 'admin' and user.role != 'super_admin' %}
+                                <!-- Normal Admin can edit/delete Students and Teachers -->
+                                <button class="btn btn-info btn-circle btn-sm mr-1 shadow-sm" title="Edit"
+                                    data-toggle="modal" data-target="#editUserModal{{ user.user_id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete" 
+                                    data-toggle="modal" data-target="#deleteUserModal" 
+                                    data-id="{{ user.user_id }}" data-name="{{ user.firstname }} {{ user.lastname }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            {% elif session.get('role') == 'super_admin' %}
+                                <!-- ONLY Super Admin can edit/delete other Admins -->
+                                <button class="btn btn-info btn-circle btn-sm mr-1 shadow-sm" title="Edit Admin"
+                                    data-toggle="modal" data-target="#editUserModal{{ user.user_id }}">
+                                    <i class="fas fa-user-edit"></i>
+                                </button>
+                                
+                                <!-- Prevent Super Admin from deleting themselves (A26-0000) -->
+                                {% if user.user_id != session.get('user_id') %}
+                                <button type="button" class="btn btn-danger btn-circle btn-sm" title="Delete Admin" 
+                                    data-toggle="modal" data-target="#deleteUserModal" 
+                                    data-id="{{ user.user_id }}" data-name="{{ user.firstname }} {{ user.lastname }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            {% else %}
+                                <!-- Normal Admin looking at an Admin row: Show a lock icon -->
+                                <span class="badge badge-light"><i class="fas fa-lock"></i> Restricted</span>
                             {% endif %}
                         </td>
                     </tr>

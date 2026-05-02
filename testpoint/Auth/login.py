@@ -27,7 +27,7 @@ def allowed_file(filename):
 def user_logged_in(): 
     return session.get('user_logged_in', False)
 def admin_logged_in(): 
-    return session.get('admin_logged_in', False)
+    return session.get('admin_logged_in', False) and session.get('role') in ['admin', 'super_admin']
 def teacher_logged_in(): 
     return session.get('teacher_logged_in', False)
 def pending_user_logged_in(): 
@@ -258,10 +258,16 @@ def login():
         user = cursor.fetchone()
 
         if user and check_password_hash(user['password'], password_input):
-            if user['role'] == 'admin':
+            if user['role'] in ['admin', 'super_admin']:
                 cursor.execute("SELECT firstname FROM admins WHERE email = %s", (email_input,))
                 admin_data = cursor.fetchone()
-                session.update({'admin_logged_in': True, 'user_id': user['user_id'], 'email': user['email'], 'firstname': admin_data['firstname'], 'role': 'admin'})
+                session.update({
+                    'admin_logged_in': True, 
+                    'user_id': user['user_id'], 
+                    'email': user['email'], 
+                    'firstname': admin_data['firstname'], 
+                    'role': user['role']  # <--- THIS MAKES IT DYNAMIC
+                })
                 cursor.close(); connection.close(); return redirect(url_for('admin.admin_dashboard'))
             elif user['role'] == 'student':
                 cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
