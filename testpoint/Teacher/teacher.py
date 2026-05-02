@@ -525,6 +525,56 @@ def bulk_unlink_questions(exam_id):
     connection.commit(); cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
+@teacher.route('/exam/<int:exam_id>/questions/bulk_action', methods=['POST'])
+def bulk_question_action(exam_id):
+    if not teacher_logged_in():
+        return redirect(url_for('auth.login'))
+
+    action = request.form.get('action') # 'unlink' or 'delete'
+    question_ids = request.form.getlist('question_ids[]')
+    
+    if not question_ids:
+        flash("No questions selected.", "warning")
+        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+
+    try:
+        format_strings = ','.join(['%s'] * len(question_ids))
+        
+        if action == 'unlink':
+            # Only remove Bank items (is_isolated = 0) from exam_questions
+            query = f"""
+                DELETE eq FROM exam_questions eq
+                JOIN questions q ON eq.question_id = q.question_id
+                WHERE eq.exam_id = %s 
+                AND eq.question_id IN ({format_strings})
+                AND q.is_isolated = 0
+            """
+            cursor.execute(query, [exam_id] + question_ids)
+            flash(f"Unlinked {cursor.rowcount} Bank questions.", "success")
+
+        elif action == 'delete':
+            # Only delete Isolated items (is_isolated = 1) from the database
+            query = f"""
+                DELETE FROM questions 
+                WHERE question_id IN ({format_strings}) 
+                AND is_isolated = 1
+            """
+            cursor.execute(query, question_ids)
+            flash(f"Deleted {cursor.rowcount} isolated questions.", "danger")
+
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        flash(f"Error: {str(e)}", "error")
+    finally:
+        cursor.close()
+        connection.close()
+
+    return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
 @teacher.route('/delete_question/<int:q_id>/<int:exam_id>', methods=['POST'])
 def delete_question(q_id, exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
