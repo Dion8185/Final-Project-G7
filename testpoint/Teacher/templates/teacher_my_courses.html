@@ -1,44 +1,158 @@
 {% extends "teacher_base.html" %}
 {% block title %}My Classes - TestPoint{% endblock %}
 
+{% block head %}
+<style>
+    /* Card Lift Effect */
+    .course-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: none !important;
+    }
+
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.12) !important;
+    }
+
+    /* Code Highlighting */
+    .code-badge-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .primary-code {
+        font-size: 0.9rem;
+        letter-spacing: 0.05em;
+    }
+
+    /* Soft Section Badge */
+    .badge-section {
+        background-color: #f8f9fc;
+        color: #4e73df;
+        border: 1px solid #e3e6f0;
+        font-size: 0.75rem;
+        padding: 0.5em 0.8em;
+    }
+
+    /* Search Bar Styling */
+    .search-input-group {
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #d1d3e2;
+        transition: all 0.2s;
+    }
+
+    .search-input-group:focus-within {
+        border-color: #e74a3b;
+        box-shadow: 0 0 0 0.2rem rgba(231, 74, 59, 0.15);
+    }
+
+    .search-input-group .form-control {
+        border: none;
+        box-shadow: none;
+    }
+
+    /* Icon Circle */
+    .icon-circle-teacher {
+        height: 38px;
+        width: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fc;
+        color: #d1d3e2;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">My Assigned Courses</h1>
-    <div class="card shadow mb-4">
-        <div class="card-body"><input type="text" id="searchInput" class="form-control" placeholder="Search courses...">
+<div class="container-fluid animate__animated animate__fadeIn">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">My Assigned Courses</h1>
+        <div>
+            <span class="badge badge-danger px-3 py-2 rounded-pill shadow-sm">
+                <i class="fas fa-book mr-1"></i> {{ courses|length }} Active Classes
+            </span>
         </div>
     </div>
 
+    <!-- Search Section -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body py-3">
+            <div class="input-group search-input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text bg-white border-0"><i class="fas fa-search text-gray-400"></i></span>
+                </div>
+                <input type="text" id="searchInput" class="form-control"
+                    placeholder="Search course code, class code, or section...">
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Grid -->
     <div class="row" id="courseGrid">
         {% for course in courses %}
-        <div class="col-xl-4 col-md-6 mb-4 course-card">
-            <div class="card shadow h-100 border-left-danger">
-                <div class="card-header bg-white py-3">
-                    <h6 class="m-0 font-weight-bold text-danger">{{ course.course_code }}</h6>
+        <div class="col-xl-4 col-md-6 mb-4 course-card-container">
+            <div class="card shadow-sm h-100 border-left-danger course-card">
+                <!-- Header with both codes highlighted -->
+                <div
+                    class="card-header bg-white py-3 d-flex flex-row align-items-center justify-content-between border-bottom-0">
+                    <div class="code-badge-container">
+                        <span class="primary-code font-weight-bold text-danger text-uppercase" title="Course Code">
+                            {{ course.course_code }}
+                        </span>
+                        <span class="text-gray-300">|</span>
+                        <span class="primary-code font-weight-bold text-primary text-uppercase" title="Class Code">
+                            {{ course.class_code }}
+                        </span>
+                    </div>
+                    <div class="icon-circle-teacher">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <h5 class="font-weight-bold text-dark">{{ course.course_name }}</h5>
-                    <p class="text-muted small">{{ course.description[:100] }}...</p>
-                    
-                    <!-- Class Details Section -->
+
+                <div class="card-body pt-0">
+                    <h5 class="font-weight-bold text-dark mb-1">{{ course.course_name }}</h5>
+
                     <div class="mb-3">
-                        <span class="badge badge-primary">Class: {{ course.class_code }}</span>
-                        <span class="badge badge-secondary">Section: {{ course.block_name }}</span>
+                        <span class="badge badge-pill badge-section font-weight-bold">
+                            <i class="fas fa-layer-group mr-1"></i> SECTION: {{ course.block_name }}
+                        </span>
                     </div>
 
-                    <hr>
-                    <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('teacher.manage_enrollees', class_code=course.class_code) }}"
-                            class="btn btn-danger btn-sm shadow-sm"><i class="fas fa-users mr-1"></i> Students</a>
-                        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-outline-danger btn-sm"><i
-                                class="fas fa-file-alt mr-1"></i> Exams</a>
+                    <p class="text-muted small mb-4" style="line-height: 1.5;">
+                        {{ course.description[:110] }}{% if course.description|length > 110 %}...{% endif %}
+                    </p>
+
+                    <hr class="mt-auto">
+                    <div class="row no-gutters">
+                        <div class="col-6 pr-1">
+                            <a href="{{ url_for('teacher.manage_enrollees', class_code=course.class_code) }}"
+                                class="btn btn-danger btn-sm btn-block shadow-sm rounded-pill font-weight-bold">
+                                <i class="fas fa-users mr-1"></i> Students
+                            </a>
+                        </div>
+                        <div class="col-6 pl-1">
+                            <a href="{{ url_for('teacher.manage_exams') }}"
+                                class="btn btn-outline-dark btn-sm btn-block rounded-pill font-weight-bold">
+                                <i class="fas fa-file-alt mr-1"></i> Exams
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         {% else %}
         <div class="col-12 text-center py-5">
-            <h4 class="text-gray-500">No courses assigned yet.</h4>
+            <div class="mb-3">
+                <i class="fas fa-folder-open fa-4x text-gray-200"></i>
+            </div>
+            <h4 class="text-gray-500">No classes found.</h4>
+            <p class="small text-muted">You are not currently assigned to any active classes.</p>
         </div>
         {% endfor %}
     </div>
@@ -47,9 +161,18 @@
 
 {% block extra_js %}
 <script>
-    $('#searchInput').on('keyup', function () {
-        var query = $(this).val().toLowerCase();
-        $('.course-card').each(function () { $(this).toggle($(this).text().toLowerCase().indexOf(query) > -1); });
+    $(document).ready(function () {
+        $('#searchInput').on('keyup', function () {
+            var query = $(this).val().toLowerCase();
+            $('.course-card-container').each(function () {
+                var content = $(this).text().toLowerCase();
+                if (content.indexOf(query) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
     });
 </script>
 {% endblock %}

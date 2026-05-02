@@ -5,7 +5,7 @@
 <style>
     /* ── BASE ── */
     body {
-        background-color: #f4f4f2;
+        background-color: #f8f9fc;
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -15,7 +15,7 @@
     #lockdown-overlay {
         position: fixed;
         inset: 0;
-        background: rgba(10, 10, 10, 0.96);
+        background: rgba(30, 30, 45, 0.98);
         z-index: 99999;
         display: flex;
         flex-direction: column;
@@ -27,58 +27,61 @@
     }
 
     #lockdown-overlay .lock-icon {
-        width: 64px;
-        height: 64px;
+        width: 80px;
+        height: 80px;
         border-radius: 50%;
-        background: rgba(239, 80, 80, 0.15);
+        background: rgba(231, 74, 59, 0.1);
         display: flex;
         align-items: center;
         justify-content: center;
+        margin-bottom: 10px;
     }
 
     #lockdown-overlay h2 {
         color: #fff;
-        font-size: 22px;
-        font-weight: 600;
+        font-size: 24px;
+        font-weight: 700;
         margin: 0;
     }
 
     #lockdown-overlay p {
-        color: #b4b2a9;
-        font-size: 15px;
+        color: #aab2bd;
+        font-size: 16px;
         margin: 0;
-        max-width: 380px;
+        max-width: 420px;
         line-height: 1.6;
     }
 
     #lockdown-overlay .btn-enter {
-        margin-top: 8px;
-        padding: 12px 32px;
-        background: #e24b4a;
+        margin-top: 15px;
+        padding: 14px 40px;
+        background: #e74a3b;
         color: #fff;
         border: none;
-        border-radius: 10px;
-        font-size: 15px;
-        font-weight: 600;
+        border-radius: 30px;
+        font-size: 16px;
+        font-weight: 700;
         cursor: pointer;
-        transition: background .15s;
+        transition: all .2s;
+        box-shadow: 0 4px 15px rgba(231, 74, 59, 0.4);
     }
 
     #lockdown-overlay .btn-enter:hover {
-        background: #a32d2d;
+        background: #be2617;
+        transform: translateY(-2px);
     }
 
     /* ── LAYOUT ── */
     .exam-grid {
         display: grid;
-        grid-template-columns: 1fr 320px;
-        gap: 30px;
-        padding: 20px;
-        max-width: 1100px;
+        grid-template-columns: 1fr 340px;
+        gap: 25px;
+        padding: 20px 0;
+        max-width: 1200px;
         margin: 0 auto;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 992px) {
         .exam-grid {
             grid-template-columns: 1fr;
         }
@@ -88,88 +91,44 @@
         }
     }
 
-    /* ── CARD ── */
-    .exam-card {
-        background: #fff;
-        border: 0.5px solid rgba(0, 0, 0, .1);
-        border-radius: 12px;
-        overflow: hidden;
-        position: relative;
-    }
-
     /* ── PROGRESS BAR ── */
-    .progress-bar-track {
-        height: 4px;
-        background: #e5e4e0;
-    }
-
-    .progress-bar-fill {
-        height: 100%;
-        background: #1d9e75;
-        transition: width .4s ease;
+    .progress {
+        height: 8px;
+        border-radius: 0;
+        background-color: #eaecf4;
     }
 
     /* ── CARD HEAD / FOOT ── */
-    .card-head {
-        padding: 14px 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        background: #fff;
-        border-bottom: 0.5px solid rgba(0, 0, 0, .08);
+    .card-header {
+        background-color: #fff;
+        border-bottom: 1px solid #e3e6f0;
     }
 
-    .card-foot {
-        padding: 14px 20px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        flex-wrap: wrap;
-        background: #f9f9f7;
-        border-top: 0.5px solid rgba(0, 0, 0, .08);
+    .card-footer {
+        background-color: #f8f9fc;
+        border-top: 1px solid #e3e6f0;
     }
 
     .q-counter {
-        font-size: 14px;
-        color: #888;
-    }
-
-    .q-counter strong {
-        color: #1a1a1a;
-        font-weight: 600;
+        font-size: 0.9rem;
+        color: #858796;
     }
 
     /* ── FLAG BUTTON ── */
     .btn-flag {
-        font-size: 13px;
-        font-weight: 500;
-        padding: 7px 14px;
-        border-radius: 8px;
-        border: 0.5px solid #ef9f27;
-        background: #faeeda;
-        color: #854f0b;
-        cursor: pointer;
-        transition: background .15s;
-    }
-
-    .btn-flag:hover {
-        background: #fac775;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .btn-flag.active {
-        background: #ef9f27;
+        background-color: #f6c23e;
+        border-color: #f6c23e;
         color: #fff;
-        border-color: #ba7517;
     }
 
     /* ── QUESTION BODY ── */
-    .card-body {
-        padding: 24px 20px;
-        min-height: 320px;
-    }
-
     .question-step {
         display: none;
     }
@@ -178,86 +137,37 @@
         display: block;
     }
 
-    .q-badges {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 14px;
-        flex-wrap: wrap;
-    }
-
-    .badge-difficulty {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 20px;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .badge-difficulty.easy {
-        background: #eaf3de;
-        color: #3b6d11;
-    }
-
-    .badge-difficulty.medium {
-        background: #faeeda;
-        color: #854f0b;
-    }
-
-    .badge-difficulty.hard {
-        background: #fcebeb;
-        color: #a32d2d;
-    }
-
-    .badge-type {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 20px;
-        background: #e6f1fb;
-        color: #185fa5;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
     .q-text {
-        font-size: 17px;
-        font-weight: 500;
-        line-height: 1.55;
-        color: #1a1a1a;
-        margin-bottom: 20px;
-    }
-
-    .q-divider {
-        border: none;
-        border-top: 0.5px solid rgba(0, 0, 0, .08);
-        margin-bottom: 20px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #4e73df;
+        line-height: 1.5;
     }
 
     /* ── RADIO OPTIONS ── */
     .options-wrap {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 12px;
     }
 
     .option-label {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 13px 16px;
-        border-radius: 8px;
-        border: 0.5px solid rgba(0, 0, 0, .12);
+        gap: 15px;
+        padding: 15px 20px;
+        border-radius: 10px;
+        border: 1px solid #d1d3e2;
         cursor: pointer;
-        transition: border-color .15s, background .15s;
-        font-size: 15px;
-        color: #1a1a1a;
+        transition: all .2s;
+        font-size: 1rem;
+        color: #5a5c69;
+        margin-bottom: 0;
     }
 
     .option-label:hover {
-        border-color: #b5d4f4;
-        background: #eef6fd;
+        border-color: #4e73df;
+        background: #f8f9fc;
     }
 
     .option-label input[type="radio"] {
@@ -265,32 +175,33 @@
     }
 
     .radio-custom {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         flex-shrink: 0;
         border-radius: 50%;
-        border: 2px solid rgba(0, 0, 0, .25);
+        border: 2px solid #d1d3e2;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: border-color .15s, background .15s;
+        transition: all .2s;
     }
 
     .option-label:has(input:checked) {
-        border-color: #378add;
-        background: #eef6fd;
-        font-weight: 500;
+        border-color: #4e73df;
+        background: #ebf0fe;
+        color: #2e59d9;
+        font-weight: 700;
     }
 
     .option-label:has(input:checked) .radio-custom {
-        border-color: #378add;
-        background: #378add;
+        border-color: #4e73df;
+        background: #4e73df;
     }
 
     .option-label:has(input:checked) .radio-custom::after {
         content: '';
-        width: 6px;
-        height: 6px;
+        width: 8px;
+        height: 8px;
         border-radius: 50%;
         background: #fff;
     }
@@ -298,110 +209,59 @@
     /* ── TEXT INPUT ── */
     .id-input {
         width: 100%;
-        padding: 11px 14px;
-        font-size: 15px;
-        border: 0.5px solid rgba(0, 0, 0, .2);
-        border-left: 3px solid #378add;
-        border-radius: 8px;
+        padding: 15px;
+        font-size: 1rem;
+        border: 1px solid #d1d3e2;
+        border-left: 5px solid #4e73df;
+        border-radius: 10px;
         background: #fff;
-        color: #1a1a1a;
+        color: #5a5c69;
         outline: none;
-        transition: box-shadow .15s;
+        transition: all .2s;
     }
 
     .id-input:focus {
-        box-shadow: 0 0 0 3px rgba(55, 138, 221, .14);
-        border-color: #378add;
-    }
-
-    .id-label {
-        font-size: 13px;
-        font-weight: 500;
-        color: #666;
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    /* ── NAV BUTTONS ── */
-    .btn-nav {
-        font-size: 14px;
-        font-weight: 500;
-        padding: 10px 22px;
-        border-radius: 8px;
-        border: 0.5px solid rgba(0, 0, 0, .18);
-        background: #fff;
-        color: #1a1a1a;
-        cursor: pointer;
-        transition: background .15s;
-    }
-
-    .btn-nav:hover:not(:disabled) {
-        background: #f4f4f2;
-    }
-
-    .btn-nav:disabled {
-        opacity: .4;
-        cursor: not-allowed;
-    }
-
-    .btn-nav-primary {
-        background: #378add;
-        color: #fff;
-        border-color: #378add;
-    }
-
-    .btn-nav-primary:hover:not(:disabled) {
-        background: #185fa5;
-        border-color: #185fa5;
-    }
-
-    .btn-nav-success {
-        background: #1d9e75;
-        color: #fff;
-        border-color: #1d9e75;
-    }
-
-    .btn-nav-success:hover:not(:disabled) {
-        background: #0f6e56;
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.1);
     }
 
     /* ── VIOLATION BANNER ── */
     #violation-banner {
         display: none;
-        background: #fcebeb;
-        color: #a32d2d;
-        border: 0.5px solid #f09595;
+        background: #e74a3b;
+        color: #fff;
         border-radius: 8px;
-        padding: 10px 16px;
-        font-size: 13px;
+        padding: 12px 20px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 10px rgba(231, 74, 59, 0.3);
     }
 
     /* ── SIDEBAR: TIMER ── */
     .timer-section {
-        padding: 18px;
+        padding: 20px;
         text-align: center;
-        border-bottom: 0.5px solid rgba(0, 0, 0, .08);
+        background: #fff;
     }
 
     .timer-label {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: .07em;
+        font-size: 0.7rem;
+        font-weight: 800;
         text-transform: uppercase;
-        color: #a32d2d;
-        margin-bottom: 4px;
+        letter-spacing: 1px;
+        color: #e74a3b;
+        margin-bottom: 5px;
     }
 
     .timer-value {
-        font-size: 36px;
-        font-weight: 600;
-        letter-spacing: .04em;
-        font-variant-numeric: tabular-nums;
-        color: #1a1a1a;
+        font-size: 40px;
+        font-weight: 700;
+        color: #5a5c69;
     }
 
     .timer-value.warning {
-        color: #a32d2d;
+        color: #e74a3b;
         animation: blink 1s infinite;
     }
 
@@ -413,40 +273,28 @@
         }
 
         50% {
-            opacity: .45;
+            opacity: 0.5;
         }
     }
 
     /* ── SIDEBAR: MAP ── */
-    .map-section-header {
-        padding: 10px 16px;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: .05em;
-        color: #888;
-        border-bottom: 0.5px solid rgba(0, 0, 0, .08);
-    }
-
     .map-grid {
         display: grid;
-        grid-template-columns: repeat(5, 38px);
-        justify-content: center;
-        gap: 8px;
-        padding: 16px;
-        max-height: 260px;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        padding: 20px;
+        max-height: 300px;
         overflow-y: auto;
     }
 
     .q-indicator {
-        width: 40px;
-        height: 40px;
+        aspect-ratio: 1/1;
         border-radius: 8px;
-        border: 0.5px solid rgba(0, 0, 0, .15);
+        border: 1px solid #d1d3e2;
         background: #fff;
-        color: #888;
-        font-size: 13px;
-        font-weight: 600;
+        color: #858796;
+        font-size: 0.85rem;
+        font-weight: 700;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -455,62 +303,28 @@
     }
 
     .q-indicator:hover {
-        border-color: #378add;
-        color: #378add;
+        border-color: #4e73df;
+        color: #4e73df;
     }
 
     .q-indicator.active {
-        border: 2px solid #378add;
-        color: #378add;
-        background: #eef6fd;
+        border: 2px solid #4e73df;
+        color: #4e73df;
+        background: #f8f9fc;
         transform: scale(1.1);
+        z-index: 2;
     }
 
     .q-indicator.answered {
-        background: #1d9e75 !important;
+        background: #1cc88a !important;
         color: #fff !important;
-        border-color: #0f6e56 !important;
+        border-color: #1cc88a !important;
     }
 
     .q-indicator.flagged {
-        background: #ef9f27 !important;
+        background: #f6c23e !important;
         color: #fff !important;
-        border-color: #ba7517 !important;
-    }
-
-    .q-indicator.answered.active,
-    .q-indicator.flagged.active {
-        box-shadow: 0 0 0 2px #378add;
-    }
-
-    .map-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 10px 14px;
-        border-top: 0.5px solid rgba(0, 0, 0, .08);
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 12px;
-        color: #888;
-    }
-
-    .legend-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 3px;
-    }
-
-    .map-footer {
-        padding: 10px 16px;
-        font-size: 12px;
-        color: #999;
-        text-align: center;
-        border-top: 0.5px solid rgba(0, 0, 0, .08);
+        border-color: #f6c23e !important;
     }
 </style>
 {% endblock %}
@@ -519,119 +333,148 @@
 <!-- LOCKDOWN OVERLAY -->
 <div id="lockdown-overlay">
     <div class="lock-icon">
-        <i class="fas fa-lock fa-2x text-danger"></i>
+        <i class="fas fa-shield-alt fa-3x text-danger"></i>
     </div>
-    <h2>Security Lockdown</h2>
-    <p>Fullscreen is required to take this exam. Exiting fullscreen or switching tabs will be logged as a violation.</p>
+    <h2>Examination Secure Environment</h2>
+    <p>Fullscreen mode is required to proceed. Exiting fullscreen or switching tabs will be logged as a security
+        violation.</p>
     <button class="btn-enter" onclick="startLockdown()">
-        <i class="fas fa-expand mr-2"></i> Enter fullscreen &amp; begin
+        <i class="fas fa-expand mr-2"></i> Activate Lockdown & Begin
     </button>
 </div>
 
-<div class="exam-grid animate__animated animate__fadeIn">
+<div class="container-fluid">
+    <div class="exam-grid animate__animated animate__fadeIn">
 
-    <!-- LEFT: QUESTION AREA -->
-    <div style="display:flex; flex-direction:column; gap:12px;">
-        <div id="violation-banner">
-            ⚠ Violation logged — please stay in fullscreen mode.
+        <!-- LEFT: QUESTION AREA -->
+        <div class="d-flex flex-column">
+            <div id="violation-banner">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Security violation detected! Please remain in
+                fullscreen.
+            </div>
+
+            <div class="card shadow mb-4 overflow-hidden border-left-primary">
+                <div class="progress">
+                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" id="progress-fill"
+                        style="width:0%"></div>
+                </div>
+
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <span class="q-counter">Question <span id="q-idx-text">1</span> of {{ questions|length }}</span>
+                    </h6>
+                    <button class="btn btn-sm btn-outline-warning btn-flag rounded-pill" id="btn-flag">
+                        <i class="fas fa-flag mr-1"></i> Flag for review
+                    </button>
+                </div>
+
+                <div class="card-body" style="min-height: 350px;">
+                    <form id="exam-form" action="{{ url_for('student.submit_exam', attempt_id=attempt_id) }}"
+                        method="POST">
+                        {% for q in questions %}
+                        <div class="question-step" id="step-{{ loop.index0 }}" data-q-id="{{ q.question_id }}"
+                            data-q-type="{{ q.question_type }}">
+
+                            <div class="q-badges mb-3">
+                                <span
+                                    class="badge badge-pill {% if q.difficulty == 'easy' %}badge-success{% elif q.difficulty == 'medium' %}badge-warning{% else %}badge-danger{% endif %} text-uppercase px-3">
+                                    {{ q.difficulty }}
+                                </span>
+                                <span class="badge badge-pill badge-secondary text-uppercase px-3 ml-1">
+                                    {{ q.question_type.replace('_',' ') }}
+                                </span>
+                            </div>
+
+                            <p class="q-text mb-4">{{ q.question_text }}</p>
+                            <hr class="mb-4">
+
+                            {% if q.question_type in ['multiple_choice', 'true_false'] %}
+                            <div class="options-wrap">
+                                {% for opt in q.options %}
+                                <label class="option-label">
+                                    <input type="radio" name="question_{{ q.question_id }}"
+                                        value="{{ opt.option_text }}" class="ajax-save" {% if
+                                        q.saved_answer==opt.option_text %}checked{% endif %}>
+                                    <span class="radio-custom"></span>
+                                    {{ opt.option_text }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-dark text-uppercase mb-2">Your Answer:</label>
+                                <input type="text" name="question_{{ q.question_id }}" class="id-input ajax-save"
+                                    placeholder="Type your response here..." value="{{ q.saved_answer }}"
+                                    autocomplete="off">
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </form>
+                </div>
+
+                <div class="card-footer py-3">
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-secondary px-4 rounded-pill font-weight-bold" id="btn-prev">
+                            <i class="fas fa-chevron-left mr-2"></i> Previous
+                        </button>
+                        <button class="btn btn-primary px-4 rounded-pill font-weight-bold" id="btn-next">
+                            Next Question <i class="fas fa-chevron-right ml-2"></i>
+                        </button>
+                        <button class="btn btn-success px-4 rounded-pill font-weight-bold" id="btn-submit"
+                            style="display:none" onclick="confirmFinalSubmit()">
+                            <i class="fas fa-check-double mr-2"></i> Finalize & Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="exam-card">
-            <div class="progress-bar-track">
-                <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
-            </div>
+        <!-- RIGHT: SIDEBAR -->
+        <div class="exam-sidebar">
+            <div class="card shadow mb-4">
+                <div class="timer-section">
+                    <div class="timer-label">Time Remaining</div>
+                    <div class="timer-value" id="timer">00:00</div>
+                </div>
 
-            <div class="card-head">
-                <span class="q-counter">Question <strong id="q-idx-text">1</strong> of {{ questions|length }}</span>
-                <button class="btn-flag" id="btn-flag">
-                    <i class="fas fa-flag mr-1"></i> Flag for review
-                </button>
-            </div>
-
-            <div class="card-body">
-                <form id="exam-form" action="{{ url_for('student.submit_exam', attempt_id=attempt_id) }}" method="POST">
+                <div class="card-header py-3 bg-light border-top border-bottom">
+                    <h6 class="m-0 font-weight-bold text-dark small text-uppercase">Question Map</h6>
+                </div>
+                <div class="map-grid">
                     {% for q in questions %}
-                    <div class="question-step" id="step-{{ loop.index0 }}" data-q-id="{{ q.question_id }}"
-                        data-q-type="{{ q.question_type }}">
-
-                        <div class="q-badges">
-                            <span class="badge-difficulty {{ q.difficulty|lower }}">{{ q.difficulty }}</span>
-                            <span class="badge-type">{{ q.question_type.replace('_',' ') }}</span>
-                        </div>
-
-                        <p class="q-text">{{ q.question_text }}</p>
-                        <hr class="q-divider">
-
-                        {% if q.question_type in ['multiple_choice', 'true_false'] %}
-                        <div class="options-wrap">
-                            {% for opt in q.options %}
-                            <label class="option-label">
-                                <input type="radio" name="question_{{ q.question_id }}" value="{{ opt.option_text }}"
-                                    class="ajax-save" {% if q.saved_answer==opt.option_text %}checked{% endif %}>
-                                <span class="radio-custom"></span>
-                                {{ opt.option_text }}
-                            </label>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <label class="id-label">Type your answer:</label>
-                        <input type="text" name="question_{{ q.question_id }}" class="id-input ajax-save"
-                            placeholder="Type answer..." value="{{ q.saved_answer }}" autocomplete="off">
-                        {% endif %}
+                    <div class="q-indicator
+                                {% if q.saved_answer %}answered{% endif %}
+                                {% if q.is_flagged %}flagged{% endif %}" id="map-{{ loop.index0 }}"
+                        onclick="jumpTo({{ loop.index0 }})">
+                        {{ loop.index }}
                     </div>
                     {% endfor %}
-                </form>
-            </div>
+                </div>
 
-            <div class="card-foot">
-                <button class="btn-nav" id="btn-prev">← Previous</button>
-                <button class="btn-nav btn-nav-primary" id="btn-next">Next question →</button>
-                <button class="btn-nav btn-nav-success" id="btn-submit" style="display:none"
-                    onclick="confirmFinalSubmit()">
-                    <i class="fas fa-check-double mr-1"></i> Finalize &amp; submit
-                </button>
+                <div class="card-footer small">
+                    <div class="d-flex flex-wrap" style="gap: 10px;">
+                        <div class="d-flex align-items-center">
+                            <div style="width: 12px; height: 12px; background:#1cc88a; border-radius: 2px;"
+                                class="mr-2"></div> Answered
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div style="width: 12px; height: 12px; background:#f6c23e; border-radius: 2px;"
+                                class="mr-2"></div> Flagged
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div style="width: 12px; height: 12px; background:#fff; border: 1px solid #d1d3e2; border-radius: 2px;"
+                                class="mr-2"></div> Empty
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center text-muted font-italic">
+                        <i class="fas fa-cloud-upload-alt mr-1"></i> Auto-saving progress...
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
-    <!-- RIGHT: SIDEBAR -->
-    <div class="exam-sidebar" style="display:flex; flex-direction:column; gap:16px;">
-        <div class="exam-card">
-            <div class="timer-section">
-                <div class="timer-label">Time remaining</div>
-                <div class="timer-value" id="timer">00:00</div>
-            </div>
-
-            <div class="map-section-header">Question map</div>
-            <div class="map-grid">
-                {% for q in questions %}
-                <div class="q-indicator
-                            {% if q.saved_answer %}answered{% endif %}
-                            {% if q.is_flagged %}flagged{% endif %}" id="map-{{ loop.index0 }}"
-                    onclick="jumpTo({{ loop.index0 }})">
-                    {{ loop.index }}
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="map-legend">
-                <div class="legend-item">
-                    <div class="legend-dot" style="background:#1d9e75;"></div> Answered
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background:#ef9f27;"></div> Flagged
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot" style="background:#e0e0da; border:0.5px solid #bbb;"></div> Unanswered
-                </div>
-            </div>
-
-            <div class="map-footer">
-                <i class="fas fa-save mr-1"></i> Answers save automatically
-            </div>
-        </div>
-    </div>
-
 </div>
 {% endblock %}
 
@@ -640,29 +483,30 @@
     $(document).ready(function () {
         "use strict";
 
-        function shuffleOptions() {
-            $('.options-wrap').each(function () {
-                var container = $(this);
-                var options = container.children('.option-label').get();
-
-                for (var i = options.length - 1; i > 0; i--) {
-                    var j = Math.floor(Math.random() * (i + 1));
-                    var temp = options[i];
-                    options[i] = options[j];
-                    options[j] = temp;
-                }
-
-                $.each(options, function (index, item) {
-                    container.append(item);
-                });
-            });
-        }
-
-        let currentIdx = {{ current_q }};
-
-    const totalQ = {{ questions| length }};
+        const totalQ = {{ questions| length
+    }};
     let timeLeft = {{ remaining_seconds }};
+    let currentIdx = {{ current_q }};
     let isUnloading = false;
+
+    // SHUFFLE FUNCTION: Randomizes position of multiple choice options
+    function shuffleOptions() {
+        $('.options-wrap').each(function () {
+            var container = $(this);
+            var options = container.children('.option-label').get();
+
+            for (var i = options.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = options[i];
+                options[i] = options[j];
+                options[j] = temp;
+            }
+
+            $.each(options, function (index, item) {
+                container.append(item);
+            });
+        });
+    }
 
     /* ── LOCKDOWN ── */
     window.startLockdown = function () {
@@ -690,7 +534,7 @@
         const s = timeLeft % 60;
         const $t = $('#timer');
         $t.text(String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'));
-        $t.toggleClass('warning', timeLeft < 300);
+        if (timeLeft < 300) $t.addClass('warning');
     }
     renderTimer();
 
@@ -838,7 +682,7 @@
     };
 
     /* ── INIT ── */
-    shuffleOptions(); // Run shuffle once on page load
+    shuffleOptions();
     if (!document.fullscreenElement) $('#lockdown-overlay').show();
     showStep(currentIdx);
     updateProgressBar();
