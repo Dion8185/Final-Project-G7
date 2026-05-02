@@ -615,7 +615,7 @@ def manage_enrollees(class_code):
         cursor.close()
         connection.close()
         
-    return render_template('teacher_enrollees.html', class_code=class_code, enrollees=enrollees)
+    return render_template('teacher_enrollees.html', class_code=class_code, enrollees=enrollees )
 
 #! 6. MONITORING & RESULTS
 @teacher.route('/student_monitor')
