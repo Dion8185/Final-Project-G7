@@ -17,10 +17,23 @@
         <div class="card shadow-sm border-0">
             <div class="card-body py-3 d-flex align-items-center overflow-auto">
                 <span class="small font-weight-bold text-muted text-uppercase mr-4">Quick Actions:</span>
-                <a href="{{ url_for('admin.add_user') }}" class="btn btn-sm btn-light border mr-2 text-nowrap"><i class="fas fa-user-plus mr-1 text-primary"></i> Create User</a>
-                <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-sm btn-light border mr-2 text-nowrap"><i class="fas fa-layer-group mr-1 text-success"></i> New Block</a>
-                <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-light border mr-2 text-nowrap"><i class="fas fa-calendar-plus mr-1 text-info"></i> Schedule Class</a>
-                <a href="{{ url_for('admin.view_verifications') }}" class="btn btn-sm btn-light border text-nowrap"><i class="fas fa-user-check mr-1 text-warning"></i> Verify Requests</a>
+                
+                <!-- ACTIONS FOR ALL ADMINS (Academic Operations) -->
+                <a href="{{ url_for('admin.manage_programs') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
+                    <i class="fas fa-graduation-cap mr-1 text-primary"></i> Programs
+                </a>
+                <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
+                    <i class="fas fa-layer-group mr-1 text-success"></i> New Block
+                </a>                
+                <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
+                    <i class="fas fa-book mr-1 text-secondary"></i> Subject Catalog
+                </a>
+                <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
+                    <i class="fas fa-calendar-plus mr-1 text-info"></i> Schedule Class
+                </a>
+                <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
+                    <i class="fas fa-desktop mr-1 text-danger"></i> Monitor Exams
+                </a>
             </div>
         </div>
     </div>

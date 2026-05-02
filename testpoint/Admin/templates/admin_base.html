@@ -34,7 +34,10 @@
         transition: width 0.2s ease-in-out !important; 
     }
 
-    /* Chevron Rotation Logic */
+    .collapse {
+        transition: height 0.15s ease-out;
+    }
+
     .dropdown-chevron {
         transition: transform 0.3s ease;
         opacity: 0.5;
@@ -187,6 +190,36 @@
                 $(".sidebar").toggleClass("toggled");
             });
         })(jQuery);
+    </script>
+    <script>
+    $(document).ready(function() {
+        // 1. RESTORE STATE ON LOAD
+        // Loop through each collapse element in the sidebar
+        $('#accordionSidebar .collapse').each(function() {
+            var id = $(this).attr('id');
+            var state = localStorage.getItem('sidebar_' + id);
+
+            if (state === 'show') {
+                // Add the 'show' class to the accordion content
+                $(this).addClass('show');
+                // Remove 'collapsed' class from the trigger link and set aria-expanded
+                $('[data-target="#' + id + '"]').removeClass('collapsed').attr('aria-expanded', 'true');
+            }
+        });
+
+        // 2. SAVE STATE ON CHANGE
+        // Listen for when a section is shown
+        $('#accordionSidebar .collapse').on('shown.bs.collapse', function() {
+            var id = $(this).attr('id');
+            localStorage.setItem('sidebar_' + id, 'show');
+        });
+
+        // Listen for when a section is hidden
+        $('#accordionSidebar .collapse').on('hidden.bs.collapse', function() {
+            var id = $(this).attr('id');
+            localStorage.removeItem('sidebar_' + id);
+        });
+    });
     </script>
     {% block scripts %}{% endblock %}
 </body>

@@ -21,7 +21,6 @@
             </div>
             <i class="fas fa-chevron-down fa-xs dropdown-chevron"></i>
         </a>
-        <!-- Removed data-parent to allow independent opening -->
         <div id="collapseUsers" class="collapse" aria-labelledby="headingTwo">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">User Controls:</h6>
@@ -70,9 +69,9 @@
 
     <hr class="sidebar-divider">
 
+    <!-- Section 4: Maintenance (RESTRICTED TO SUPER ADMIN) -->
+    {% if session.get('role') == 'super_admin' %}
     <div class="sidebar-heading">System</div>
-
-    <!-- Section 4: Maintenance -->
     <li class="nav-item">
         <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseSystem" aria-expanded="false" aria-controls="collapseSystem">
             <div>
@@ -84,14 +83,15 @@
         <div id="collapseSystem" class="collapse">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Utility:</h6>
-                <a class="collapse-item" href="{{url_for('admin.user_logs')}}">Activity Logs</a>
-                <a class="collapse-item" href="{{url_for('admin.settings')}}">Config Settings</a>
+                <a class="collapse-item" href="{{url_for('admin.user_logs')}}">Account Logs</a>
             </div>
         </div>
     </li>
 
-    <hr class="sidebar-divider d-none d-md-block">
+    <hr class="sidebar-divider d-none d-md-block"> 
+    {% endif %}
 
+    <!-- Sidebar Toggler -->
     <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
     </div>

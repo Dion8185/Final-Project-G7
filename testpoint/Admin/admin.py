@@ -10,6 +10,7 @@ admin = Blueprint('admin', __name__, template_folder='templates', static_folder=
 
 @admin.route('/admin_dashboard')
 def admin_dashboard():
+    print(f"DEBUG: Current User Role is {session.get('role')}")
     if admin_logged_in():
         firstname = session.get('firstname')
         connection = mysql.connector.connect(**db_config)
@@ -92,8 +93,8 @@ def admin_dashboard():
 #! 1. MANAGE ACCOUNTS (Modified to handle Blocks)
 @admin.route('/manage_accounts' )
 def manage_accounts():
-    if admin_logged_in():
-        firstname = session.get('firstname') 
+    if admin_logged_in():    
+        firstname = session.get('firstname')  
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         cursor.execute(""" SELECT 
@@ -273,6 +274,11 @@ def restore_account(user_id):
 @admin.route('/delete_account_permanently/<string:user_id>', methods=['POST'])
 def delete_account_permanently(user_id):
     if admin_logged_in():
+        # Protection
+        if session.get('role') != 'super_admin':
+            flash('Unauthorized action.', 'danger')
+            return redirect(url_for('admin.admin_dashboard'))
+
         connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
         cursor.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
         connection.commit(); cursor.close(); connection.close()
