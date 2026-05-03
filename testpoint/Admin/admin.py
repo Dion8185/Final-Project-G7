@@ -1024,7 +1024,7 @@ def view_verifications():
     
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM pending_users WHERE verification_status = 'pending_approval' OR verification_status = 'pending_upload' ORDER BY created_at DESC")
+    cursor.execute("SELECT * FROM pending_users ORDER BY created_at DESC")
     pending_list = cursor.fetchall()
     
     cursor.close()

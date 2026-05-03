@@ -142,41 +142,34 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
+<script src="{{ url_for('static', filename='js/paginator.js') }}"></script>
 
 <script>
-    // ── Paginator ──────────────────────────────────────────────────────
-    const allRows = Array.from(document.querySelectorAll('#verificationTable tbody tr'));
-    const filteredRows = [...allRows];
+$(document).ready(function() {
+    console.log("Admin Verifications script loaded.");
 
-    const paginator = createPaginator({
-        tableBodySelector  : 'tbody',
-        paginationSelector : '#verifications-pagination',
-        rowsPerPage        : 10,
-        getVisibleRows     : () => filteredRows,
-    });
-
-    paginator.render();
-
-    // --- APPROVAL LOGIC ---
-    function approveUser(id, name) {
-        if (confirm("Are you sure you want to approve " + name + "? This will activate their account.")) {
-            fetch("{{ url_for('auth.approve_user', pending_id=0) }}".replace('0', id), { method: "POST" })
+    // --- 1. MODAL & ACTION FUNCTIONS (Defined globally) ---
+    window.approveUser = function(id, name) {
+        if (confirm("Approve " + name + "?")) {
+            fetch("{{ url_for('auth.approve_user', pending_id=999) }}".replace('999', id), { method: "POST" })
             .then(res => res.json())
-            .then(data => {
-                if (data.message) { location.reload(); } 
-                else { alert("Error: " + data.error); }
-            });
+            .then(data => { location.reload(); });
         }
-    }
+    };
 
-    // --- RESUBMIT LOGIC ---
-    function openResubmitModal(id, name) {
+    window.openResubmitModal = function(id, name) {
         $('#resubmit_id').val(id);
         $('#resubmit_name').text(name);
         $('#resubmitModal').modal('show');
-    }
+    };
 
+    window.openRejectModal = function(id, name) {
+        $('#reject_id').val(id);
+        $('#reject_name').text(name);
+        $('#rejectModal').modal('show');
+    };
+
+    // Form Submissions
     $('#resubmitForm').on('submit', function(e) {
         e.preventDefault();
         const id = $('#resubmit_id').val();
@@ -184,18 +177,11 @@
         fd.append('reason', $('#resubmit_reason').val());
         fd.append('notes', $('#resubmit_notes').val());
 
-        fetch("{{ url_for('auth.resubmit_user', pending_id=0) }}".replace('0', id), {
+        fetch("{{ url_for('auth.resubmit_user', pending_id=999) }}".replace('999', id), {
             method: "POST",
             body: fd
         }).then(() => location.reload());
     });
-
-    // --- REJECTION LOGIC ---
-    function openRejectModal(id, name) {
-        $('#reject_id').val(id);
-        $('#reject_name').text(name);
-        $('#rejectModal').modal('show');
-    }
 
     $('#rejectForm').on('submit', function(e) {
         e.preventDefault();
@@ -204,10 +190,25 @@
         fd.append('reason', $('#reject_reason').val());
         fd.append('notes', $('#reject_notes').val());
 
-        fetch("{{ url_for('auth.reject_user', pending_id=0) }}".replace('0', id), {
+        fetch("{{ url_for('auth.reject_user', pending_id=999) }}".replace('999', id), {
             method: "POST",
             body: fd
         }).then(() => location.reload());
     });
+
+    // --- 2. PAGINATOR (Wrapped in Try/Catch to prevent crashes) ---
+    try {
+        const allRows = Array.from(document.querySelectorAll('#verifyTable tbody tr'));
+        const paginator = createPaginator({
+            tableBodySelector  : '#verifyTable tbody',
+            paginationSelector : '#verify-pagination', // Matches the ID in your HTML
+            rowsPerPage        : 10,
+            getVisibleRows     : () => allRows,
+        });
+        if (paginator) paginator.render();
+    } catch (err) {
+        console.warn("Paginator Error (ignoring):", err);
+    }
+});
 </script>
 {% endblock %}
