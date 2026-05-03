@@ -86,6 +86,12 @@
         font-size: 14px;
         line-height: 36px;
     }
+
+    /* Publish Option Styles */
+    .publish-item:hover {
+        background-color: #f8f9fc;
+        cursor: pointer;
+    }
 </style>
 {% endblock %}
 
@@ -183,7 +189,7 @@
                                 </div>
                                 <div class="col border-top pt-2">
                                     <small class="text-muted d-block text-uppercase font-weight-bold"
-                                        style="font-size: 0.65rem;">Serve</small>
+                                        style="font-size: 0.65rem;">Question Limit</small>
                                     <span class="text-danger font-weight-bold">{{ exam.question_limit }}</span>
                                 </div>
                             </div>
@@ -195,6 +201,7 @@
                                 {{ exam.date_time.strftime('%b %d, %Y • %I:%M %p') if exam.date_time else 'Unscheduled'
                                 }}
                             </span>
+                            <span class="ml-auto badge badge-light border">Class: {{ exam.class_code }}</span>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
@@ -206,6 +213,14 @@
                                 }}
                             </a>
                             <div class="d-flex" style="gap: 5px;">
+                                <!-- PUBLISH BUTTON -->
+                                <button class="btn btn-light btn-circle-lg text-info shadow-sm border"
+                                    data-toggle="modal" data-target="#publishExamModal" data-id="{{ exam.exam_id }}"
+                                    data-title="{{ exam.title }}" data-coursecode="{{ exam.course_code }}"
+                                    data-classcode="{{ exam.class_code }}" title="Publish to Other Classes">
+                                    <i class="fas fa-share-square"></i>
+                                </button>
+
                                 <a href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}"
                                     class="btn btn-light btn-circle-lg text-primary shadow-sm border"
                                     title="View Results">
@@ -221,7 +236,7 @@
                                     </button>
                                 </form>
 
-                                <button class="btn btn-light btn-circle-lg text-info shadow-sm border"
+                                <button class="btn btn-light btn-circle-lg text-secondary shadow-sm border"
                                     data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}" title="Settings">
                                     <i class="fas fa-cog"></i>
                                 </button>
@@ -239,6 +254,38 @@
         </div>
     </div>
     {% endfor %}
+</div>
+
+<!-- PUBLISH MODAL -->
+<div class="modal fade" id="publishExamModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-share-square mr-2"></i>Publish to Choices</h5>
+                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <form action="{{ url_for('teacher.publish_exam_to_classes') }}" method="POST">
+                <input type="hidden" name="source_exam_id" id="pubSourceId">
+                <div class="modal-body">
+                    <p class="small text-muted">Select other classes of this course where you want to publish <b><span
+                                id="pubExamTitle"></span></b>.</p>
+                    <div id="targetClassList" class="list-group">
+                        <!-- Dynamic Checkboxes -->
+                    </div>
+                    <div id="noOtherClasses" class="text-center py-4 d-none">
+                        <i class="fas fa-info-circle text-muted fa-2x mb-2"></i>
+                        <p class="small text-muted">No other classes found for this course.</p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary btn-sm px-4 rounded-pill" data-dismiss="modal"
+                        type="button">Cancel</button>
+                    <button class="btn btn-info btn-sm px-4 rounded-pill" type="submit" id="pubSubmitBtn">Publish
+                        Exam</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- CREATE EXAM MODAL -->
@@ -280,7 +327,7 @@
                             <input type="number" name="pass_percentage" class="form-control" value="75">
                         </div>
                         <div class="col-4">
-                            <label class="small font-weight-bold text-uppercase text-danger">Serve Qty</label>
+                            <label class="small font-weight-bold text-uppercase text-danger">Question Limit</label>
                             <input type="number" name="question_limit" class="form-control" value="50" min="1">
                         </div>
                     </div>
@@ -398,24 +445,85 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function () {
+ $(document).ready(function () {
+        // 1. Full list of classes passed from Flask
+        const teacherClasses = [
+            {% for c in classes %}
+            { code: "{{ c.class_code }}", course: "{{ c.course_code }}", block: "{{ c.block_name }}", name: "{{ c.course_name }}" },
+            {% endfor %}
+        ];
+
+        // 2. Map of existing exams (to prevent the loop)
+        // We store which Class Codes already have which Exam Titles
+        const existingExams = [
+            {% for e in exams %}
+            { class_code: "{{ e.class_code }}", title: "{{ e.title }}" },
+            {% endfor %}
+        ];
+
+        // Search Filter Logic
         $('#searchInput').on('keyup', function () {
             var val = $(this).val().toLowerCase();
             $('.exam-item').each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
             });
-
             $('.course-section').each(function () {
                 var visibleItems = $(this).find('.exam-item:visible').length;
                 $(this).toggle(visibleItems > 0);
             });
         });
 
+        // Delete Modal logic
         $('#deleteExamModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
             $('#delExamTitle').text(btn.data('title'));
             var action = "{{ url_for('teacher.soft_delete_exam', exam_id='0') }}".replace('0', btn.data('id'));
             $('#deleteExamForm').attr('action', action);
+        });
+
+        // PUBLISH MODAL DYNAMIC FILTERING (THE FIX)
+        $('#publishExamModal').on('show.bs.modal', function (event) {
+            const btn = $(event.relatedTarget);
+            const sourceId = btn.data('id');
+            const sourceTitle = btn.data('title');
+            const courseCode = btn.data('coursecode');
+            const currentClass = btn.data('classcode');
+
+            $('#pubSourceId').val(sourceId);
+            $('#pubExamTitle').text(sourceTitle);
+            
+            const listContainer = $('#targetClassList').empty();
+            let count = 0;
+
+            teacherClasses.forEach(c => {
+                // RULE 1: Must be the same course
+                // RULE 2: Must not be the source class itself
+                // RULE 3: The target class must NOT already have an exam with this title (Prevents the Loop)
+                const alreadyHasThisExam = existingExams.some(e => e.class_code === c.code && e.title === sourceTitle);
+
+                if(c.course === courseCode && c.code !== currentClass && !alreadyHasThisExam) {
+                    count++;
+                    listContainer.append(`
+                        <label class="list-group-item publish-item d-flex align-items-center mb-1 rounded border">
+                            <input type="checkbox" name="target_class_codes[]" value="${c.code}" class="mr-3">
+                            <div>
+                                <span class="d-block font-weight-bold text-dark">Class Code: ${c.code}</span>
+                                <span class="small text-muted">Block: ${c.block}</span>
+                            </div>
+                        </label>
+                    `);
+                }
+            });
+
+            if (count === 0) {
+                $('#targetClassList').addClass('d-none');
+                $('#noOtherClasses').removeClass('d-none');
+                $('#pubSubmitBtn').prop('disabled', true);
+            } else {
+                $('#targetClassList').removeClass('d-none');
+                $('#noOtherClasses').addClass('d-none');
+                $('#pubSubmitBtn').prop('disabled', false);
+            }
         });
     });
 </script>

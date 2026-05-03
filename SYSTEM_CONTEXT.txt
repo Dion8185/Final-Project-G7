@@ -1,0 +1,240 @@
+Final Project G7 - System Context Overview
+============================================
+
+Project Root: Final-Project-G7
+
+This project is a Flask-based online examination and user management system named TestPoint. It is built with Python and MySQL, using Flask Blueprints to separate functionality for authentication, student users, teacher users, and admin users.
+
+---
+
+1. Entry Point and Application Factory
+--------------------------------------
+
+app.py
+------
+- Imports Flask, redirect, url_for.
+- Imports create_app() from testpoint.__init__.
+- Creates the Flask app by calling create_app().
+- Defines a root route ('/') that redirects to the authentication login page.
+- Adds an after_request handler to force no-cache headers on every response. This helps prevent browser caching of pages after logout or during sensitive sessions.
+- Runs the app in debug mode on port 5000 when invoked directly.
+
+---
+
+2. Core Package Initialization
+------------------------------
+
+testpoint/__init__.py
+----------------------
+- Uses dotenv to load environment variables from testpoint/passwordDB.env.
+- Reads DBPASSWORD, GMAILPASS, and GMAIL.
+- Configures the MySQL connection settings for database host, user, password, database name (test_point), and auth plugin.
+- Configures Flask-Mail with Gmail SMTP settings and initializes the mail extension.
+- Creates the Flask app, sets a secret key, and registers four blueprints:
+  - auth from testpoint.Auth.login
+  - admin from testpoint.Admin.admin with prefix /admin
+  - teacher from testpoint.Teacher.teacher with prefix /teacher
+  - student from testpoint.Student.student with prefix /student
+
+This means the system is structured as a modular multi-role web application.
+
+---
+
+3. Authentication Module
+------------------------
+
+File: testpoint/Auth/login.py
+
+Features:
+- Login for admin, student, teacher, and pending users.
+- Registration flows for student and teacher.
+- Email OTP verification for registrations.
+- Document upload for pending users requiring verification.
+- Password reset and OTP-based reset flow.
+- Rate limiting logic for resending OTPs.
+- Uses session variables extensively to track login state, role, and verification progress.
+- Uses Werkzeug password hashing for secure password storage and checking.
+- Defines helper validators for names and email format.
+- Defines helper functions:
+  - generate_id(role_prefix): creates sequential user IDs like S26-0001, T26-0001, A26-0001.
+  - generate_unique_otp() to create 6-digit codes.
+  - send_otp_email() and send_reset_otp_email() to send styled HTML email messages.
+- Has allowed_file() support for PDF verification documents.
+
+Authentication Workflow:
+- Active users are stored in `users` table.
+- Pending users are stored in `pending_users` table.
+- Registration submits pending record, sends OTP via email, and requires OTP verification.
+- After OTP verification, the user uploads verification documents in PDF format.
+- Admin approval is implied by verification status transitions.
+
+Session role tracking:
+- `user_logged_in` for students.
+- `teacher_logged_in` for teachers.
+- `admin_logged_in` for admin and super_admin.
+- `pending_user_logged_in` for users still in verification flow.
+
+---
+
+4. Student Module
+-----------------
+
+File: testpoint/Student/student.py
+
+Student features include:
+- Student dashboard with statistics:
+  - active enrolled courses count.
+  - completed exams count.
+  - available exams count.
+  - recent performance trend and class ranking.
+- Profile page with edit support and password update.
+- Student exams page showing available exams and computed exam status labels.
+- Enrolled courses injection into templates via app_context_processor.
+- Lockdown enforcement with before_app_request when an active exam is in progress:
+  - restricts navigation to only exam-related endpoints while an exam is active.
+- Uses session values to validate that a student is logged in.
+
+Important database relationships:
+- Students join enrollments, classes, courses, exams, exam_attempts.
+- Score calculations use attempt_questions and exam_questions tables.
+- Class standing uses a ranking SQL query.
+
+---
+
+5. Teacher Module
+-----------------
+
+File: testpoint/Teacher/teacher.py
+
+Teacher features include:
+- Teacher dashboard with analytics:
+  - number of distinct courses taught.
+  - active examinees in progress.
+  - total questions in question bank.
+  - total exam violations (tab switches).
+  - average class score.
+  - question type distribution.
+  - recent exam submissions.
+- Question bank management:
+  - view courses with question counts.
+  - view question details and options.
+  - add questions of type multiple-choice, true/false, identification.
+  - delete individual or bulk questions.
+- My courses page showing teacher courses and blocks.
+- Exam management:
+  - manage existing exams.
+  - add exams and save the exam as inactive initially.
+  - update exams, activate them only when they have questions.
+  - delete exams.
+  - view trashed exams.
+- Exam analysis dashboard for teacher-specific exam averages and participation.
+
+The teacher module is protected by `teacher_logged_in` checks.
+
+---
+
+6. Admin Module
+---------------
+
+File: testpoint/Admin/admin.py
+
+Admin features include:
+- Admin dashboard with system-wide summaries:
+  - total active users.
+  - total programs, blocks, classes.
+  - live exam sessions.
+  - global violation counts.
+  - user distribution pie chart.
+  - year-level distribution based on block naming.
+  - watchlist for blocks nearing capacity.
+- Manage accounts:
+  - view all users with joined student, teacher, admin details.
+  - choose block assignments for students.
+  - view role-based enrolled courses and assigned classes.
+- Trashed accounts view for soft-deleted users.
+- Update account details, role-specific profile fields, and passwords.
+- Create new accounts for admin, teacher, and student with role-based user IDs.
+- Soft delete users by marking `is_active = 0`.
+
+Admin views and actions are protected by admin login validation.
+
+---
+
+7. Database & Data Model
+------------------------
+
+The system uses MySQL with a schema named `test_point`.
+
+Core tables implied by code:
+- users
+- pending_users
+- students
+- teachers
+- admins
+- programs
+- blocks
+- classes
+- courses
+- enrollments
+- exams
+- exam_attempts
+- questions
+- options
+- attempt_questions
+- exam_questions
+
+Configuration:
+- host: localhost
+- user: root
+- password: loaded from `testpoint/passwordDB.env`
+- database: test_point
+- auth_plugin: mysql_native_password
+
+Sensitive values are stored in `testpoint/passwordDB.env` and loaded with `dotenv`.
+
+---
+
+8. Template and Static Structure
+--------------------------------
+
+Templates are organized by blueprint:
+- Auth: templates for login, register, reset password, verification, waiting approval.
+- Student: templates for dashboard, exams, profile, certificates, results, review, take exam.
+- Teacher: templates for dashboard, bank courses, bank details, exam results, monitoring, my courses, questions, trash views.
+- Admin: templates for dashboard, accounts, classes, courses, exams, logs, programs, blocks, settings, trash, verifications.
+
+Static files include:
+- Auth JS and JSON data for Philippine address selection.
+- Teacher and Student JS for pagination and interactive UI.
+- Uploads directory for verification documents.
+
+---
+
+9. Security and User Experience Notes
+-------------------------------------
+
+- Passwords are hashed using Werkzeug.
+- Role-based access is enforced through session checks and blueprint-specific login guards.
+- User registration uses OTP verification and document upload before final approval.
+- Login checks both active users and pending users.
+- No caching headers are applied to each response to reduce session leakage.
+- Uploaded verification documents are restricted to PDF.
+- Admin panel is separate and mounted at /admin.
+- Teacher and student dashboards are separate and mounted at /teacher and /student.
+
+---
+
+10. Project Observations
+------------------------
+
+- The README contains only a short project title and course references.
+- The system is built in a monolithic Flask app with blueprint separation.
+- It is strongly database-driven and oriented around role-specific workflows.
+- The design supports student exam taking, teacher exam/question management, and admin oversight.
+
+---
+
+File Created:
+- SYSTEM_CONTEXT.txt
+
+This file contains a complete architectural overview of the project, covering Flask setup, authentication, student workflows, teacher management, admin operations, data model assumptions, templates, and security.

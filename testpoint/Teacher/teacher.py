@@ -190,30 +190,30 @@ def bulk_delete_bank_questions(course_code):
         return redirect(url_for('teacher.course_question_bank', course_code=course_code))
     return redirect(url_for('auth.login'))
 
-#! 3. EXAM MANAGEMENT
-
 @teacher.route('/manage_exams')
 def manage_exams():
     if teacher_logged_in():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         
-        # FIXED QUERY: Added (SELECT COUNT(*) FROM exam_attempts...) as attempt_count
+        # ADDED: JOIN blocks b ON cl.block_id = b.block_id to get b.block_name
         cursor.execute("""
-            SELECT e.*, c.course_name, cl.class_code, 
+            SELECT e.*, c.course_name, cl.class_code, cl.course_code, b.block_name,
                 (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as q_count,
                 (SELECT COUNT(*) FROM exam_attempts WHERE exam_id = e.exam_id) as attempt_count
             FROM exams e 
             JOIN classes cl ON e.class_code = cl.class_code 
             JOIN courses c ON cl.course_code = c.course_code 
+            JOIN blocks b ON cl.block_id = b.block_id
             WHERE cl.teacher_id = %s AND e.archived = 0
         """, (session.get('user_id'),))
         exams = cursor.fetchall()
         
         cursor.execute("""
-            SELECT cl.class_code, c.course_name 
+            SELECT cl.class_code, c.course_name, cl.course_code, b.block_name 
             FROM classes cl 
             JOIN courses c ON cl.course_code = c.course_code 
+            JOIN blocks b ON cl.block_id = b.block_id
             WHERE cl.teacher_id = %s
         """, (session.get('user_id'),))
         classes = cursor.fetchall()
@@ -222,6 +222,50 @@ def manage_exams():
         connection.close()
         return render_template('teacher_exams.html', exams=exams, classes=classes, now=datetime.now())
     return redirect(url_for('auth.login'))
+
+@teacher.route('/publish_exam_to_classes', methods=['POST'])
+def publish_exam_to_classes():
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+    
+    source_exam_id = request.form.get('source_exam_id')
+    selected_class_codes = request.form.getlist('target_class_codes[]')
+    
+    if not selected_class_codes:
+        flash("No target classes selected.", "warning")
+        return redirect(url_for('teacher.manage_exams'))
+
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM exams WHERE exam_id = %s", (source_exam_id,))
+        src = cursor.fetchone()
+        
+        if src:
+            # Fix: Handle potentially empty datetime
+            exam_schedule = src['date_time'] if src['date_time'] else None
+
+            for class_code in selected_class_codes:
+                cursor.execute("""
+                    INSERT INTO exams (class_code, title, duration_minutes, pass_percentage, date_time, created_by, question_limit, is_active)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 0)
+                """, (class_code, src['title'], src['duration_minutes'], src['pass_percentage'], 
+                      exam_schedule, session.get('user_id'), src['question_limit']))
+                
+                new_exam_id = cursor.lastrowid
+                cursor.execute("""
+                    INSERT INTO exam_questions (exam_id, question_id)
+                    SELECT %s, question_id FROM exam_questions WHERE exam_id = %s
+                """, (new_exam_id, source_exam_id))
+            
+            connection.commit()
+            flash(f"Exam published successfully.", "success")
+    except Exception as e:
+        connection.rollback()
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        cursor.close(); connection.close()
+    return redirect(url_for('teacher.manage_exams'))
 
 @teacher.route('/add_exam', methods=['POST'])
 def add_exam():
@@ -249,9 +293,29 @@ def update_exam():
 
 @teacher.route('/delete_exam/<int:exam_id>', methods=['POST'])
 def delete_exam(exam_id):
+    """Handles direct deletion from the main management page if applicable."""
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-    cursor.execute("DELETE FROM exams WHERE exam_id = %s", (exam_id,)); connection.commit(); cursor.close(); connection.close()
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # 1. Delete isolated questions associated with this exam first
+        cursor.execute("""
+            DELETE FROM questions 
+            WHERE is_isolated = 1 
+            AND question_id IN (SELECT question_id FROM exam_questions WHERE exam_id = %s)
+        """, (exam_id,))
+        
+        # 2. Delete the exam (This will CASCADE delete records in exam_questions and exam_attempts)
+        cursor.execute("DELETE FROM exams WHERE exam_id = %s AND created_by = %s", (exam_id, session.get('user_id')))
+        
+        connection.commit()
+        flash("Exam and its isolated questions deleted successfully.", "success")
+    except Exception as e:
+        connection.rollback()
+        flash(f"Error deleting exam: {str(e)}", "danger")
+    finally:
+        cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_exams'))
 
 @teacher.route('/trashed_exams')
@@ -279,16 +343,62 @@ def restore_exam(exam_id):
 
 @teacher.route('/delete_exam_permanently/<int:exam_id>', methods=['POST'])
 def delete_exam_permanently(exam_id):
+    """Handles permanent deletion from the Trash Bin."""
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-    cursor.execute("DELETE FROM exams WHERE exam_id = %s", (exam_id,)); connection.commit(); cursor.close(); connection.close()
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # 1. Find and delete isolated questions linked to this archived exam
+        cursor.execute("""
+            DELETE FROM questions 
+            WHERE is_isolated = 1 
+            AND question_id IN (SELECT question_id FROM exam_questions WHERE exam_id = %s)
+        """, (exam_id,))
+        
+        # 2. Physically remove the exam record
+        cursor.execute("DELETE FROM exams WHERE exam_id = %s AND created_by = %s", (exam_id, session.get('user_id')))
+        
+        connection.commit()
+        flash("Exam permanently removed along with its isolated questions.", "success")
+    except Exception as e:
+        connection.rollback()
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        cursor.close(); connection.close()
     return redirect(url_for('teacher.trashed_exams'))
 
 @teacher.route('/empty_exam_trash', methods=['POST'])
 def empty_exam_trash():
+    """Bulk cleanup of all archived exams and their isolated questions."""
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-    cursor.execute("DELETE FROM exams WHERE archived = 1 AND created_by = %s", (session.get('user_id'),)); connection.commit(); cursor.close(); connection.close()
+    
+    teacher_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # 1. Delete all isolated questions belonging to any of this teacher's archived exams
+        cursor.execute("""
+            DELETE FROM questions 
+            WHERE is_isolated = 1 
+            AND question_id IN (
+                SELECT eq.question_id 
+                FROM exam_questions eq 
+                JOIN exams e ON eq.exam_id = e.exam_id 
+                WHERE e.archived = 1 AND e.created_by = %s
+            )
+        """, (teacher_id,))
+        
+        # 2. Delete all archived exams for this teacher
+        cursor.execute("DELETE FROM exams WHERE archived = 1 AND created_by = %s", (teacher_id,))
+        
+        connection.commit()
+        flash("Trash bin emptied. All isolated questions were also removed.", "success")
+    except Exception as e:
+        connection.rollback()
+        flash(f"Error emptying trash: {str(e)}", "danger")
+    finally:
+        cursor.close(); connection.close()
     return redirect(url_for('teacher.trashed_exams'))
 
 #! 4. EXAM QUESTIONS (POOL)
