@@ -4,6 +4,7 @@ from testpoint import db_config
 from testpoint.Auth.login import user_logged_in
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
+import random
 
 student = Blueprint('student', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/student/static')
@@ -305,7 +306,7 @@ def save_progress():
         cursor.close()
         connection.close()
 
-#! 2. TAKE EXAM (PERSISTENT LOGIC)
+#! 2. TAKE EXAM (PERSISTENT & RANDOMIZED LOGIC)
 @student.route('/take_exam/<int:exam_id>')
 def take_exam(exam_id):
     if not user_logged_in(): 
@@ -319,32 +320,27 @@ def take_exam(exam_id):
 
     try:
         # 1. SECURITY: ENROLLMENT & BLOCKING CHECK
-        # Checks if the student is 'active' in the class. If teacher set them to 'dropped', they are blocked.
         cursor.execute("""
-            SELECT en.status FROM enrollments en
-            JOIN exams e ON en.class_code = e.class_code
-            WHERE e.exam_id = %s AND en.student_id = %s
+            SELECT status FROM exam_attempts 
+            WHERE exam_id = %s AND student_id = %s
         """, (exam_id, student_id))
-        enrollment = cursor.fetchone()
+        existing_status = cursor.fetchone()
         
-        if not enrollment or enrollment['status'] != 'active':
-            flash("You are currently blocked from taking this exam. Please contact your instructor.", "danger")
+        if existing_status and existing_status['status'] == 'blocked':
+            flash("You are currently blocked from taking this exam.", "danger")
             return redirect(url_for('student.student_exams'))
 
         # 2. EXAM METADATA & TIMER LOGIC
-        # rem = remaining seconds until the exam window (Start + Duration) closes
         cursor.execute("""
             SELECT *, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(date_time, INTERVAL duration_minutes MINUTE)) as rem 
             FROM exams WHERE exam_id = %s
         """, (exam_id,))
         exam = cursor.fetchone()
         
-        # Check if exam exists or is deactivated by teacher
         if not exam or exam['is_active'] == 0:
             flash("This exam is currently unavailable.", "warning")
             return redirect(url_for('student.student_exams'))
 
-        # Automatic detection of missed/expired exam
         if exam['rem'] <= 0:
             session.pop('active_exam_id', None) 
             flash("This exam session has already expired.", "danger")
@@ -363,7 +359,7 @@ def take_exam(exam_id):
             connection.commit()
             attempt_id = cursor.lastrowid
             
-            # Serve randomized subset from the total pool based on teacher's 'question_limit'
+            # THE SUBSET RANDOMIZATION: Pick random IDs from the pool
             limit = exam.get('question_limit') or 50
             cursor.execute("""
                 INSERT INTO attempt_questions (attempt_id, question_id)
@@ -388,25 +384,27 @@ def take_exam(exam_id):
             tab_switches = attempt['tab_switches']
 
         # 4. LOCKDOWN ENFORCEMENT
-        # Set this ID in session so before_app_request prevents navigation
         session['active_exam_id'] = exam_id
 
-        # 5. LOAD QUESTIONS SERVED FOR THIS SPECIFIC ATTEMPT
+        # 5. FETCH AND SHUFFLE QUESTIONS (The Fix for Student-Specific Randomization)
         cursor.execute("""
             SELECT q.* FROM questions q
             JOIN attempt_questions aq ON q.question_id = aq.question_id
             WHERE aq.attempt_id = %s
-            ORDER BY FIELD(q.difficulty, 'easy', 'medium', 'hard')
         """, (attempt_id,))
         questions = cursor.fetchall()
 
-        # 6. ATTACH OPTIONS & SAVED ANSWERS TO EACH QUESTION
+        # We use a localized Random instance seeded with attempt_id.
+        # This ensures Student A and Student B get different orders, 
+        # but Student A always gets the SAME order even if they refresh the page.
+        rng = random.Random(attempt_id)
+        rng.shuffle(questions)
+
+        # 6. ATTACH OPTIONS & SAVED ANSWERS
         for q in questions:
-            # Load options (Multiple Choice/TF)
             cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
             q['options'] = cursor.fetchall()
             
-            # Load student's previously saved answer (if they refreshed the page)
             cursor.execute("""
                 SELECT submitted_answer, is_flagged FROM student_answers 
                 WHERE attempt_id = %s AND question_id = %s
@@ -433,7 +431,7 @@ def take_exam(exam_id):
     finally:
         cursor.close()
         connection.close()
-
+        
 @student.route('/review_results/<int:attempt_id>')
 def review_results(attempt_id):
     if not user_logged_in(): return redirect(url_for('auth.login'))
