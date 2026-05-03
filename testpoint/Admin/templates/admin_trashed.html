@@ -1,31 +1,41 @@
 {% extends "admin_base.html" %}
 {% block title %}Trashed Accounts - Admin Control{% endblock %}
 
+{% block head %}
+<style>
+    .badge-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 10px; border-radius: 6px; }
+    .badge-student { background: #e8edfb; color: #2d5be3; }
+    .badge-teacher { background: #fdecea; color: #d93025; }
+    .badge-admin   { background: #f1f1f1; color: #1a1a1a; }
+    .badge-super   { background: #1a1a1a; color: #fff; }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- 1. HEADER & ACTIONS -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Accounts</h1>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-danger shadow-sm px-3" data-toggle="modal" data-target="#emptyTrashModal">
-            <i class="fas fa-eraser fa-sm mr-1"></i> Empty Trash
-        </button>
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trash Bin</h1>
+        <p class="text-muted small mb-0">Recover or permanently destroy deleted accounts.</p>
     </div>
+    <button class="btn btn-danger shadow-sm px-4 rounded-pill font-weight-bold small" data-toggle="modal" data-target="#emptyTrashModal">
+        <i class="fas fa-eraser mr-2"></i> Wipe All Trash
+    </button>
 </div>
 
-<!-- 2. BREADCRUMBS -->
+<!-- Breadcrumb -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_accounts') }}">Account Manager</a></li>
         <li class="breadcrumb-item active">Trash Bin</li>
     </ol>
 </nav>
 
-<!-- 3. FILTER CARD (Consistent with Account Manager) -->
-<div class="card shadow mb-4 border-bottom-dark">
+<!-- Filters -->
+<div class="card shadow-sm mb-4">
     <div class="card-body py-3">
         <div class="row">
-            <div class="col-md-9">
+            <div class="col-md-9 mb-2 mb-md-0">
                 <input type="text" id="trashSearch" class="form-control" placeholder="Search by name, ID, or email...">
             </div>
             <div class="col-md-3">
@@ -40,51 +50,43 @@
     </div>
 </div>
 
-<!-- 4. TABLE CARD (Modeled after admin_accounts.html) -->
-<div class="card shadow mb-4">
+<!-- Table -->
+<div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="trashTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th>Role</th>
-                        <th>ID</th>
-                        <th>Full Name</th>
-                        <th>Email</th>
-                        <th class="text-center">Actions</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4">Role</th>
+                        <th class="border-0">User ID</th>
+                        <th class="border-0">Full Name</th>
+                        <th class="border-0">Email</th>
+                        <th class="border-0 text-center px-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for tu in trashed_users %}
                     <tr class="trash-row" data-role="{{ tu.role }}">
-                        <td>
+                        <td class="px-4">
                             {% if tu.role == 'super_admin' %}
-                                <span class="badge badge-dark shadow-sm"><i class="fas fa-crown text-warning mr-1"></i>Super Admin</span>
+                                <span class="badge-role badge-super">Super Admin</span>
                             {% elif tu.role == 'admin' %}
-                                <span class="badge badge-secondary">Admin</span>
+                                <span class="badge-role badge-admin">Admin</span>
                             {% elif tu.role == 'teacher' %}
-                                <span class="badge badge-danger">Teacher</span>
+                                <span class="badge-role badge-teacher">Teacher</span>
                             {% else %}
-                                <span class="badge badge-primary">Student</span>
+                                <span class="badge-role badge-student">Student</span>
                             {% endif %}
                         </td>
-                        <td><span class="font-weight-bold text-dark search-data">{{ tu.user_id }}</span></td>
-                        <td class="search-data text-capitalize">{{ tu.firstname }} {{ tu.lastname }}</td>
-                        <td class="search-data small">{{ tu.email }}</td>
-                        <td class="text-center">
-                            <button class="btn btn-success btn-circle btn-sm shadow-sm mr-1" 
-                                    data-toggle="modal" data-target="#restoreUserModal" 
-                                    data-id="{{ tu.user_id }}" 
-                                    data-name="{{ tu.firstname }} {{ tu.lastname }}"
-                                    title="Restore Account">
-                                <i class="fas fa-undo"></i>
+                        <td><span class="font-weight-bold text-gray-800 search-data">{{ tu.user_id }}</span></td>
+                        <td class="search-data text-capitalize font-weight-bold text-gray-800">{{ tu.firstname }} {{ tu.lastname }}</td>
+                        <td class="search-data small text-muted">{{ tu.email }}</td>
+                        <td class="text-center px-4">
+                            <button class="btn btn-white border btn-circle-sm mr-1" data-toggle="modal" data-target="#restoreUserModal" data-id="{{ tu.user_id }}" data-name="{{ tu.firstname }} {{ tu.lastname }}" title="Restore Account">
+                                <i class="fas fa-undo text-success"></i>
                             </button>
-                            <button class="btn btn-danger btn-circle btn-sm shadow-sm" 
-                                    data-toggle="modal" data-target="#permDeleteUserModal" 
-                                    data-id="{{ tu.user_id }}" 
-                                    data-name="{{ tu.firstname }} {{ tu.lastname }}"
-                                    title="Permanent Delete">
-                                <i class="fas fa-exclamation-triangle"></i>
+                            <button class="btn btn-white border btn-circle-sm" data-toggle="modal" data-target="#permDeleteUserModal" data-id="{{ tu.user_id }}" data-name="{{ tu.firstname }} {{ tu.lastname }}" title="Permanent Delete">
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
                             </button>
                         </td>
                     </tr>
@@ -92,7 +94,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="p-3 bg-light border-top">
+        <div class="card-footer bg-white border-0 py-3">
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm justify-content-center mb-0" id="trash-pagination"></ul>
             </nav>
@@ -102,21 +104,19 @@
 {% endblock %}
 
 {% block modals %}
-<!-- Modals remain the same as previous fix -->
 <div class="modal fade" id="restoreUserModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title font-weight-bold small"><i class="fas fa-undo mr-2"></i>Restore Account</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-undo mr-2 text-success"></i>Restore Account</h5>
             </div>
             <form id="restoreForm" method="POST" action="">
-                <div class="modal-body text-center py-4">
-                    <p class="text-dark">Are you sure you want to restore the account of <span id="restoreUserName" class="font-weight-bold"></span>?</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Are you sure you want to restore the account of <span id="restoreUserName" class="font-weight-bold text-dark"></span>? They will regain access to the system.</p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-success btn-sm px-4" type="submit">Yes, Restore</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success px-4 font-weight-bold" type="submit">Yes, Restore</button>
                 </div>
             </form>
         </div>
@@ -125,20 +125,18 @@
 
 <div class="modal fade" id="permDeleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title font-weight-bold small"><i class="fas fa-exclamation-triangle mr-2"></i>Destroy Account</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-bomb mr-2 text-danger"></i>Permanent Destruction</h5>
             </div>
             <form id="permDeleteForm" method="POST" action="">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-bomb fa-2x text-danger mb-3"></i>
-                    <p class="text-dark font-weight-bold mb-1">Destroy account: <span id="deleteUserName"></span>?</p>
-                    <p class="text-danger small font-weight-bold">This action cannot be undone.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-dark font-weight-bold mb-1">Destroy account for <span id="deleteUserName"></span>?</p>
+                    <p class="text-danger small font-weight-bold mb-0"><i class="fas fa-exclamation-triangle mr-1"></i> This action is irreversible.</p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger btn-sm px-4" type="submit">Destroy Forever</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4 font-weight-bold" type="submit">Destroy Forever</button>
                 </div>
             </form>
         </div>
@@ -147,20 +145,17 @@
 
 <div class="modal fade" id="emptyTrashModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title font-weight-bold small"><i class="fas fa-eraser mr-2"></i>Confirm Wipe</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-eraser mr-2 text-danger"></i>Empty Trash Bin</h5>
             </div>
             <form action="{{ url_for('admin.empty_trash') }}" method="POST">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-dumpster-fire fa-2x text-danger mb-3"></i>
-                    <h5 class="font-weight-bold">Empty the Trash Bin?</h5>
-                    <p class="text-muted small">All records in this bin will be permanently removed.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Are you sure you want to permanently delete every account currently in the trash? This cannot be undone.</p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger btn-sm px-4" type="submit">Confirm Empty Trash</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4 font-weight-bold" type="submit">Empty Trash</button>
                 </div>
             </form>
         </div>
@@ -180,17 +175,13 @@ $(document).ready(function() {
     function performFilter() {
         var searchVal = $('#trashSearch').val().toLowerCase();
         var roleVal = $('#trashRoleFilter').val().toLowerCase();
-
         filteredRows = allRows.filter(row => {
             var rowText = $(row).find('.search-data').text().toLowerCase();
             var rowRole = $(row).attr('data-role').toLowerCase();
-
             var matchesSearch = rowText.indexOf(searchVal) > -1;
             var matchesRole = roleVal === "" || rowRole === roleVal;
-
             return matchesSearch && matchesRole;
         });
-
         paginator.render();
     }
 
@@ -212,10 +203,10 @@ $(document).ready(function() {
     });
 
     const paginator = createPaginator({
-        tableBodySelector  : '#trashTable tbody',
-        paginationSelector : '#trash-pagination', 
-        rowsPerPage        : 10,
-        getVisibleRows     : () => filteredRows,
+        tableBodySelector: '#trashTable tbody',
+        paginationSelector: '#trash-pagination', 
+        rowsPerPage: 10,
+        getVisibleRows: () => filteredRows,
     });
     paginator.render();
 });

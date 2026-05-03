@@ -1,29 +1,38 @@
 {% extends "admin_base.html" %}
 {% block title %}Manage Enrollees - {{ class_info.class_code }}{% endblock %}
 
+{% block head %}
+<style>
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .tp-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; padding: 8px 24px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<!-- 1. HEADER & ACTIONS -->
+<!-- HEADER & ACTIONS -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">
-        Class Enrollees: <span class="text-primary">{{ class_info.class_code }}</span>
-    </h1>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#enrollModal">
-            <i class="fas fa-user-plus fa-sm text-white-50 mr-2"></i> Enroll Student
-        </button>
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">
+            Enrollees: <span class="text-primary">{{ class_info.class_code }}</span>
+        </h1>
+        <p class="text-muted small mb-0">Managing individual students for <strong>{{ class_info.course_name }}</strong>.</p>
     </div>
+    <button class="btn btn-dark shadow-sm tp-pill" data-toggle="modal" data-target="#enrollModal">
+        <i class="fas fa-user-plus mr-2"></i> Enroll Student
+    </button>
 </div>
 
-<!-- 2. BREADCRUMBS -->
+<!-- BREADCRUMBS -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_classes') }}">Class Management</a></li>
-        <li class="breadcrumb-item active">{{ class_info.course_name }} Enrollees</li>
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_classes') }}">Classes</a></li>
+        <li class="breadcrumb-item active">{{ class_info.class_code }}</li>
     </ol>
 </nav>
 
-<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
@@ -35,121 +44,109 @@
     {% endif %}
 {% endwith %}
 
-<!-- 3. FILTER CARD -->
-<div class="card shadow mb-4 border-bottom-secondary">
+<!-- FILTER -->
+<div class="card shadow-sm mb-4">
     <div class="card-body py-3">
         <div class="input-group">
             <div class="input-group-prepend">
-                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span>
             </div>
-            <input type="text" id="enrolleeSearch" class="form-control border-left-0" placeholder="Search by student name, ID, or email...">
+            <input type="text" id="enrolleeSearch" class="form-control border-left-0" placeholder="Search by name, student ID, or email...">
         </div>
     </div>
 </div>
 
-<!-- 4. TABLE CARD -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3 bg-white">
-        <h6 class="m-0 font-weight-bold text-dark text-uppercase small">Active Enrollment List ({{ enrollees|length }})</h6>
+<!-- TABLE -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3 bg-white border-0">
+        <h6 class="m-0 font-weight-bold text-gray-800 text-uppercase small" style="letter-spacing: 0.5px;">Active Enrollment List ({{ enrollees|length }})</h6>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="enrollTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th>Student ID</th>
-                        <th>Full Name</th>
-                        <th>Email Address</th>
-                        <th>Date Enrolled</th>
-                        <th class="text-center">Action</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4">Student ID</th>
+                        <th class="border-0">Full Name</th>
+                        <th class="border-0">Email Address</th>
+                        <th class="border-0">Date Enrolled</th>
+                        <th class="border-0 text-center px-4">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for enrollee in enrollees %}
                     <tr class="enrollee-row">
-                        <td><span class="font-weight-bold text-dark">{{ enrollee.student_id }}</span></td>
-                        <td class="text-capitalize">{{ enrollee.firstname }} {{ enrollee.lastname }}</td>
-                        <td>{{ enrollee.email }}</td>
+                        <td class="px-4"><span class="font-weight-bold text-gray-800">{{ enrollee.student_id }}</span></td>
+                        <td class="text-capitalize font-weight-bold text-gray-700">{{ enrollee.firstname }} {{ enrollee.lastname }}</td>
+                        <td class="text-muted">{{ enrollee.email }}</td>
                         <td class="small text-muted">{{ enrollee.enrolled_at }}</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-danger btn-circle btn-sm shadow-sm" 
-                                    data-toggle="modal" data-target="#confirmUnenrollModal" 
-                                    data-enrollment="{{ enrollee.enrollment_id }}" 
-                                    data-name="{{ enrollee.firstname }} {{ enrollee.lastname }}">
-                                <i class="fas fa-user-minus"></i>
+                        <td class="text-center px-4">
+                            <button type="button" class="btn btn-circle-sm" data-toggle="modal" data-target="#confirmUnenrollModal" data-enrollment="{{ enrollee.enrollment_id }}" data-name="{{ enrollee.firstname }} {{ enrollee.lastname }}" title="Unenroll Student">
+                                <i class="fas fa-user-minus text-danger"></i>
                             </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <i class="fas fa-users-slash fa-3x text-gray-200 mb-3"></i>
-                            <p class="text-gray-500 italic">No students are currently enrolled in this specific class.</p>
-                        </td>
-                    </tr>
+                    <tr><td colspan="5" class="text-center py-5 text-muted font-italic small">No students are currently enrolled.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination -->
-        <div class="p-3 bg-light border-top">
-            <nav aria-label="Enrollee pagination">
-                <ul class="pagination pagination-sm justify-content-center mb-0" id="enrollee-pagination"></ul>
-            </nav>
+        <div class="card-footer bg-white border-0 py-3">
+            <nav aria-label="Enrollee pagination"><ul class="pagination pagination-sm justify-content-center mb-0" id="enrollee-pagination"></ul></nav>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- 1. Enroll Student Modal -->
+<!-- ENROLL STUDENT MODAL -->
 <div class="modal fade" id="enrollModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-plus mr-2"></i>Manual Enrollment</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-user-plus mr-2 text-primary"></i>Manual Enrollment</h5>
+                <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.enroll_student') }}" method="POST">
-                <div class="modal-body bg-light">
+                <div class="modal-body p-4">
                     <input type="hidden" name="class_code" value="{{ class_info.class_code }}">
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Verified Students</label>
+                    <div class="form-group mb-0">
+                        <label class="small font-weight-bold">Verified Students</label>
                         <select name="student_id" class="form-control" required>
                             <option value="">-- Select student --</option>
                             {% for s in all_students %}
                             <option value="{{ s.student_id }}">{{ s.firstname }} {{ s.lastname }} ({{ s.student_id }})</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted mt-2 d-block">Only showing verified students not already in this class.</small>
+                        <div class="mt-3 p-2 px-3 bg-light rounded text-muted" style="font-size: 11px; border: 1.5px dashed var(--tp-admin-border);">
+                            Only verified students not currently in this class are listed.
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Complete Enrollment</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-dark px-4 font-weight-bold" type="submit">Complete Enrollment</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- 2. Confirm Unenroll Modal -->
+<!-- UNENROLL MODAL -->
 <div class="modal fade" id="confirmUnenrollModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-danger text-white border-0">
-                <h5 class="modal-title font-weight-bold">Unenroll Student</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-user-minus mr-2 text-danger"></i>Unenroll Student</h5>
             </div>
             <form id="unenrollForm" method="POST">
-                <div class="modal-body text-center py-4 bg-white">
-                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-                    <p class="mb-1 text-dark">Remove <strong id="studentNameDisplay"></strong>?</p>
-                    <p class="text-muted small">The student will lose access to exams for <strong>{{ class_info.class_code }}</strong>.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Remove <strong id="studentNameDisplay" class="text-dark"></strong> from this class? Access to future exams will be revoked.</p>
                 </div>
-                <div class="modal-footer border-0 pt-0 bg-light">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Confirm Removal</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4 font-weight-bold" type="submit">Confirm Removal</button>
                 </div>
             </form>
         </div>
@@ -162,11 +159,8 @@
 <script>
     $(document).ready(function() {
         "use strict";
-
-        // Filter and Pagination
         const rows = Array.from(document.querySelectorAll('#enrollTable tbody tr.enrollee-row'));
         let filtered = [...rows];
-
         const paginator = createPaginator({
             tableBodySelector: '#enrollTable tbody',
             paginationSelector: '#enrollee-pagination',
@@ -181,20 +175,15 @@
             paginator.reset();
         });
 
-        // Unenroll logic (Dynamic URL injection)
         $('#confirmUnenrollModal').on('show.bs.modal', function (e) {
             var btn = $(e.relatedTarget);
             var enrollmentId = btn.data('enrollment');
             var studentName = btn.data('name');
             var classCode = "{{ class_info.class_code }}";
-            
             $('#studentNameDisplay').text(studentName);
-            
-            // Build the URL dynamically: /admin/unenroll_student/ID/CLASS_CODE
             var actionUrl = '{{ url_for("admin.unenroll_student", enrollment_id=0, class_code="_code_") }}'
                 .replace('0', enrollmentId)
                 .replace('_code_', classCode);
-                
             $(this).find('form').attr('action', actionUrl);
         });
     });

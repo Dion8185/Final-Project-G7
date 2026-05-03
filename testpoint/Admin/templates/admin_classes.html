@@ -1,25 +1,37 @@
 {% extends "admin_base.html" %}
-{% block title %}Academic Classes - Admin Control{% endblock %}
+{% block title %}Class Schedule - TestPoint Admin{% endblock %}
+
+{% block head %}
+<style>
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .badge-block { background: #f1f1f1; color: #1a1a1a; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--tp-admin-border); }
+    .tp-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; padding: 8px 24px; }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- 1. HEADER & ACTIONS -->
+<!-- HEADER & ACTIONS -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Class Schedule</h1>
-    <div style="display: flex; gap: 10px;">
-        <!-- Improved: Button disables if essential data is missing -->
-        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addClassModal" 
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">Class Schedule</h1>
+        <p class="text-muted small mb-0">Monitor active academic sessions and instructor assignments.</p>
+    </div>
+    <div class="d-flex" style="gap: 12px;">
+        <button class="btn btn-dark shadow-sm tp-pill" data-toggle="modal" data-target="#addClassModal" 
                 {% if not subjects or not teachers or not blocks %}disabled title="Ensure Subjects, Teachers, and Blocks exist first"{% endif %}>
-            <i class="fas fa-calendar-plus fa-sm text-white-50 mr-2"></i> Schedule Class
+            <i class="fas fa-calendar-plus mr-2"></i> Schedule Class
         </button>
-        <a href="{{ url_for('admin.trashed_classes') }}" class="btn btn-sm btn-danger shadow-sm px-3">
-            <i class="fas fa-trash-alt fa-sm mr-1"></i> View Trash
+        <a href="{{ url_for('admin.trashed_classes') }}" class="btn btn-white border shadow-sm tp-pill text-danger">
+            <i class="fas fa-trash-alt mr-2"></i> View Trash
         </a>        
     </div>
 </div>
 
-<!-- 2. BREADCRUMBS -->
+<!-- BREADCRUMBS -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item active">Class Management</li>
     </ol>
@@ -37,14 +49,14 @@
     {% endif %}
 {% endwith %}
 
-<!-- 3. ADVANCED FILTER CARD -->
-<div class="card shadow mb-4 border-bottom-primary">
+<!-- FILTERS -->
+<div class="card shadow-sm mb-4">
     <div class="card-body py-3">
         <div class="row">
             <div class="col-md-8 mb-2 mb-md-0">
                 <div class="input-group">
                     <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span>
                     </div>
                     <input type="text" id="classSearch" class="form-control border-left-0" placeholder="Search by code, subject, or instructor...">
                 </div>
@@ -52,7 +64,6 @@
             <div class="col-md-4">
                 <select id="programFilter" class="form-control">
                     <option value="">All Programs</option>
-                    <!-- Standard Jinja way to get unique items: groupby -->
                     {% for prog_name, group in classes|groupby('program_name') %}
                         <option value="{{ prog_name }}">{{ prog_name }}</option>
                     {% endfor %}
@@ -62,60 +73,67 @@
     </div>
 </div>
 
-<!-- 4. TABLE CARD -->
-<div class="card shadow mb-4">
+<!-- TABLE -->
+<div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="classTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="10%">Code</th>
-                        <th width="30%">Subject</th>
-                        <th width="20%">Block / Section</th>
-                        <th width="20%">Instructor</th>
-                        <th class="text-center" width="20%">Management</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="12%">Class Code</th>
+                        <th class="border-0" width="28%">Subject Title</th>
+                        <th class="border-0" width="20%">Assigned Block</th>
+                        <th class="border-0" width="20%">Instructor</th>
+                        <th class="border-0 text-center px-4" width="20%">Management</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in classes %}
                     <tr class="class-row" data-program="{{ c.program_name }}">
-                        <td><strong class="text-primary">{{ c.class_code }}</strong></td>
+                        <td class="px-4"><strong class="text-primary">{{ c.class_code }}</strong></td>
                         <td>
-                            <div class="font-weight-bold text-dark">{{ c.course_name }}</div>
-                            <small class="text-muted">{{ c.course_code }}</small>
+                            <div class="font-weight-bold text-gray-800">{{ c.course_name }}</div>
+                            <div class="small text-muted" style="font-size: 11px;">ID: {{ c.course_code }}</div>
                         </td>
                         <td>
-                            <span class="badge badge-light border text-dark px-2">
+                            <span class="badge-block">
                                 <i class="fas fa-layer-group mr-1 text-primary"></i> {{ c.program_name }} - {{ c.block_name }}
                             </span>
                         </td>
                         <td>
-                            <div class="small font-weight-bold"><i class="fas fa-user-tie mr-1 text-gray-400"></i> {{ c.firstname }} {{ c.lastname }}</div>
+                            <div class="small font-weight-bold text-gray-700">
+                                <i class="fas fa-user-tie mr-1 text-gray-400"></i> {{ c.firstname }} {{ c.lastname }}
+                            </div>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center px-4">
                             <div class="d-flex justify-content-center align-items-center">
                                 <form action="{{ url_for('admin.enroll_block') }}" method="POST" class="mr-1" onsubmit="return confirm('Enroll entire block?')">
                                     <input type="hidden" name="class_code" value="{{ c.class_code }}">
-                                    <button type="submit" class="btn btn-success btn-sm btn-circle shadow-sm" title="Bulk Enroll Block"><i class="fas fa-users"></i></button>
+                                    <button type="submit" class="btn btn-circle-sm" title="Bulk Enroll Block">
+                                        <i class="fas fa-users text-success"></i>
+                                    </button>
                                 </form>
-                                <a href="{{ url_for('admin.manage_enrollments', class_code=c.class_code) }}" class="btn btn-dark btn-sm btn-circle mr-1 shadow-sm" title="Individual Management"><i class="fas fa-list-ul"></i></a>
-                                <button class="btn btn-danger btn-sm btn-circle shadow-sm" data-toggle="modal" data-target="#archiveClassModal{{ loop.index }}" title="Archive Class"><i class="fas fa-trash"></i></button>
+                                <a href="{{ url_for('admin.manage_enrollments', class_code=c.class_code) }}" class="btn btn-circle-sm mr-1" title="Manage Enrollees">
+                                    <i class="fas fa-list-ul text-primary"></i>
+                                </a>
+                                <button class="btn btn-circle-sm" data-toggle="modal" data-target="#archiveClassModal{{ loop.index }}" title="Archive Session">
+                                    <i class="fas fa-trash text-danger"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted italic">
-                            <i class="fas fa-calendar-times fa-3x mb-3 text-gray-200"></i><br>
-                            No active classes scheduled.
+                        <td colspan="5" class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-3x mb-3 text-gray-200"></i>
+                            <p class="text-muted font-italic small">No active classes scheduled.</p>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Footer -->
-        <div class="p-3 bg-light border-top">
+        <div class="card-footer bg-white border-0 py-3">
             <nav aria-label="Class pagination">
                 <ul class="pagination pagination-sm justify-content-center mb-0" id="class-pagination"></ul>
             </nav>
@@ -125,35 +143,35 @@
 {% endblock %}
 
 {% block modals %}
-<!-- 1. ADD CLASS MODAL -->
+<!-- ADD CLASS MODAL -->
 <div class="modal fade" id="addClassModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">Schedule New Class</h5>
-                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-calendar-plus mr-2 text-primary"></i>Schedule New Class</h5>
+                <button class="close" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.manage_classes') }}" method="POST">
-                <div class="modal-body bg-light px-4">
-                    <div class="alert alert-info small py-2">
-                        <i class="fas fa-info-circle mr-1"></i> Class Code will be auto-generated (e.g., #101).
+                <div class="modal-body p-4">
+                    <div class="p-2 px-3 bg-light rounded text-muted mb-4" style="border: 1px solid var(--tp-admin-border); font-size: 12px;">
+                        <i class="fas fa-info-circle mr-1 text-info"></i> A unique Class Code will be automatically assigned.
                     </div>
                     
-                    <div class="form-group">
-                        <label class="small font-weight-bold">Subject Catalog</label>
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold">Subject from Catalog</label>
                         <select name="course_code" class="form-control" required>
                             <option value="">-- Select Subject --</option>
                             {% for s in subjects %}<option value="{{ s.course_code }}">{{ s.course_name }} ({{ s.course_code }})</option>{% endfor %}
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-primary">Target Block</label>
-                        <select name="block_id" class="form-control border-left-primary" required>
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold">Target Block / Section</label>
+                        <select name="block_id" class="form-control" required>
                             <option value="">-- Select Section --</option>
                             {% for b in blocks %}<option value="{{ b.block_id }}">{{ b.program_name }} - {{ b.block_name }}</option>{% endfor %}
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group mb-0">
                         <label class="small font-weight-bold">Assigned Instructor</label>
                         <select name="teacher_id" class="form-control" required>
                             <option value="">-- Select Teacher --</option>
@@ -161,33 +179,30 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit">Finalize Schedule</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-dark px-4 font-weight-bold" type="submit">Finalize Schedule</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- 2. ARCHIVE MODALS (Loop) -->
 {% for c in classes %}
+<!-- ARCHIVE MODAL -->
 <div class="modal fade" id="archiveClassModal{{ loop.index }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-danger text-white border-0">
-                <h5 class="modal-title font-weight-bold">Archive Class Session</h5>
-                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-archive mr-2 text-danger"></i>Archive Class Session</h5>
             </div>
-            <div class="modal-body text-center py-4 bg-white">
-                <i class="fas fa-archive fa-3x text-danger mb-3"></i>
-                <p class="text-dark">Archive <strong>Class {{ c.class_code }}</strong>?</p>
-                <p class="small text-muted">The subject <strong>{{ c.course_name }}</strong> will be hidden for block <strong>{{ c.block_name }}</strong>.</p>
+            <div class="modal-body text-center p-4">
+                <p class="text-gray-600 mb-0">Archive <strong>Class {{ c.class_code }}</strong>? Subject visibility for block <strong>{{ c.block_name }}</strong> will be suspended.</p>
             </div>
-            <div class="modal-footer border-0 pt-0 bg-white">
-                <button class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Cancel</button>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                <button class="btn btn-light px-4" data-dismiss="modal">Keep Active</button>
                 <form action="{{ url_for('admin.archive_class', class_code=c.class_code) }}" method="POST">
-                    <button type="submit" class="btn btn-danger btn-sm px-4 shadow-sm">Move to Trash</button>
+                    <button type="submit" class="btn btn-danger px-4 font-weight-bold">Confirm Archive</button>
                 </form>
             </div>
         </div>
@@ -201,8 +216,6 @@
 <script>
     $(document).ready(function() {
         "use strict";
-
-        // Filter and Pagination Logic
         const classTableBody = document.querySelector('#classTable tbody');
         const allRows = Array.from(classTableBody.querySelectorAll('tr.class-row'));
         let filteredRows = [...allRows];
@@ -210,14 +223,11 @@
         function performFilter() {
             var searchVal = $('#classSearch').val().toLowerCase();
             var progVal = $('#programFilter').val();
-
             filteredRows = allRows.filter(row => {
                 var text = row.textContent.toLowerCase();
                 var rowProg = row.dataset.program;
-
                 var matchesSearch = text.indexOf(searchVal) > -1;
                 var matchesProg = progVal === "" || rowProg === progVal;
-
                 return matchesSearch && matchesProg;
             });
             paginator.reset();
@@ -232,7 +242,6 @@
             rowsPerPage: 10,
             getVisibleRows: () => filteredRows,
         });
-
         paginator.render();
     });
 </script>

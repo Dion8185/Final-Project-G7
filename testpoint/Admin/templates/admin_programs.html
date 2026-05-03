@@ -1,111 +1,137 @@
 {% extends "admin_base.html" %}
-{% block title %}Programs - Admin Control{% endblock %}
+{% block title %}Programs - TestPoint Admin{% endblock %}
+
+{% block head %}
+<style>
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Programs</h1>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addProgramModal"><i class="fas fa-plus fa-sm mr-2"></i> Add New Program</button>
-        <a href="{{ url_for('admin.trashed_programs') }}" class="btn btn-sm btn-danger shadow-sm px-3"><i class="fas fa-trash-alt fa-sm mr-1"></i> View Trash</a>        
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">Programs</h1>
+        <p class="text-muted small mb-0">Manage institutional degree programs and academic curriculum.</p>
+    </div>
+    <div class="d-flex" style="gap: 12px;">
+        <button class="btn btn-dark shadow-sm px-4 rounded-pill font-weight-bold small" data-toggle="modal" data-target="#addProgramModal">
+            <i class="fas fa-plus mr-2"></i> Add New Program
+        </button>
+        <a href="{{ url_for('admin.trashed_programs') }}" class="btn btn-white border shadow-sm px-4 rounded-pill font-weight-bold small text-danger">
+            <i class="fas fa-trash-alt mr-2"></i> View Trash
+        </a>        
     </div>
 </div>
 
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item active">Programs</li>
     </ol>
 </nav>
 
-<div class="card shadow mb-4 border-bottom-secondary">
-    <div class="card-body py-3"><input type="text" id="progSearch" class="form-control" placeholder="Search programs..."></div>
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="input-group">
+            <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span></div>
+            <input type="text" id="progSearch" class="form-control border-left-0" placeholder="Search programs by name or abbreviation...">
+        </div>
+    </div>
 </div>
 
-<div class="card shadow mb-4">
+<div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="progTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="20%">Abbreviation</th>
-                        <th width="50%">Program Name</th>
-                        <th class="text-center" width="30%">Actions</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="20%">Abbreviation</th>
+                        <th class="border-0" width="50%">Program Name</th>
+                        <th class="border-0 text-center px-4" width="30%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in programs %}
                     <tr class="prog-row">
-                        <td class="font-weight-bold text-dark">{{ p.program_name }}</td>
+                        <td class="px-4 font-weight-bold text-gray-800">{{ p.program_name }}</td>
                         <td class="small text-muted">{{ p.description }}</td>
-                        <td class="text-center">
-                            <a href="{{ url_for('admin.view_program_blocks', program_id=p.program_id) }}" class="btn btn-success btn-circle btn-sm shadow-sm mr-1"><i class="fas fa-layer-group"></i></a>
-                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1" data-toggle="modal" data-target="#editProgramModal{{ p.program_id }}"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-danger btn-circle btn-sm shadow-sm" data-toggle="modal" data-target="#archiveProgramModal{{ p.program_id }}"><i class="fas fa-trash"></i></button>
+                        <td class="text-center px-4">
+                            <a href="{{ url_for('admin.view_program_blocks', program_id=p.program_id) }}" class="btn btn-circle-sm mr-1" title="View Blocks">
+                                <i class="fas fa-layer-group text-success"></i>
+                            </a>
+                            <button class="btn btn-circle-sm mr-1" data-toggle="modal" data-target="#editProgramModal{{ p.program_id }}" title="Edit">
+                                <i class="fas fa-edit text-info"></i>
+                            </button>
+                            <button class="btn btn-circle-sm" data-toggle="modal" data-target="#archiveProgramModal{{ p.program_id }}" title="Delete">
+                                <i class="fas fa-trash text-danger"></i>
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <div class="p-3 bg-light border-top"><nav><ul class="pagination pagination-sm justify-content-center mb-0" id="prog-pagination"></ul></nav></div>
+        <div class="card-footer bg-white border-0 py-3">
+            <nav><ul class="pagination pagination-sm justify-content-center mb-0" id="prog-pagination"></ul></nav>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- 1. ADD PROGRAM MODAL (Outside loop) -->
+<!-- ADD PROGRAM MODAL -->
 <div class="modal fade" id="addProgramModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">New Program</h5>
-                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-plus-circle mr-2 text-primary"></i>New Program</h5>
+                <button class="close" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.manage_programs') }}" method="POST">
-                <div class="modal-body bg-light px-4">
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Program Abbreviation</label>
+                <div class="modal-body p-4">
+                    <div class="form-group mb-4">
+                        <label class="small font-weight-bold">Program Abbreviation</label>
                         <input type="text" name="program_name" class="form-control" placeholder="e.g. BSIT" required>
                     </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Program Name</label>
-                        <textarea name="description" class="form-control" rows="4"></textarea>
+                    <div class="form-group mb-0">
+                        <label class="small font-weight-bold">Full Program Name</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Enter formal description..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-white">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4" type="submit">Save Program</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-dark px-4 font-weight-bold" type="submit">Save Program</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- 2. DYNAMIC MODALS (Inside loop) -->
 {% for p in programs %}
     <!-- EDIT MODAL -->
     <div class="modal fade" id="editProgramModal{{ p.program_id }}" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title font-weight-bold">Edit Program</h5>
-                    <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-edit mr-2 text-info"></i>Edit Program</h5>
+                    <button class="close" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <!-- Check this line specifically -->
                 <form action="{{ url_for('admin.edit_program', program_id=p.program_id) }}" method="POST">
-                    <div class="modal-body bg-light px-4">
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Program Abbreviation</label>
+                    <div class="modal-body p-4">
+                        <div class="form-group mb-4">
+                            <label class="small font-weight-bold">Program Abbreviation</label>
                             <input type="text" name="program_name" class="form-control" value="{{ p.program_name }}" required>
                         </div>
-                        <div class="form-group">
-                            <label class="small font-weight-bold text-dark">Program Name</label>
+                        <div class="form-group mb-0">
+                            <label class="small font-weight-bold">Full Program Name</label>
                             <textarea name="description" class="form-control" rows="4">{{ p.description }}</textarea>
                         </div>
                     </div>
-                    <div class="modal-footer bg-white">
-                        <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                        <button class="btn btn-info btn-sm px-4" type="submit">Save Changes</button>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                        <button class="btn btn-info px-4 font-weight-bold" type="submit">Update Program</button>
                     </div>
                 </form>
             </div>
@@ -115,20 +141,17 @@
     <!-- ARCHIVE MODAL -->
     <div class="modal fade" id="archiveProgramModal{{ p.program_id }}" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title font-weight-bold">Delete Program</h5>
-                    <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                    <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-trash-alt mr-2 text-danger"></i>Move to Trash</h5>
                 </div>
-                <div class="modal-body text-center py-4">
-                    <p>Move <strong>{{ p.program_name }}</strong> to trash?</p>
-                    <p class="small text-muted">You can restore this later from the Trash Bin.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Move <strong>{{ p.program_name }}</strong> to trash? All linked records will be archived.</p>
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button class="btn btn-outline-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <!-- Check this line specifically -->
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
                     <form action="{{ url_for('admin.archive_program', program_id=p.program_id) }}" method="POST">
-                        <button type="submit" class="btn btn-danger btn-sm px-4">Move to Trash</button>
+                        <button type="submit" class="btn btn-danger px-4 font-weight-bold">Confirm Delete</button>
                     </form>
                 </div>
             </div>

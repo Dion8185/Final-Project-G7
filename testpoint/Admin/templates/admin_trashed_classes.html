@@ -1,99 +1,102 @@
 {% extends "admin_base.html" %}
-{% block title %}Trashed Classes - Admin Control{% endblock %}
+{% block title %}Trashed Classes - TestPoint Admin{% endblock %}
+
+{% block head %}
+<style>
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .badge-block { background: #f8f9fc; color: #1a1a1a; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; border: 1px solid var(--tp-admin-border); }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- 1. HEADER & ACTIONS -->
+<!-- HEADER -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Classes</h1>
-    <div style="display: flex; gap: 10px;">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Classes</h1>
+        <p class="text-muted small mb-0">Recover classes or purge them forever.</p>
     </div>
 </div>
 
-<!-- 2. BREADCRUMBS -->
+<!-- BREADCRUMBS -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_classes') }}">Classes</a></li>
         <li class="breadcrumb-item active">Trash Bin</li>
     </ol>
 </nav>
 
-<!-- 3. FILTER CARD -->
-<div class="card shadow mb-4 border-bottom-dark">
+<!-- FILTER -->
+<div class="card shadow-sm mb-4">
     <div class="card-body py-3">
         <div class="input-group">
             <div class="input-group-prepend">
-                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span>
             </div>
             <input type="text" id="classTrashSearch" class="form-control border-left-0" placeholder="Search by class code, subject, or block...">
         </div>
     </div>
 </div>
 
-<!-- 4. TABLE CARD -->
-<div class="card shadow mb-4">
+<!-- TABLE -->
+<div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="classTrashTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="15%">Class Code</th>
-                        <th width="30%">Subject Title</th>
-                        <th width="25%">Assigned Block</th>
-                        <th class="text-center" width="30%">Actions</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="15%">Class Code</th>
+                        <th class="border-0" width="30%">Subject Title</th>
+                        <th class="border-0" width="25%">Assigned Block</th>
+                        <th class="border-0 text-center px-4" width="30%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in trashed_classes %}
                     <tr class="trash-row">
-                        <td><strong class="text-danger">{{ c.class_code }}</strong></td>
-                        <td>{{ c.course_name }}</td>
-                        <td><span class="badge badge-light border text-dark">{{ c.program_name }} - {{ c.block_name }}</span></td>
-                        <td class="text-center">
-                            <!-- Restore Action -->
+                        <td class="px-4"><strong class="text-danger">{{ c.class_code }}</strong></td>
+                        <td class="font-weight-bold text-gray-700">{{ c.course_name }}</td>
+                        <td><span class="badge-block">{{ c.program_name }} - {{ c.block_name }}</span></td>
+                        <td class="text-center px-4">
                             <form action="{{ url_for('admin.restore_class', class_code=c.class_code) }}" method="POST" class="d-inline">
-                                <button class="btn btn-success btn-sm px-3 shadow-sm mr-1" type="submit" title="Restore Class">
-                                    <i class="fas fa-undo mr-1"></i> Restore
+                                <button class="btn btn-circle-sm mr-1" type="submit" title="Restore Class">
+                                    <i class="fas fa-undo text-success"></i>
                                 </button>
                             </form>
-                            <!-- Trigger Permanent Delete Modal -->
-                            <button class="btn btn-danger btn-sm px-3 shadow-sm" data-toggle="modal" data-target="#permDeleteClassModal{{ loop.index }}" title="Delete Forever">
-                                <i class="fas fa-times-circle mr-1"></i> Destroy
+                            <button class="btn btn-circle-sm" data-toggle="modal" data-target="#permDeleteClassModal{{ loop.index }}" title="Destroy Permanently">
+                                <i class="fas fa-times-circle text-danger"></i>
                             </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center py-5 text-muted italic">Trash bin is empty.</td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center py-5 text-muted font-italic small">Trash bin is empty.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Footer -->
-        <div class="p-3 bg-light border-top">
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm justify-content-center mb-0" id="class-trash-pagination"></ul>
-            </nav>
+        <div class="card-footer bg-white border-0 py-3">
+            <nav aria-label="Page navigation"><ul class="pagination pagination-sm justify-content-center mb-0" id="class-trash-pagination"></ul></nav>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- DYNAMIC PERMANENT DELETE MODALS -->
 {% for c in trashed_classes %}
+<!-- PERMANENT DELETE MODAL -->
 <div class="modal fade" id="permDeleteClassModal{{ loop.index }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-body text-center p-5">
-                <i class="fas fa-exclamation-triangle fa-4x text-danger mb-4"></i>
-                <h4 class="font-weight-bold text-dark">Destroy Class Forever?</h4>
-                <p class="text-muted">You are about to permanently delete <strong>Class {{ c.class_code }}</strong> ({{ c.course_name }}). All student enrollment records associated with this session will be wiped. This action is irreversible.</p>
-                <div class="mt-4">
-                    <button class="btn btn-light px-4 mr-2" data-dismiss="modal">Cancel</button>
-                    <form action="{{ url_for('admin.delete_class_permanently', class_code=c.class_code) }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger px-4">Confirm Destruction</button>
+                <i class="fas fa-bomb fa-4x text-danger mb-4"></i>
+                <h4 class="font-weight-bold" style="font-family: var(--tp-serif);">Irreversible Deletion</h4>
+                <p class="text-gray-600">Destroy <strong>Class {{ c.class_code }}</strong> ({{ c.course_name }})? All student enrollment records associated with this session will be permanently wiped.</p>
+                <div class="mt-4 justify-content-center d-flex" style="gap: 12px;">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('admin.delete_class_permanently', class_code=c.class_code) }}" method="POST">
+                        <button type="submit" class="btn btn-danger px-4 font-weight-bold">Destroy Forever</button>
                     </form>
                 </div>
             </div>
@@ -108,21 +111,16 @@
 <script>
     $(document).ready(function() {
         "use strict";
-
-        // Logic for Filter & Pagination
         const rows = Array.from(document.querySelectorAll('#classTrashTable tbody tr.trash-row'));
         let filtered = [...rows];
-
         const paginator = createPaginator({ 
             tableBodySelector: '#classTrashTable tbody', 
             paginationSelector: '#class-trash-pagination', 
             rowsPerPage: 10, 
             getVisibleRows: () => filtered 
         });
-        
         paginator.render();
 
-        // Search filtering logic
         $('#classTrashSearch').on('keyup', function() {
             const val = $(this).val().toLowerCase();
             filtered = rows.filter(r => r.textContent.toLowerCase().includes(val));

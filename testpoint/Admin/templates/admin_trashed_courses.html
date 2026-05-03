@@ -4,38 +4,31 @@
 
 {% block head %}
 <style>
-    .card {
-        border: none;
-    }
-
-    .btn-circle.btn-sm {
-        height: 30px;
-        width: 30px;
-        font-size: 0.75rem;
-    }
-
-    .course-row {
-        transition: all 0.2s;
-    }
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .tp-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; padding: 8px 24px; }
+    .form-control { height: 42px !important; border-radius: 8px !important; border: 1.5px solid var(--tp-admin-border) !important; font-size: 14px !important; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Courses</h1>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-danger shadow-sm px-3" data-toggle="modal" data-target="#emptyTrashModal">
-            <i class="fas fa-eraser fa-sm text-white-50 mr-1"></i> Empty Trash
-        </button>
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-trash-alt mr-2 text-danger"></i>Trashed Courses</h1>
+        <p class="text-muted small mb-0">Manage subjects flagged for permanent deletion.</p>
     </div>
+    <button class="btn btn-danger shadow-sm tp-pill font-weight-bold" data-toggle="modal" data-target="#emptyTrashModal">
+        <i class="fas fa-eraser mr-2"></i> Purge All Trash
+    </button>
 </div>
 
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_courses') }}">Courses</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Trash Bin</li>
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_courses') }}">Catalog</a></li>
+        <li class="breadcrumb-item active">Trash Bin</li>
     </ol>
 </nav>
 
@@ -44,84 +37,66 @@
 {% for category, message in messages %}
 <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}" role="alert">
     {{ message }}
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+    <button type="button" class="close" data-dismiss="alert"><span>×</span></button>
 </div>
 {% endfor %}
 {% endif %}
 {% endwith %}
 
-<!-- Filter/Search Card -->
-<div class="card shadow mb-4 border-bottom-dark">
-    <div class="card-body">
+<!-- Filter Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
         <div class="row align-items-center">
-            <div class="col-md-9">
+            <div class="col-md-9 mb-2 mb-md-0">
                 <div class="input-group">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i
-                                class="fas fa-search text-gray-400"></i></span>
-                    </div>
-                    <input type="text" class="form-control border-left-0" id="searchInput"
-                        placeholder="Search by subject code or title...">
+                    <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span></div>
+                    <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search by subject code or title...">
                 </div>
             </div>
             <div class="col-md-3">
-                <button type="button" id="resetFilters" class="btn btn-secondary btn-block shadow-sm">Reset
-                    View</button>
+                <button type="button" id="resetFilters" class="btn btn-light btn-block font-weight-bold small">Reset View</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Trashed Courses Table -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3 bg-white">
-        <h6 class="m-0 font-weight-bold text-dark text-uppercase small">Deleted Subjects Registry</h6>
+<!-- Trashed Table -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3 bg-white border-0">
+        <h6 class="m-0 font-weight-bold text-gray-800 text-uppercase small" style="letter-spacing: 0.5px;">Deleted Subjects Registry</h6>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" id="courseTable" width="100%">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="20%">Subject Code</th>
-                        <th width="50%">Subject Title</th>
-                        <th class="text-center" width="30%">Restore / Destroy</th>
+            <table class="table table-hover align-middle mb-0" id="courseTable">
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="20%">Subject Code</th>
+                        <th class="border-0" width="50%">Subject Title</th>
+                        <th class="border-0 text-center px-4" width="30%">Restore / Destroy</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in trashed_courses %}
                     <tr class="course-row">
-                        <td><span class="font-weight-bold text-dark">{{ course.course_code }}</span></td>
-                        <td>{{ course.course_name }}</td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-success btn-circle btn-sm mr-2 shadow-sm"
-                                title="Restore Subject" data-toggle="modal" data-target="#restoreCourseModal"
-                                data-id="{{ course.course_code }}" data-name="{{ course.course_name }}">
-                                <i class="fas fa-undo"></i>
+                        <td class="px-4 font-weight-bold text-gray-800">{{ course.course_code }}</td>
+                        <td class="font-weight-bold text-gray-700">{{ course.course_name }}</td>
+                        <td class="text-center px-4">
+                            <button type="button" class="btn btn-circle-sm mr-2" data-toggle="modal" data-target="#restoreCourseModal" data-id="{{ course.course_code }}" data-name="{{ course.course_name }}" title="Restore Subject">
+                                <i class="fas fa-undo text-success"></i>
                             </button>
-
-                            <button type="button" class="btn btn-danger btn-circle btn-sm shadow-sm"
-                                title="Delete Permanently" data-toggle="modal" data-target="#permDeleteCourseModal"
-                                data-id="{{ course.course_code }}" data-name="{{ course.course_name }}">
-                                <i class="fas fa-exclamation-triangle"></i>
+                            <button type="button" class="btn btn-circle-sm" data-toggle="modal" data-target="#permDeleteCourseModal" data-id="{{ course.course_code }}" data-name="{{ course.course_name }}" title="Destroy Permanently">
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
                             </button>
                         </td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="3" class="text-center py-5">
-                            <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i>
-                            <p class="text-gray-500 italic">Course trash bin is empty.</p>
-                        </td>
-                    </tr>
+                    <tr><td colspan="3" class="text-center py-5 text-muted font-italic small">Course trash bin is empty.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Container -->
-        <div class="p-3 bg-light border-top">
-            <nav aria-label="Trashed courses pagination">
+        <div class="card-footer bg-white border-0 py-3">
+            <nav aria-label="Trashed pagination">
                 <ul class="pagination pagination-sm justify-content-center mb-0" id="trashed-courses-pagination"></ul>
             </nav>
         </div>
@@ -130,26 +105,20 @@
 {% endblock %}
 
 {% block modals %}
-<!-- ── MODALS SECTION (Outside Animation Area) ── -->
-
 <!-- Restore Confirmation Modal -->
 <div class="modal fade" id="restoreCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-success text-white border-0">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-undo mr-2"></i>Restore Subject</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-undo mr-2 text-success"></i>Restore Subject</h5>
             </div>
             <form id="restoreForm" method="POST">
-                <div class="modal-body text-center py-4">
-                    <p class="text-dark">Are you sure you want to restore <br><strong id="restoreCourseName"
-                            class="text-success h5"></strong>?</p>
-                    <p class="small text-muted mb-0">This will return the subject to the active Subject Catalog.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Restore <strong id="restoreCourseName" class="text-dark"></strong> to the active Subject Catalog?</p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-outline-secondary btn-sm px-3" type="button"
-                        data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-success btn-sm px-4 shadow-sm" type="submit">Confirm Restore</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-success px-4 font-weight-bold" type="submit">Yes, Restore</button>
                 </div>
             </form>
         </div>
@@ -159,25 +128,20 @@
 <!-- Permanent Delete Modal -->
 <div class="modal fade" id="permDeleteCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-dark text-white border-0">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-bomb mr-2"></i>Irreversible Deletion</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-bomb mr-2 text-danger"></i>Permanent Deletion</h5>
             </div>
             <form id="permDeleteForm" method="POST">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
-                    <p class="text-dark font-weight-bold">Destroy <span id="deleteCourseName"
-                            class="text-danger"></span> permanently?</p>
-                    <div class="alert alert-danger small mb-0">
-                        <i class="fas fa-info-circle mr-1"></i> <strong>Warning:</strong> All data, questions, and
-                        curriculum links related to this subject will be lost forever.
+                <div class="modal-body text-center p-4">
+                    <p class="text-dark font-weight-bold mb-2">Destroy <span id="deleteCourseName" class="text-danger"></span> permanently?</p>
+                    <div class="p-3 bg-light rounded text-muted small" style="border: 1px solid #fee2e2;">
+                        <i class="fas fa-exclamation-triangle text-danger mr-1"></i> <strong>Warning:</strong> Every single question and linked curriculum record will be lost forever.
                     </div>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-outline-secondary btn-sm px-3" type="button"
-                        data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Destroy Forever</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4 font-weight-bold" type="submit">Destroy Forever</button>
                 </div>
             </form>
         </div>
@@ -187,22 +151,17 @@
 <!-- Empty Trash Modal -->
 <div class="modal fade" id="emptyTrashModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-danger text-white border-0">
-                <h5 class="modal-title font-weight-bold">Purge Trash Bin</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-dumpster-fire mr-2 text-danger"></i>Confirm Wipe</h5>
             </div>
             <form action="{{ url_for('admin.empty_course_trash') }}" method="POST">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-dumpster-fire fa-3x text-danger mb-3"></i>
-                    <h5 class="font-weight-bold text-dark">Confirm Bulk Deletion</h5>
-                    <p class="text-muted small">You are about to permanently delete all subjects currently in the trash
-                        bin. This action cannot be reversed.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Permanently delete every subject currently in the trash? This operation is irreversible.</p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-outline-secondary btn-sm px-3" type="button"
-                        data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Purge Everything</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger px-4 font-weight-bold" type="submit">Confirm Purge</button>
                 </div>
             </form>
         </div>
@@ -212,60 +171,44 @@
 
 {% block scripts %}
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
-
 <script>
     (function ($) {
         "use strict";
 
-        // ── Filtering logic
         const courseTableBody = document.querySelector('#courseTable tbody');
         const allRows = Array.from(courseTableBody.querySelectorAll('tr.course-row'));
         let filteredRows = [...allRows];
 
         function performFilter() {
             var value = $('#searchInput').val().toLowerCase();
-            filteredRows = allRows.filter(row => {
-                return row.textContent.toLowerCase().indexOf(value) > -1;
-            });
+            filteredRows = allRows.filter(row => row.textContent.toLowerCase().indexOf(value) > -1);
             paginator.reset();
         }
 
         $('#searchInput').on('keyup', performFilter);
+        $('#resetFilters').on('click', function () { $('#searchInput').val(''); performFilter(); });
 
-        $('#resetFilters').on('click', function () {
-            $('#searchInput').val('');
-            performFilter();
-        });
-
-        // Modal Action Injection: Restore (Uses course_code)
         $('#restoreCourseModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
             var code = btn.data('id');
-            var name = btn.data('name');
-            $('#restoreCourseName').text(code + " (" + name + ")");
-            var action = "{{ url_for('admin.restore_course', course_code='_code_') }}".replace('_code_', code);
-            $('#restoreForm').attr('action', action);
+            $('#restoreCourseName').text(code + " (" + btn.data('name') + ")");
+            $('#restoreForm').attr('action', "{{ url_for('admin.restore_course', course_code='_code_') }}".replace('_code_', code));
         });
 
-        // Modal Action Injection: Permanent Delete (Uses course_code)
         $('#permDeleteCourseModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
             var code = btn.data('id');
             $('#deleteCourseName').text(code);
-            var action = "{{ url_for('admin.delete_course_permanently', course_code='_code_') }}".replace('_code_', code);
-            $('#permDeleteForm').attr('action', action);
+            $('#permDeleteForm').attr('action', "{{ url_for('admin.delete_course_permanently', course_code='_code_') }}".replace('_code_', code));
         });
 
-        // ── Paginator Implementation
         const paginator = createPaginator({
             tableBodySelector: 'tbody',
             paginationSelector: '#trashed-courses-pagination',
             rowsPerPage: 10,
             getVisibleRows: () => filteredRows,
         });
-
         paginator.render();
-
     })(jQuery);
 </script>
 {% endblock %}

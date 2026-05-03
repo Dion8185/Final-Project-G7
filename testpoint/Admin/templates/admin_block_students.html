@@ -1,37 +1,64 @@
 {% extends "admin_base.html" %}
-{% block title %}Block Enrollees - Admin Control{% endblock %}
+{% block title %}Block Enrollees - TestPoint Admin{% endblock %}
+
+{% block head %}
+<style>
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    
+    .capacity-card { border-radius: 12px; border: 1px solid #e3e6f0; background: #fff; border-left: 4px solid var(--tp-accent); }
+    .tp-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; }
+
+    /* Custom Checkbox Alignment */
+    .custom-control-label::before, .custom-control-label::after { top: 0.15rem; }
+    .student-item { padding: 10px; border-radius: 8px; transition: background 0.2s; border-bottom: 1px solid var(--tp-admin-border); }
+    .student-item:hover { background: #f8f9fc; }
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- HEADER -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Enrollees: <span class="text-primary">{{ block.block_name }}</span></h1>
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">Enrollees: <span class="text-primary">{{ block.block_name }}</span></h1>
+        <p class="text-muted small mb-0">Managing students assigned to {{ block.program_name }}.</p>
+    </div>
     <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#assignStudentModal">
-            <i class="fas fa-user-plus fa-sm mr-2"></i> Assign Students
+        <button class="btn btn-dark shadow-sm tp-pill px-4" data-toggle="modal" data-target="#assignStudentModal">
+            <i class="fas fa-user-plus mr-2"></i> Assign Students
         </button>
     </div>
 </div>
 
 <!-- BREADCRUMBS -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_blocks') }}">Blocks</a></li>
-        <li class="breadcrumb-item active">{{ block.program_name }} {{ block.block_name }} Enrollees</li>
+        <li class="breadcrumb-item active">{{ block.program_name }} {{ block.block_name }}</li>
     </ol>
 </nav>
 
 <!-- CAPACITY ALERT -->
-<div class="alert {% if students|length >= block.capacity %}alert-danger{% else %}alert-info{% endif %} shadow-sm small mb-4">
-    <i class="fas fa-info-circle mr-2"></i>
-    <strong>Capacity:</strong> {{ students|length }} / {{ block.capacity }} slots occupied.
+<div class="capacity-card p-3 mb-4 shadow-sm d-flex align-items-center justify-content-between" style="border-left-color: {% if students|length >= block.capacity %}#e74a3b{% else %}#4e73df{% endif %};">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-info-circle mr-3 {% if students|length >= block.capacity %}text-danger{% else %}text-primary{% endif %}" style="font-size: 20px;"></i>
+        <div>
+            <div class="small font-weight-bold text-uppercase text-muted" style="letter-spacing: 1px;">Current Enrollment</div>
+            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ students|length }} <span class="text-muted font-weight-normal">/ {{ block.capacity }} Slots Occupied</span></div>
+        </div>
+    </div>
+    {% if students|length >= block.capacity %}
+    <span class="badge badge-danger px-3 py-2 tp-pill">AT CAPACITY</span>
+    {% endif %}
 </div>
 
 <!-- TABLE CARD -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
-        <h6 class="m-0 font-weight-bold text-dark">Active Students ({{ students|length }})</h6>
-        <button type="button" id="btnBulkUnenroll" class="btn btn-danger btn-sm shadow-sm px-3 d-none animate__animated animate__fadeIn" onclick="confirmBulkUnenroll()">
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center border-0">
+        <h6 class="m-0 font-weight-bold text-gray-800 text-uppercase small" style="letter-spacing: 0.5px;">Active Students ({{ students|length }})</h6>
+        <button type="button" id="btnBulkUnenroll" class="btn btn-danger btn-sm tp-pill px-3 d-none animate__animated animate__fadeInDown" onclick="confirmBulkUnenroll()">
             <i class="fas fa-user-minus mr-1"></i> Unenroll Selected (<span id="selectedCount">0</span>)
         </button>
     </div>
@@ -40,18 +67,18 @@
             <input type="hidden" name="block_id" value="{{ block.block_id }}">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="studentTable">
-                    <thead class="thead-light">
-                        <tr>
-                            <th width="40" class="text-center">
+                    <thead class="bg-light">
+                        <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th width="50" class="text-center border-0">
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input" id="selectAllCurrent">
                                     <label class="custom-control-label" for="selectAllCurrent"></label>
                                 </div>
                             </th>
-                            <th>Student ID</th>
-                            <th>Full Name</th>
-                            <th>Email</th>
-                            <th class="text-center">Action</th>
+                            <th class="border-0">Student ID</th>
+                            <th class="border-0">Full Name</th>
+                            <th class="border-0">Email Address</th>
+                            <th class="border-0 text-center px-4">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,66 +90,75 @@
                                     <label class="custom-control-label" for="un_{{ s.student_id }}"></label>
                                 </div>
                             </td>
-                            <td class="font-weight-bold">{{ s.student_id }}</td>
-                            <td>{{ s.firstname }} {{ s.lastname }}</td>
-                            <td class="small">{{ s.email }}</td>
-                            <td class="text-center"><button type="button" class="btn btn-link text-danger p-0 small" onclick="singleUnenroll('{{ s.student_id }}')">Remove</button></td>
+                            <td><span class="font-weight-bold text-gray-800">{{ s.student_id }}</span></td>
+                            <td class="text-gray-800 font-weight-bold">{{ s.firstname }} {{ s.lastname }}</td>
+                            <td class="small text-muted">{{ s.email }}</td>
+                            <td class="text-center px-4">
+                                <button type="button" class="btn btn-circle-sm" onclick="singleUnenroll('{{ s.student_id }}')" title="Remove Student">
+                                    <i class="fas fa-user-minus text-danger"></i>
+                                </button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </form>
-        <div class="p-3 bg-light border-top">
+        <div class="card-footer bg-white border-0 py-3">
             <nav aria-label="Page navigation"><ul class="pagination pagination-sm justify-content-center mb-0" id="student-pagination"></ul></nav>
         </div>
     </div>
 </div>
+
+<!-- Hidden Single Unenroll Form -->
+<form id="singleUnenrollForm" action="{{ url_for('admin.remove_from_block', block_id=block.block_id, student_id='TMP') }}" method="POST" style="display:none;"></form>
 {% endblock %}
 
 {% block modals %}
 <div class="modal fade" id="assignStudentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-md" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold">Bulk Assign Students</h5>
-                <button class="close text-white" data-dismiss="modal"><span>×</span></button>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-user-plus mr-2 text-primary"></i>Bulk Assign Students</h5>
+                <button class="close" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.assign_to_block') }}" method="POST">
                 <input type="hidden" name="block_id" value="{{ block.block_id }}">
                 
-                <div class="modal-body">
-                    <!-- Search inside modal for convenience -->
-                    <div class="form-group">
-                        <input type="text" id="studentModalSearch" class="form-control form-control-sm mb-3" placeholder="Search unassigned students...">
+                <div class="modal-body p-4">
+                    <div class="form-group mb-4">
+                        <div class="input-group">
+                            <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span></div>
+                            <input type="text" id="studentModalSearch" class="form-control border-left-0" style="height: 40px !important;" placeholder="Search unassigned students...">
+                        </div>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-2 px-2">
-                        <label class="small font-weight-bold mb-0">Select Students</label>
-                        <button type="button" id="selectAllStudents" class="btn btn-sm btn-link p-0 text-primary">Select All</button>
+                    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                        <label class="small font-weight-bold text-muted text-uppercase mb-0" style="letter-spacing: 1px;">Available List</label>
+                        <button type="button" id="selectAllStudents" class="btn btn-sm btn-link p-0 font-weight-bold text-primary" style="text-decoration: none; font-size: 11px;">Select All</button>
                     </div>
 
-                    <!-- Scrollable Area for Students -->
-                    <div class="border rounded p-2 bg-light" style="max-height: 300px; overflow-y: auto;">
+                    <div class="border rounded-lg bg-light" style="max-height: 350px; overflow-y: auto; border: 1.5px solid var(--tp-admin-border) !important;">
                         {% for u in unassigned %}
-                        <div class="custom-control custom-checkbox mb-2 student-item">
+                        <div class="custom-control custom-checkbox student-item">
                             <input type="checkbox" name="student_ids" value="{{ u.student_id }}" class="custom-control-input student-checkbox" id="chk_{{ u.student_id }}">
-                            <label class="custom-control-label d-block cursor-pointer" for="chk_{{ u.student_id }}">
-                                <span class="font-weight-bold text-dark">{{ u.firstname }} {{ u.lastname }}</span>
-                                <br><small class="text-muted">{{ u.student_id }}</small>
+                            <label class="custom-control-label d-block cursor-pointer w-100" for="chk_{{ u.student_id }}">
+                                <span class="font-weight-bold text-gray-800" style="font-size: 13.5px;">{{ u.firstname }} {{ u.lastname }}</span>
+                                <br><span class="text-muted" style="font-size: 11px;">ID: {{ u.student_id }}</span>
                             </label>
                         </div>
                         {% else %}
-                        <div class="text-center py-4 text-muted small">
-                            No unassigned students available.
+                        <div class="text-center py-5 text-muted small">
+                            <i class="fas fa-user-check fa-2x mb-3 opacity-25"></i>
+                            <p class="mb-0">All students are currently assigned.</p>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
 
-                <div class="modal-footer bg-white">
-                    <button class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4 shadow-sm" type="submit" id="submitBulkAssign" {% if not unassigned %}disabled{% endif %}>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button class="btn btn-light px-4" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-dark px-4 font-weight-bold" type="submit" id="submitBulkAssign" {% if not unassigned %}disabled{% endif %}>
                         Assign Selected
                     </button>
                 </div>
@@ -156,21 +192,17 @@ $(document).ready(function() {
         $('.student-checkbox').prop('checked', false);
         $('#studentModalSearch').val('').trigger('keyup');
     });
-});
-</script>
 
-<script>
-$(document).ready(function() {
+    // 3. Bulk UI Logic
     const $selectAll = $('#selectAllCurrent');
     const $checkboxes = $('.student-unenroll-check');
     const $bulkBtn = $('#btnBulkUnenroll');
     const $countLabel = $('#selectedCount');
 
-    // Update UI based on how many checkboxes are checked
     function updateBulkUI() {
         const checkedCount = $('.student-unenroll-check:checked').length;
         if (checkedCount > 0) {
-            $bulkBtn.removeClass('d-none').addClass('animate__animated animate__fadeInDown');
+            $bulkBtn.removeClass('d-none');
             $countLabel.text(checkedCount);
         } else {
             $bulkBtn.addClass('d-none');
@@ -178,31 +210,21 @@ $(document).ready(function() {
         $selectAll.prop('checked', checkedCount === $checkboxes.length && $checkboxes.length > 0);
     }
 
-    // Select All click
-    $selectAll.on('change', function() {
-        $checkboxes.prop('checked', this.checked);
-        updateBulkUI();
-    });
-
-    // Individual checkbox click
-    $checkboxes.on('change', function() {
-        updateBulkUI();
-    });
+    $selectAll.on('change', function() { $checkboxes.prop('checked', this.checked); updateBulkUI(); });
+    $checkboxes.on('change', function() { updateBulkUI(); });
 });
 
-// Confirmation logic
 function confirmBulkUnenroll() {
     if (confirm("Are you sure you want to remove the selected students from this block?")) {
         $('#bulkUnenrollForm').submit();
     }
 }
 
-// Single unenroll helper
 function singleUnenroll(studentId) {
     if (confirm("Remove this student from the block?")) {
         let form = $('#singleUnenrollForm');
-        let action = form.attr('action').replace('TMP', studentId);
-        form.attr('action', action).submit();
+        let baseAction = "{{ url_for('admin.remove_from_block', block_id=block.block_id, student_id='TMP') }}";
+        form.attr('action', baseAction.replace('TMP', studentId)).submit();
     }
 }
 </script>

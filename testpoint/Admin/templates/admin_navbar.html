@@ -1,22 +1,22 @@
 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 sticky-top shadow">
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i
-            class="fa fa-bars"></i></button>
+    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+        <i class="fa fa-bars text-gray-600"></i>
+    </button>
+
     <ul class="navbar-nav ml-auto">
-        <li class="nav-item dropdown no-arrow mx-1">
-        </li>
         <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                data-toggle="dropdown">
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ firstname }}</span>
-                <img class="img-profile rounded-circle"
-                    src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                <span class="mr-2 d-none d-lg-inline text-gray-700 font-weight-bold small">{{ firstname }}</span>
+                <div class="img-profile rounded-circle d-flex align-items-center justify-content-center bg-light" style="width: 32px; height: 32px;">
+                    <i class="fas fa-user-shield text-gray-500" style="font-size: 14px;"></i>
+                </div>
             </a>
-            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                <a class="dropdown-item" href="{{url_for('admin.profile')}}"><i
-                        class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
+            <div class="dropdown-menu dropdown-menu-right shadow border-0 animated--grow-in" style="border-radius: 12px; padding: 10px;">
+                <a class="dropdown-item rounded" href="{{url_for('admin.profile')}}" style="padding: 10px 15px;">
+                    <i class="fas fa-user-circle fa-sm fa-fw mr-2 text-gray-400"></i> My Profile
+                </a>
                 <div class="dropdown-divider"></div>
-                <button type="button" class="dropdown-item border-0 bg-transparent w-100 text-left"
-                    data-toggle="modal" data-target="#logoutModal">
+                <button type="button" class="dropdown-item rounded border-0 bg-transparent w-100 text-left" data-toggle="modal" data-target="#logoutModal" style="padding: 10px 15px;">
                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
                 </button>
             </div>

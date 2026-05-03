@@ -1,73 +1,82 @@
 {% extends "admin_base.html" %}
-{% block title %}Program Blocks - Admin Control{% endblock %}
+{% block title %}Program Blocks - TestPoint Admin{% endblock %}
+
+{% block head %}
+<style>
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; padding: 6px 20px; }
+    .progress { background-color: var(--tp-admin-bg); }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- 1. HEADER & ACTIONS -->
+<!-- HEADER & ACTIONS -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">
-        Program Blocks: <span class="text-primary">{{ program.program_name }}</span>
-    </h1>
-    <div style="display: flex; gap: 10px;">
-        <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-sm btn-primary shadow-sm px-4">
-            <i class="fas fa-layer-group fa-sm mr-2"></i> Manage All Blocks
-        </a>
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">
+            Program Blocks: <span class="text-primary">{{ program.program_name }}</span>
+        </h1>
+        <p class="text-muted small mb-0">Managing sections and enrollment capacity for this degree program.</p>
     </div>
+    <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-dark shadow-sm btn-pill">
+        <i class="fas fa-layer-group mr-2"></i> Manage All Blocks
+    </a>
 </div>
 
-<!-- 2. BREADCRUMBS -->
+<!-- BREADCRUMBS -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
         <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_programs') }}">Degree Programs</a></li>
         <li class="breadcrumb-item active">{{ program.program_name }} Blocks</li>
     </ol>
 </nav>
 
-<!-- 3. FILTER CARD -->
-<div class="card shadow mb-4 border-bottom-secondary">
+<!-- FILTER CARD -->
+<div class="card shadow-sm mb-4">
     <div class="card-body py-3">
         <div class="input-group">
             <div class="input-group-prepend">
-                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span>
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span>
             </div>
             <input type="text" id="blockSearch" class="form-control border-left-0" placeholder="Search blocks by name...">
         </div>
     </div>
 </div>
 
-<!-- 4. TABLE CARD -->
-<div class="card shadow mb-4">
-    <div class="card-header py-3 bg-white">
-        <h6 class="m-0 font-weight-bold text-dark text-uppercase small">Blocks under {{ program.program_name }} ({{ blocks|length }})</h6>
+<!-- TABLE CARD -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header py-3 bg-white border-0">
+        <h6 class="m-0 font-weight-bold text-gray-800 text-uppercase small" style="letter-spacing: 0.5px;">Blocks under {{ program.program_name }}</h6>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="progBlockTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="30%">Block Name</th>
-                        <th width="40%">Capacity Status</th>
-                        <th class="text-center" width="30%">Action</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="30%">Block Name</th>
+                        <th class="border-0" width="40%">Capacity Status</th>
+                        <th class="border-0 text-center px-4" width="30%">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for b in blocks %}
                     <tr class="block-row">
-                        <td class="font-weight-bold text-dark">{{ b.block_name }}</td>
+                        <td class="px-4 font-weight-bold text-gray-800">{{ b.block_name }}</td>
                         <td>
-                            <div class="small font-weight-bold mb-1">
-                                {{ b.current_count }} / {{ b.capacity }} Slots Occupied
-                                {% if b.current_count >= b.capacity %}<span class="badge badge-danger ml-2">Full</span>{% endif %}
+                            <div class="d-flex justify-content-between mb-1" style="max-width: 250px;">
+                                <span class="small font-weight-bold text-gray-700">{{ b.current_count }} / {{ b.capacity }} Slots</span>
+                                {% if b.current_count >= b.capacity %}<span class="badge badge-danger" style="font-size: 9px;">FULL</span>{% endif %}
                             </div>
-                            <div class="progress progress-sm" style="height: 8px; width: 200px;">
+                            <div class="progress" style="height: 6px; width: 250px; border-radius: 10px;">
                                 {% set percent = (b.current_count / b.capacity * 100)|round %}
                                 <div class="progress-bar {% if percent > 90 %}bg-danger{% elif percent > 70 %}bg-warning{% else %}bg-success{% endif %}" 
-                                     style="width: {{ percent }}%"></div>
+                                     style="width: {{ percent }}%; border-radius: 10px;"></div>
                             </div>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center px-4">
                             <a href="{{ url_for('admin.manage_block_students', block_id=b.block_id) }}" 
-                               class="btn btn-info btn-sm px-4 shadow-sm rounded-pill">
+                               class="btn btn-white border shadow-sm btn-pill text-info">
                                 <i class="fas fa-users mr-1"></i> View Students
                             </a>
                         </td>
@@ -76,15 +85,14 @@
                     <tr>
                         <td colspan="3" class="text-center py-5">
                             <i class="fas fa-layer-group fa-3x text-gray-200 mb-3"></i>
-                            <p class="text-gray-500 italic">No blocks are currently assigned to this program.</p>
+                            <p class="text-muted font-italic small">No blocks are currently assigned to this program.</p>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <!-- Pagination Footer -->
-        <div class="p-3 bg-light border-top">
+        <div class="card-footer bg-white border-0 py-3">
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm justify-content-center mb-0" id="prog-block-pagination"></ul>
             </nav>
@@ -98,21 +106,15 @@
 <script>
     $(document).ready(function() {
         "use strict";
-
-        // Logic for Filter & Pagination
         const rows = Array.from(document.querySelectorAll('#progBlockTable tbody tr.block-row'));
         let filtered = [...rows];
-
         const paginator = createPaginator({ 
             tableBodySelector: '#progBlockTable tbody', 
             paginationSelector: '#prog-block-pagination', 
             rowsPerPage: 10, 
             getVisibleRows: () => filtered 
         });
-        
         paginator.render();
-
-        // Search filtering logic
         $('#blockSearch').on('keyup', function() {
             const val = $(this).val().toLowerCase();
             filtered = rows.filter(r => r.textContent.toLowerCase().includes(val));

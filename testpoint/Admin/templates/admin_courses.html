@@ -1,127 +1,112 @@
 {% extends "admin_base.html" %}
 
-{% block title %}Courses - Admin Control{% endblock %}
+{% block title %}Course Catalog - TestPoint Admin{% endblock %}
 
 {% block head %}
 <style>
-    .course-card {
-        transition: all 0.2s;
-        border-left: 5px solid transparent;
-    }
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    
+    .tp-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; padding: 8px 24px; }
+    .form-control { height: 42px !important; border-radius: 8px !important; border: 1.5px solid var(--tp-admin-border) !important; font-size: 14px !important; }
+    .form-control:focus { border-color: var(--tp-admin-ink) !important; box-shadow: 0 0 0 4px rgba(15,14,17,0.05) !important; }
+    
+    .field-feedback { font-size: 11px; margin-top: 4px; display: block; min-height: 1rem; }
+    .valid-msg { color: #1a7a5e; }
+    .invalid-msg { color: #c0392b; }
 
-    .course-card:hover {
-        border-left: 5px solid #4e73df;
-        background-color: #f8f9fc;
-    }
-
-    .btn-circle.btn-sm {
-        height: 30px;
-        width: 30px;
-        font-size: 0.75rem;
-    }
-
-    /* ── VALIDATION STYLES ── */
-    .field-feedback {
-        font-size: 0.70rem;
-        margin-top: 0.2rem;
-        display: block;
-        min-height: 1rem;
-        padding-left: 5px;
-    }
-
-    .valid-msg {
-        color: #28a745;
-    }
-
-    .invalid-msg {
-        color: #dc3545;
-    }
+    /* Description link styling */
+    .btn-view-desc { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--tp-accent); text-decoration: none !important; padding: 2px 8px; border-radius: 4px; background: var(--tp-accent-lt); transition: all 0.2s; }
+    .btn-view-desc:hover { background: var(--tp-accent); color: #fff; }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- Page Header -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Courses</h1>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn btn-sm btn-primary shadow-sm px-4" data-toggle="modal" data-target="#addCourseModal">
-            <i class="fas fa-plus fa-sm text-white-50 mr-2"></i> Add New Course
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">Course Catalog</h1>
+        <p class="text-muted small mb-0">Manage and organize institutional subjects and descriptions.</p>
+    </div>
+    <div class="d-flex" style="gap: 12px;">
+        <button class="btn btn-dark shadow-sm tp-pill" data-toggle="modal" data-target="#addCourseModal">
+            <i class="fas fa-plus mr-2"></i> Add New Subject
         </button>
-        <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-sm btn-danger shadow-sm px-3">
-            <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> View Trash
+        <a href="{{ url_for('admin.trashed_courses') }}" class="btn btn-white border shadow-sm tp-pill text-danger">
+            <i class="fas fa-trash-alt mr-2"></i> View Trash
         </a>        
     </div>
 </div>
 
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm small">
+    <ol class="breadcrumb bg-white shadow-sm small" style="border-radius: 12px;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.admin_dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Courses</li>
+        <li class="breadcrumb-item active">Subject Catalog</li>
     </ol>
 </nav>
 
-<!-- Flash Messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 {% for category, message in messages %}
 <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-left-{{ category }}" role="alert">
     {{ message }}
-    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+    <button type="button" class="close" data-dismiss="alert"><span>×</span></button>
 </div>
 {% endfor %}
 {% endif %}
 {% endwith %}
 
 <!-- Filter Card -->
-<div class="card shadow mb-4 border-bottom-secondary">
+<div class="card shadow-sm mb-4">
     <div class="card-body py-3">
         <div class="input-group">
             <div class="input-group-prepend">
-                <span class="input-group-text bg-white border-right-0"><i
-                        class="fas fa-search text-gray-400"></i></span>
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span>
             </div>
-            <input type="text" id="searchInput" class="form-control border-left-0"
-                placeholder="Search by Subject Code or Title...">
+            <input type="text" id="searchInput" class="form-control border-left-0" placeholder="Search by subject code, title, or keywords...">
         </div>
     </div>
 </div>
 
 <!-- Subjects Table -->
-<div class="card shadow mb-4">
-    <div class="card-body">
+<div class="card shadow-sm mb-4">
+    <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle" id="courseTable" width="100%">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="15%">Code</th>
-                        <th width="30%">Subject Title</th>
-                        <th width="40%">Description</th>
-                        <th class="text-center" width="15%">Actions</th>
+            <table class="table table-hover align-middle mb-0" id="courseTable">
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="15%">Subject Code</th>
+                        <th class="border-0" width="25%">Title</th>
+                        <th class="border-0" width="45%">Description</th>
+                        <th class="border-0 text-center px-4" width="15%">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for course in courses %}
                     <tr class="course-row">
-                        <td class="font-weight-bold text-dark search-data">{{ course.course_code }}</td>
-                        <td class="search-data">{{ course.course_name }}</td>
-                        <td class="small text-muted">
-                            {{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}
+                        <td class="px-4 font-weight-bold text-gray-800 search-data">{{ course.course_code }}</td>
+                        <td class="search-data font-weight-bold text-gray-700">{{ course.course_name }}</td>
+                        <td>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span class="small text-muted text-truncate mr-2" style="max-width: 300px;">
+                                    {{ course.description[:80] }}{% if course.description|length > 80 %}...{% endif %}
+                                </span>
+                                <button type="button" class="btn btn-view-desc ml-auto flex-shrink-0" 
+                                        data-code="{{ course.course_code }}" 
+                                        data-name="{{ course.course_name }}" 
+                                        data-desc="{{ course.description }}">
+                                    View
+                                </button>
+                            </div>
                         </td>
-                        <td class="text-center">
-                            <!-- Trigger Edit Modal -->
-                            <button class="btn btn-info btn-circle btn-sm shadow-sm mr-1" 
-                                    data-toggle="modal" 
-                                    data-target="#editCourseModal{{ loop.index }}">
-                                <i class="fas fa-edit"></i>
+                        <td class="text-center px-4">
+                            <button class="btn btn-circle-sm mr-1" data-toggle="modal" data-target="#editCourseModal{{ loop.index }}" title="Edit Subject">
+                                <i class="fas fa-edit text-info"></i>
                             </button>
-                            <!-- Trigger Delete Modal -->
-                            <button type="button" class="btn btn-danger btn-circle btn-sm shadow-sm"
-                                title="Move to Trash" data-toggle="modal" data-target="#deleteCourseModal"
-                                data-id="{{ course.course_code }}" data-name="{{ course.course_name }}">
-                                <i class="fas fa-trash"></i>
+                            <button type="button" class="btn btn-circle-sm" data-toggle="modal" data-target="#deleteCourseModal" data-id="{{ course.course_code }}" data-name="{{ course.course_name }}" title="Move to Trash">
+                                <i class="fas fa-trash text-danger"></i>
                             </button>
                         </td>
                     </tr>
@@ -129,7 +114,7 @@
                     <tr>
                         <td colspan="4" class="text-center py-5">
                             <i class="fas fa-book fa-3x text-gray-200 mb-3"></i>
-                            <p class="text-gray-500 italic">No subjects found in the catalog.</p>
+                            <p class="text-muted font-italic small">No subjects found in the catalog.</p>
                         </td>
                     </tr>
                     {% endfor %}
@@ -141,38 +126,57 @@
 {% endblock %}
 
 {% block modals %}
-<!-- ── MODALS SECTION (Outside Animation) ── -->
+<!-- ── FULL DESCRIPTION VIEW MODAL ── -->
+<div class="modal fade" id="descriptionViewModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);" id="viewModalCode">COMP101</h5>
+                    <p class="small text-primary font-weight-bold mb-0" id="viewModalName">Subject Title</p>
+                </div>
+                <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="p-3 bg-light rounded-lg" style="border: 1px solid var(--tp-admin-border); min-height: 120px;">
+                    <p class="small text-gray-700 mb-0" style="line-height: 1.6; white-space: pre-wrap;" id="viewModalDesc"></p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                <button class="btn btn-light px-4 font-weight-bold" type="button" data-dismiss="modal">Close View</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- 1. Add Subject Modal -->
 <div class="modal fade validate-modal" id="addCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-plus-circle mr-2"></i>New Subject Entry</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-plus-circle mr-2 text-primary"></i>New Subject Entry</h5>
+                <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.add_course') }}" method="POST" novalidate>
-                <div class="modal-body bg-light px-4">
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Subject Code</label>
+                <div class="modal-body p-4">
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold">Subject Code</label>
                         <input type="text" class="form-control" name="course_code" placeholder="e.g. COMP101" required>
                         <span class="field-feedback"></span>
                     </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Subject Title</label>
-                        <input type="text" class="form-control" name="course_name"
-                            placeholder="e.g. Introduction to Computing" required>
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold">Subject Title</label>
+                        <input type="text" class="form-control" name="course_name" placeholder="e.g. Introduction to Computing" required>
                         <span class="field-feedback"></span>
                     </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Subject Description</label>
-                        <textarea class="form-control" name="description" rows="4"
-                            placeholder="Brief overview..."></textarea>
+                    <div class="form-group mb-0">
+                        <label class="small font-weight-bold">Subject Description</label>
+                        <textarea class="form-control" name="description" rows="4" placeholder="Briefly describe the course objectives..."></textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-white border-top">
-                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary btn-sm px-4" type="submit">Add to Catalog</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-dark px-4 font-weight-bold" type="submit">Add to Catalog</button>
                 </div>
             </form>
         </div>
@@ -183,28 +187,26 @@
 {% for course in courses %}
 <div class="modal fade" id="editCourseModal{{ loop.index }}" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-2"></i>Update: {{ course.course_code
-                    }}</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-edit mr-2 text-info"></i>Update: {{ course.course_code }}</h5>
+                <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.update_course', old_code=course.course_code) }}" method="POST" novalidate>
-                <div class="modal-body bg-light px-4">
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Subject Title</label>
-                        <input type="text" class="form-control" name="course_name" value="{{ course.course_name }}"
-                            required>
+                <div class="modal-body p-4">
+                    <div class="form-group mb-3">
+                        <label class="small font-weight-bold">Subject Title</label>
+                        <input type="text" class="form-control" name="course_name" value="{{ course.course_name }}" required>
                         <span class="field-feedback"></span>
                     </div>
-                    <div class="form-group">
-                        <label class="small font-weight-bold text-dark">Description</label>
+                    <div class="form-group mb-0">
+                        <label class="small font-weight-bold">Description</label>
                         <textarea class="form-control" name="description" rows="4">{{ course.description }}</textarea>
                     </div>
                 </div>
-                <div class="modal-footer bg-white border-top">
-                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-info btn-sm px-4" type="submit">Save Changes</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-info px-4 font-weight-bold" type="submit">Save Changes</button>
                 </div>
             </form>
         </div>
@@ -215,21 +217,17 @@
 <!-- 3. Delete Confirmation Modal -->
 <div class="modal fade" id="deleteCourseModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-danger text-white border-0">
-                <h5 class="modal-title font-weight-bold">Move to Trash</h5>
-                <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-trash-alt mr-2 text-danger"></i>Move to Trash</h5>
             </div>
             <form id="deleteCourseForm" method="POST" action="">
-                <div class="modal-body text-center py-4 bg-white">
-                    <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
-                    <p class="text-dark font-weight-bold mb-1">Move <span id="deleteCourseName"
-                            class="text-danger"></span> to trash?</p>
-                    <p class="small text-muted">You can restore this subject later from the Trash Bin.</p>
+                <div class="modal-body text-center p-4">
+                    <p class="text-gray-600 mb-0">Move <span id="deleteCourseName" class="font-weight-bold text-dark"></span> to trash? You can restore it later.</p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger btn-sm px-4 shadow-sm" type="submit">Yes, Move to Trash</button>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
+                    <button class="btn btn-light px-4" type="button" data-dismiss="modal">Keep Subject</button>
+                    <button class="btn btn-danger px-4 font-weight-bold" type="submit">Delete Subject</button>
                 </div>
             </form>
         </div>
@@ -242,16 +240,28 @@
     $(document).ready(function () {
         "use strict";
 
+        // 1. Search Logic
         $('#searchInput').on('keyup', function () {
             var value = $(this).val().toLowerCase();
             $(".course-row").each(function () {
-                // Search the WHOLE row text for better results
                 var rowText = $(this).text().toLowerCase();
                 $(this).toggle(rowText.indexOf(value) > -1);
             });
         });
 
-        // Delete Modal Logic
+        // 2. Full Description View Logic
+        $('.btn-view-desc').on('click', function() {
+            const code = $(this).data('code');
+            const name = $(this).data('name');
+            const desc = $(this).data('desc');
+
+            $('#viewModalCode').text(code);
+            $('#viewModalName').text(name);
+            $('#viewModalDesc').text(desc || "No description provided for this course.");
+            $('#descriptionViewModal').modal('show');
+        });
+
+        // 3. Delete Modal Logic
         $('#deleteCourseModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
             var code = btn.data('id');
@@ -261,7 +271,7 @@
             $('#deleteCourseForm').attr('action', actionUrl);
         });
 
-        // Inline Validation
+        // 4. Inline Validation
         $(document).on('input blur', '.validate-modal input[required]', function () {
             const input = $(this);
             if (input.val().trim().length < 2) {

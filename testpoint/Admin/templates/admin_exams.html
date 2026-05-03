@@ -1,57 +1,46 @@
 {% extends "admin_base.html" %}
 
-{% block title %}Exam Oversight - Admin Control{% endblock %}
+{% block title %}Exam Oversight - TestPoint Admin{% endblock %}
 
 {% block head %}
 <style>
-    .sidebar {
-        transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important;
-    }
+    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
+    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: 1.5px solid var(--tp-admin-border); background: #fff; }
+    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    
+    .tp-pill { border-radius: 50px !important; font-weight: 600; font-size: 12px; padding: 6px 20px; }
+    .form-control { height: 42px !important; border-radius: 8px !important; border: 1.5px solid var(--tp-admin-border) !important; font-size: 14px !important; }
 
-    .card {
-        transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
-        border: none;
-    }
-
-    /* Live Pulse Animation */
+    /* Live Pulse Animation Modernized */
     .pulse-live {
-        width: 10px;
-        height: 10px;
-        background: #e74a3b;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 5px;
-        box-shadow: 0 0 0 rgba(231, 74, 59, 0.4);
-        animation: pulse 2s infinite;
+        width: 8px; height: 8px; background: #d93025; border-radius: 50%; display: inline-block;
+        margin-right: 8px; box-shadow: 0 0 0 rgba(217, 48, 37, 0.4); animation: pulse 2s infinite;
     }
-
     @keyframes pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.4);
-        }
-
-        70% {
-            box-shadow: 0 0 0 10px rgba(231, 74, 59, 0);
-        }
-
-        100% {
-            box-shadow: 0 0 0 0 rgba(231, 74, 59, 0);
-        }
+        0% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(217, 48, 37, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(217, 48, 37, 0); }
     }
+
+    .badge-soft-success { background: #edf8f5; color: #1a7a5e; border: 1px solid #d1e7dd; }
+    .badge-soft-secondary { background: #f1f1f1; color: #5a5c69; border: 1px solid #dddfeb; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Global Exam Oversight</h1>
-    <span class="badge badge-dark p-2 shadow-sm"><i class="fas fa-eye mr-1"></i> System-Wide Monitor</span>
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">Exam Oversight</h1>
+        <p class="text-muted small mb-0">Live monitoring of all active and scheduled examinations.</p>
+    </div>
+    <span class="badge badge-dark px-3 py-2 tp-pill shadow-sm"><i class="fas fa-eye mr-1"></i> System-Wide Monitor</span>
 </div>
 
 <!-- Filters -->
-<div class="card shadow mb-4 border-bottom-secondary">
-    <div class="card-body">
-        <form class="row" id="filterForm">
-            <div class="col-md-3 mb-2">
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-3">
+        <form class="row align-items-center" id="filterForm">
+            <div class="col-md-3 mb-2 mb-md-0">
                 <select class="form-control" id="statusFilter">
                     <option value="all">All Statuses</option>
                     <option value="live">Live Now</option>
@@ -59,14 +48,12 @@
                     <option value="inactive">Inactive</option>
                 </select>
             </div>
-            <div class="col-md-9 mb-2">
+            <div class="col-md-9">
                 <div class="input-group">
                     <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i
-                                class="fas fa-search text-gray-400"></i></span>
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400 small"></i></span>
                     </div>
-                    <input type="text" class="form-control border-left-0" id="examSearch"
-                        placeholder="Search by Instructor, Exam Title, Subject, or Block...">
+                    <input type="text" class="form-control border-left-0" id="examSearch" placeholder="Search by instructor, subject, or section...">
                 </div>
             </div>
         </form>
@@ -74,19 +61,18 @@
 </div>
 
 <!-- Exam Table -->
-<div class="card shadow mb-4">
+<div class="card shadow-sm mb-4">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="examTable">
-                <thead class="thead-light">
-                    <tr>
-                        <th width="20%">Exam Title</th>
-                        <th width="15%">Instructor</th>
-                        <th width="15%">Subject (Catalog)</th>
-                        <th width="15%">Block / Section</th>
-                        <th width="15%">Live Status</th>
-                        <th width="10%">Violations</th>
-                        <th class="text-center" width="10%">Actions</th>
+                <thead class="bg-light">
+                    <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th class="border-0 px-4" width="22%">Exam Details</th>
+                        <th class="border-0" width="18%">Instructor</th>
+                        <th class="border-0" width="12%">Subject</th>
+                        <th class="border-0" width="12%">Section</th>
+                        <th class="border-0" width="18%">Live Status</th>
+                        <th class="border-0" width="8%">Violations</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,13 +81,12 @@
                         data-status="{{ 'live' if exam.is_live else 'active' if exam.is_active == 1 else 'inactive' }}"
                         data-search="{{ exam.title|lower }} {{ exam.teacher_full_name|lower }} {{ exam.course_code|lower }} {{ exam.block_name|lower }}">
 
-                        <td>
-                            <div class="font-weight-bold text-dark">{{ exam.title }}</div>
-                            <small class="text-muted"><i class="fas fa-clock mr-1"></i> {{ exam.duration_minutes }}
-                                mins</small>
+                        <td class="px-4">
+                            <div class="font-weight-bold text-gray-800">{{ exam.title }}</div>
+                            <div class="small text-muted"><i class="far fa-clock mr-1"></i> {{ exam.duration_minutes }} mins</div>
                         </td>
-                        <td>{{ exam.teacher_full_name }}</td>
-                        <td><span class="badge badge-light border">{{ exam.course_code }}</span></td>
+                        <td class="font-weight-bold text-gray-700 small">{{ exam.teacher_full_name }}</td>
+                        <td><span class="badge badge-light border text-dark">{{ exam.course_code }}</span></td>
                         <td>
                             <span class="text-primary font-weight-bold small text-uppercase">
                                 <i class="fas fa-layer-group mr-1"></i>{{ exam.block_name }}
@@ -109,25 +94,19 @@
                         </td>
                         <td>
                             {% if exam.is_live %}
-                            <span class="text-danger font-weight-bold status-label" data-val="live">
+                            <span class="text-danger font-weight-bold small status-label d-flex align-items-center" data-val="live">
                                 <div class="pulse-live"></div> LIVE ({{ exam.active_count }} Testing)
                             </span>
                             {% elif exam.is_active == 1 %}
-                            <span class="badge badge-success status-label px-2 py-1" data-val="active">Active /
-                                Scheduled</span>
+                            <span class="badge badge-soft-success status-label px-2 py-1" style="font-size: 10px;" data-val="active">Active / Scheduled</span>
                             {% else %}
-                            <span class="badge badge-secondary status-label px-2 py-1"
-                                data-val="inactive">Inactive</span>
+                            <span class="badge badge-soft-secondary status-label px-2 py-1" style="font-size: 10px;" data-val="inactive">Inactive</span>
                             {% endif %}
                         </td>
                         <td>
-                            <span
-                                class="{% if exam.total_violations > 5 %}text-danger{% else %}text-warning{% endif %} font-weight-bold">
+                            <span class="{% if exam.total_violations > 5 %}text-danger{% else %}text-warning{% endif %} font-weight-bold">
                                 <i class="fas fa-exclamation-triangle mr-1"></i> {{ exam.total_violations }}
                             </span>
-                        </td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-dark rounded-pill px-3 shadow-sm">Details</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -135,15 +114,13 @@
                     <tr id="noResultsRow" style="display: none;">
                         <td colspan="7" class="text-center py-5">
                             <i class="fas fa-search-minus fa-3x text-gray-200 mb-3"></i>
-                            <p class="text-gray-500 italic">No exams match your filter criteria.</p>
+                            <p class="text-muted font-italic small">No exams match your current filters.</p>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination Container -->
-        <div class="p-3 bg-light border-top">
+        <div class="card-footer bg-white border-0 py-3">
             <nav aria-label="Exams pagination">
                 <ul class="pagination pagination-sm justify-content-center mb-0" id="exams-pagination"></ul>
             </nav>
@@ -154,12 +131,9 @@
 
 {% block scripts %}
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
-
 <script>
     $(document).ready(function () {
         "use strict";
-
-        // ── Filtering & Pagination ─────────────────────────────────────────
         const examTableBody = document.querySelector('#examTable tbody');
         const allRows = Array.from(examTableBody.querySelectorAll('tr.exam-row'));
         let filteredRows = [...allRows];
@@ -171,37 +145,25 @@
             filteredRows = allRows.filter(row => {
                 const rowSearchText = $(row).data('search');
                 const rowStatus = $(row).data('status');
-
                 const matchesSearch = rowSearchText.indexOf(searchText) > -1;
                 const matchesStatus = (statusValue === 'all' || rowStatus === statusValue);
-
                 return matchesSearch && matchesStatus;
             });
 
-            // Toggle No Results Message
-            if (filteredRows.length === 0) {
-                $('#noResultsRow').show();
-            } else {
-                $('#noResultsRow').hide();
-            }
-
+            $('#noResultsRow').toggle(filteredRows.length === 0);
             paginator.reset();
         }
 
         $('#examSearch').on('keyup', performFilter);
         $('#statusFilter').on('change', performFilter);
 
-        // ── Paginator Implementation ──────────────────────────────────────
         const paginator = createPaginator({
             tableBodySelector: 'tbody',
             paginationSelector: '#exams-pagination',
             rowsPerPage: 10,
             getVisibleRows: () => filteredRows,
         });
-
         paginator.render();
-
-        // Initial Filter Call
         performFilter();
     });
 </script>

@@ -4,35 +4,41 @@
 {% block content %}
 <!-- HEADER -->
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800 font-weight-bold">System Command Center</h1>
     <div>
-        <span class="badge badge-dark p-2 shadow-sm mr-2"><i class="fas fa-calendar-alt mr-1"></i> Term: Academic Year 2026</span>
-        <button class="btn btn-sm btn-primary shadow-sm" onclick="window.location.reload();"><i class="fas fa-sync-alt fa-sm"></i></button>
+        <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">System Command Center</h1>
+        <p class="text-muted small mb-0">Overview of institutional academic operations and security.</p>
+    </div>
+    <div class="d-flex align-items-center">
+        <div class="bg-white px-3 py-2 rounded-pill shadow-sm border mr-3 d-flex align-items-center">
+            <i class="fas fa-calendar-alt text-primary mr-2 small"></i>
+            <span class="small font-weight-bold text-gray-700">AY 2026</span>
+        </div>
+        <button class="btn btn-white btn-circle shadow-sm border" onclick="window.location.reload();">
+            <i class="fas fa-sync-alt fa-sm text-gray-600"></i>
+        </button>
     </div>
 </div>
 
-<!-- 1. QUICK ACTIONS ROW -->
+<!-- 1. QUICK ACTIONS BAR -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0" style="background: linear-gradient(to right, #ffffff, #fcfcfc);">
             <div class="card-body py-3 d-flex align-items-center overflow-auto">
-                <span class="small font-weight-bold text-muted text-uppercase mr-4">Quick Actions:</span>
-                
-                <!-- ACTIONS FOR ALL ADMINS (Academic Operations) -->
-                <a href="{{ url_for('admin.manage_programs') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
+                <span class="small font-weight-bold text-muted text-uppercase mr-4" style="letter-spacing: 1px;">Quick Actions:</span>
+                <a href="{{ url_for('admin.manage_programs') }}" class="btn btn-white shadow-sm border rounded-pill mr-2 text-nowrap px-3 py-1 small font-weight-bold">
                     <i class="fas fa-graduation-cap mr-1 text-primary"></i> Programs
                 </a>
-                <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
-                    <i class="fas fa-layer-group mr-1 text-success"></i> New Block
+                <a href="{{ url_for('admin.manage_blocks') }}" class="btn btn-white shadow-sm border rounded-pill mr-2 text-nowrap px-3 py-1 small font-weight-bold">
+                    <i class="fas fa-layer-group mr-1 text-success"></i> Blocks
                 </a>                
-                <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
-                    <i class="fas fa-book mr-1 text-secondary"></i> Subject Catalog
+                <a href="{{ url_for('admin.manage_courses') }}" class="btn btn-white shadow-sm border rounded-pill mr-2 text-nowrap px-3 py-1 small font-weight-bold">
+                    <i class="fas fa-book mr-1 text-secondary"></i> Catalog
                 </a>
-                <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
-                    <i class="fas fa-calendar-plus mr-1 text-info"></i> Schedule Class
+                <a href="{{ url_for('admin.manage_classes') }}" class="btn btn-white shadow-sm border rounded-pill mr-2 text-nowrap px-3 py-1 small font-weight-bold">
+                    <i class="fas fa-calendar-plus mr-1 text-info"></i> Schedule
                 </a>
-                <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-sm btn-light border mr-2 text-nowrap">
-                    <i class="fas fa-desktop mr-1 text-danger"></i> Monitor Exams
+                <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-white shadow-sm border rounded-pill mr-2 text-nowrap px-3 py-1 small font-weight-bold">
+                    <i class="fas fa-desktop mr-1 text-danger"></i> Monitor
                 </a>
             </div>
         </div>
@@ -41,58 +47,62 @@
 
 <!-- 2. SUMMARY CARDS -->
 <div class="row">
-    <!-- Programs -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
+        <div class="card h-100 py-2 border-left-primary">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Programs</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_programs }}</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ total_programs }}</div>
                     </div>
-                    <div class="col-auto"><i class="fas fa-graduation-cap fa-2x text-gray-300"></i></div>
+                    <div class="col-auto">
+                        <div class="p-3 bg-light rounded-circle"><i class="fas fa-graduation-cap fa-lg text-primary"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Blocks -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
+        <div class="card h-100 py-2 border-left-success">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Blocks</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_blocks }}</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ total_blocks }}</div>
                     </div>
-                    <div class="col-auto"><i class="fas fa-cubes fa-2x text-gray-300"></i></div>
+                    <div class="col-auto">
+                        <div class="p-3 bg-light rounded-circle"><i class="fas fa-cubes fa-lg text-success"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Classes -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
+        <div class="card h-100 py-2 border-left-info">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Active Classes</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_classes }}</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ total_classes }}</div>
                     </div>
-                    <div class="col-auto"><i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i></div>
+                    <div class="col-auto">
+                        <div class="p-3 bg-light rounded-circle"><i class="fas fa-chalkboard-teacher fa-lg text-info"></i></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Live Monitor -->
     <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-danger shadow h-100 py-2">
+        <div class="card h-100 py-2 border-left-danger">
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Live Exams</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ live_sessions }}</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ live_sessions }}</div>
                     </div>
-                    <div class="col-auto"><div class="spinner-grow spinner-grow-sm text-danger" role="status"></div></div>
+                    <div class="col-auto">
+                        <div class="spinner-grow spinner-grow-sm text-danger" role="status"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,38 +111,33 @@
 
 <!-- 3. CHARTS ROW -->
 <div class="row">
-    <!-- Bar Chart: Enrollment by Year -->
     <div class="col-xl-8 col-lg-7">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center">
-                <h6 class="m-0 font-weight-bold text-primary">Student Year-Level Distribution</h6>
+        <div class="card mb-4 border-0">
+            <div class="card-header py-3 bg-white d-flex justify-content-between align-items-center border-0">
+                <h6 class="m-0 font-weight-bold text-gray-800">Student Year-Level Distribution</h6>
+                <i class="fas fa-chart-bar text-gray-300"></i>
             </div>
             <div class="card-body">
-                <div class="chart-bar">
-                    <canvas id="yearLevelBarChart" height="300"></canvas>
+                <div class="chart-bar" style="height: 320px;">
+                    <canvas id="yearLevelBarChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Pie Chart: Roles -->
     <div class="col-xl-4 col-lg-5">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-white">
-                <h6 class="m-0 font-weight-bold text-primary">Account Roles</h6>
+        <div class="card mb-4 border-0">
+            <div class="card-header py-3 bg-white border-0">
+                <h6 class="m-0 font-weight-bold text-gray-800">Account Roles</h6>
             </div>
             <div class="card-body">
-                <div class="chart-pie pt-4 pb-2">
+                <div class="chart-pie pt-2 pb-2" style="height: 250px;">
                     <canvas id="userDistPie"></canvas>
                 </div>
-                <hr>
-                <div class="text-center mb-2">
-                    <strong>Total Accounts: {{ pie_values | sum }}</strong>
-                </div>
-                <div class="text-center small">
-                    <span class="mr-2"><i class="fas fa-circle text-primary"></i> Students</span>
-                    <span class="mr-2"><i class="fas fa-circle text-danger"></i> Teachers</span>
-                    <span class="mr-2"><i class="fas fa-circle text-dark"></i> Admins</span>
+                <div class="mt-4 text-center small">
+                    <span class="mr-2"><i class="fas fa-circle text-primary"></i> Student</span>
+                    <span class="mr-2"><i class="fas fa-circle text-danger"></i> Teacher</span>
+                    <span class="mr-2"><i class="fas fa-circle text-dark"></i> Admin</span>
                 </div>
             </div>
         </div>
@@ -142,33 +147,42 @@
 <!-- 4. MONITORING ROW -->
 <div class="row">
     <!-- Capacity Watchlist -->
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-white">
-                <h6 class="m-0 font-weight-bold text-dark">Capacity Watchlist <span class="badge badge-warning ml-2">Near Full</span></h6>
+    <div class="col-lg-7 mb-4">
+        <div class="card border-0">
+            <div class="card-header py-3 bg-white border-0 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-gray-800">Capacity Watchlist</h6>
+                <span class="badge badge-soft-warning px-3 py-2 rounded-pill font-weight-bold" style="background: #fff8e1; color: #f57c00; font-size: 10px;">NEAR FULL CAPACITY</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table align-items-center table-flush mb-0">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Block</th>
-                                <th>Enrollment</th>
-                                <th>Action</th>
+                        <thead class="bg-light">
+                            <tr style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th class="border-0">Block Information</th>
+                                <th class="border-0">Enrollment Status</th>
+                                <th class="border-0">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for b in watchlist %}
                             <tr>
-                                <td><span class="font-weight-bold">{{ b.block_name }}</span><br><small>{{ b.program_name }}</small></td>
-                                <td>
-                                    <div class="small font-weight-bold">{{ b.current_count }}/{{ b.capacity }}</div>
-                                    <div class="progress progress-sm"><div class="progress-bar bg-danger" style="width: {{ (b.current_count / b.capacity * 100)|int }}%"></div></div>
+                                <td class="py-3">
+                                    <span class="font-weight-bold text-gray-800">{{ b.block_name }}</span>
+                                    <div class="text-xs text-muted">{{ b.program_name }}</div>
                                 </td>
-                                <td><a href="{{ url_for('admin.manage_block_students', block_id=b.block_id) }}" class="btn btn-sm btn-outline-primary">Manage</a></td>
+                                <td>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span class="small font-weight-bold">{{ b.current_count }}/{{ b.capacity }}</span>
+                                        <span class="small text-muted">{{ (b.current_count / b.capacity * 100)|int }}%</span>
+                                    </div>
+                                    <div class="progress progress-sm" style="height: 6px; border-radius: 10px;">
+                                        <div class="progress-bar bg-danger" style="width: {{ (b.current_count / b.capacity * 100)|int }}%; border-radius: 10px;"></div>
+                                    </div>
+                                </td>
+                                <td><a href="{{ url_for('admin.manage_block_students', block_id=b.block_id) }}" class="btn btn-sm btn-light border px-3 rounded-pill font-weight-bold small">Manage</a></td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="3" class="text-center py-4 small text-muted italic">All blocks have sufficient remaining capacity.</td></tr>
+                            <tr><td colspan="3" class="text-center py-5 small text-muted font-italic">All blocks have sufficient remaining capacity.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -177,24 +191,29 @@
         </div>
     </div>
 
-    <!-- Violations/Live Feed -->
-    <div class="col-lg-6 mb-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 bg-dark">
-                <h6 class="m-0 font-weight-bold text-white">Security & Alerts</h6>
-            </div>
-            <div class="card-body">
+    <!-- Security Feed -->
+    <div class="col-lg-5 mb-4">
+        <div class="card border-0 h-100" style="background: #1a1a1a;">
+            <div class="card-body p-4 d-flex flex-column">
                 <div class="d-flex align-items-center mb-4">
-                    <div class="icon-circle bg-danger mr-3"><i class="fas fa-exclamation-triangle text-white"></i></div>
-                    <div>
-                        <div class="small text-gray-500 text-uppercase">Total Academic Violations</div>
-                        <span class="h4 font-weight-bold text-danger">{{ global_violations }}</span>
+                    <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="ml-3">
+                        <div class="small text-uppercase font-weight-bold" style="color: rgba(255,255,255,0.4); letter-spacing: 1px;">Security Status</div>
+                        <h4 class="font-weight-bold text-white mb-0">{{ global_violations }} <span class="small font-weight-normal" style="opacity: 0.5;">Violations</span></h4>
                     </div>
                 </div>
-                <hr>
-                <p class="small text-muted mb-0"><i class="fas fa-info-circle mr-1"></i> Violations are tracked via automated tab-switch detection during active exam sessions.</p>
-                <div class="mt-4 text-center">
-                    <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-sm btn-dark rounded-pill px-4 shadow-sm">View Security Logs</a>
+                
+                <div class="mt-auto">
+                    <div class="p-3 rounded mb-4" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                        <p class="small mb-0" style="color: rgba(255,255,255,0.5); line-height: 1.6;">
+                            <i class="fas fa-info-circle mr-1"></i> Live tab-switch detection is active. Academic integrity violations are being logged in real-time.
+                        </p>
+                    </div>
+                    <a href="{{ url_for('admin.oversee_exams') }}" class="btn btn-danger btn-block font-weight-bold py-2 shadow-sm" style="border-radius: 10px;">
+                        Audit Security Logs
+                    </a>
                 </div>
             </div>
         </div>
@@ -205,10 +224,10 @@
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
 <script>
-    Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    Chart.defaults.global.defaultFontFamily = 'DM Sans', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
     Chart.defaults.global.defaultFontColor = '#858796';
 
-    // 1. Bar Chart: Year Distribution (Stay Blue)
+    // 1. Bar Chart (Modern Gray/Blue)
     var ctxBar = document.getElementById("yearLevelBarChart");
     var myBarChart = new Chart(ctxBar, {
         type: 'bar',
@@ -218,30 +237,30 @@
                 label: "Students",
                 backgroundColor: "#4e73df",
                 hoverBackgroundColor: "#2e59d9",
-                borderColor: "#4e73df",
+                borderRadius: 5,
                 data: {{ year_values|tojson }},
             }],
         },
         options: {
             maintainAspectRatio: false,
             scales: {
-                yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }]
+                xAxes: [{ gridLines: { display: false } }],
+                yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 }, gridLines: { color: 'rgba(0,0,0,0.05)' } }]
             },
             legend: { display: false }
         }
     });
 
-    // 2. Pie Chart: Roles (FIXED COLOR CODING)
+    // 2. Pie Chart (Gray/Red/Blue Coding)
     var ctxPie = document.getElementById("userDistPie");
     var labels = {{ pie_labels|tojson }};
     var values = {{ pie_values|tojson }};
 
-    // Correct Dynamic Mapping
     var backgroundColors = labels.map(function(label) {
         var l = label.toLowerCase();
-        if (l === 'admin') return '#5a5c69';   // Gray
-        if (l === 'teacher') return '#e74a3b'; // Red
-        return '#4e73df';                      // Blue (Student/Others)
+        if (l === 'admin') return '#1a1a1a';   
+        if (l === 'teacher') return '#e74a3b'; 
+        return '#4e73df';                     
     });
 
     var myPieChart = new Chart(ctxPie, {
@@ -251,7 +270,7 @@
             datasets: [{
                 data: values,
                 backgroundColor: backgroundColors,
-                hoverBorderColor: "rgba(234, 236, 244, 1)",
+                borderWidth: 0,
             }],
         },
         options: {
@@ -259,9 +278,9 @@
             cutoutPercentage: 80,
             legend: { display: false },
             tooltips: {
-                backgroundColor: "rgb(255,255,255)",
-                bodyFontColor: "#858796",
-                borderColor: '#dddfeb',
+                backgroundColor: "#fff",
+                bodyFontColor: "#1a1a1a",
+                borderColor: '#efefef',
                 borderWidth: 1,
                 xPadding: 15,
                 yPadding: 15,
