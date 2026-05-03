@@ -1,174 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Verify Account - TestPoint</title>
+    <title>Verify Account — TestPoint</title>
 
-    <!-- Custom fonts for this template-->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" type="text/css">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-
-    <!-- Custom styles for this template (SB Admin 2) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
+
     <style>
-        .otp-input-container {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin: 25px 0;
+        :root {
+            --tp-ink:       #0f0e11;
+            --tp-ink-2:     #3a3640;
+            --tp-ink-3:     #7a7585;
+            --tp-surface:   #faf9f7;
+            --tp-border:    rgba(15,14,17,0.1);
+            --tp-accent:    #2d5be3;
+            --tp-panel:     #0f0e11;
+            --tp-radius:    12px;
+            --tp-font:      'DM Sans', sans-serif;
+            --tp-serif:     'DM Serif Display', serif;
         }
 
+        body { font-family: var(--tp-font); background: var(--tp-surface) !important; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .tp-form-shell { width: 100%; max-width: 440px; background: #fff; padding: 48px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); animation: tpSlideUp .5s ease-out; border: 1px solid var(--tp-border); }
+        @keyframes tpSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .text-center i { color: var(--tp-accent); margin-bottom: 24px; }
+        .tp-form-title { font-family: var(--tp-serif); font-size: 28px; color: var(--tp-ink); margin-bottom: 8px; text-align: center; }
+        .tp-form-sub { font-size: 14px; color: var(--tp-ink-3); margin-bottom: 32px; text-align: center; line-height: 1.6; }
+
+        .otp-input-container { display: flex; justify-content: center; gap: 10px; margin: 24px 0; }
         .otp-input {
-            width: 45px;
-            height: 60px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            border: 2px solid #d1d3e2;
-            border-radius: 8px;
-            transition: all 0.2s;
+            width: 46px; height: 60px; text-align: center; font-size: 24px; font-weight: 700;
+            border: 2px solid #eaecf0; border-radius: 12px; transition: all 0.2s; background: #fff;
         }
+        .otp-input:focus { border-color: var(--tp-accent); outline: none; box-shadow: 0 0 0 4px rgba(45,91,227,0.1); }
 
-        .otp-input:focus {
-            border-color: #4e73df;
-            outline: none;
-            box-shadow: 0 0 8px rgba(78, 115, 223, 0.25);
-        }
+        #timer-text { font-weight: bold; color: #e74a3b; }
+        .resend-link { font-weight: 600; color: var(--tp-accent); text-decoration: none; cursor: pointer; }
+        .resend-link.disabled { color: #858796 !important; pointer-events: none; }
 
-        #timer-text {
-            font-weight: bold;
-            color: #e74a3b; /* Danger red */
-        }
-
-        .resend-link {
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .resend-link.disabled {
-            color: #858796 !important;
-            pointer-events: none;
-            cursor: default;
-        }
+        .btn-primary { height: 50px; background: var(--tp-ink) !important; border: none !important; border-radius: 12px !important; font-weight: 600 !important; }
     </style>
 </head>
 
-<body class="bg-gradient-primary">
-
-    <div class="container">
-
-        <!-- Outer Row -->
-        <div class="row justify-content-center">
-
-            <div class="col-xl-6 col-lg-7 col-md-9">
-
-                <div class="card o-hidden border-0 shadow-lg my-5">
-                    <div class="card-body p-0">
-                        <div class="p-5">
-                            <div class="text-center">
-                                <div class="mb-4">
-                                    <i class="fas fa-envelope-open-text fa-4x text-primary"></i>
-                                </div>
-                                <h1 class="h4 text-gray-900 mb-2">Verify Your Email</h1>
-                                <p class="mb-4">Enter the 6-digit code sent to your email address to complete your registration.</p>
-                            </div>
-
-                            <!-- Flash Messages -->
-                            {% with messages = get_flashed_messages(with_categories=true) %}
-                                {% if messages %}
-                                    {% for category, message in messages %}
-                                        <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
-                                            {{ message }}
-                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                    {% endfor %}
-                                {% endif %}
-                            {% endwith %}
-
-                            <!-- Verification Form -->
-                            <form action="{{ url_for('auth.verify_register') }}" method="POST" id="otpForm" class="user">
-                                <div class="otp-input-container">
-                                    <input type="text" name="pin1" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required autofocus>
-                                    <input type="text" name="pin2" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin3" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin4" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin5" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                    <input type="text" name="pin6" class="otp-input" autocomplete="one-time-code" maxlength="1" pattern="\d*" inputmode="numeric" required>
-                                </div>
-
-                                <div class="text-center mb-4">
-                                    <span class="small text-gray-600">Code expires in: </span>
-                                    <span id="timer-text">05:00</span>
-                                </div>
-
-                                <button type="submit" class="btn btn-primary btn-user btn-block font-weight-bold">
-                                    Verify Account
-                                </button>
-                            </form>
-
-                            <hr>
-
-                            <div class="text-center">
-                                <p class="mb-0 small text-gray-600">Didn't receive the code?</p>
-                                <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" class="small font-weight-bold text-primary resend-link">
-                                    Resend New Code
-                                </a>
-                                <div id="resendMessage" class="mt-2 small"></div>
-                            </div>
-                            
-                            <div class="text-center mt-3">
-                                <a class="small" href="{{ url_for('auth.login') }}">Return to Login</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
+<body>
+    <div class="tp-form-shell">
+        <div class="text-center">
+            <i class="fas fa-envelope-open-text fa-4x"></i>
+            <h1 class="tp-form-title">Verify Your Email</h1>
+            <p class="tp-form-sub">Enter the 6-digit code sent to your email address to complete your registration.</p>
         </div>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="{{ url_for('auth.verify_register') }}" method="POST" id="otpForm">
+            <div class="otp-input-container">
+                <input type="text" name="pin1" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required autofocus>
+                <input type="text" name="pin2" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                <input type="text" name="pin3" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                <input type="text" name="pin4" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                <input type="text" name="pin5" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+                <input type="text" name="pin6" class="otp-input" maxlength="1" pattern="\d*" inputmode="numeric" required>
+            </div>
+
+            <div class="text-center mb-4">
+                <span class="small text-gray-600">Code expires in: </span>
+                <span id="timer-text">05:00</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Verify Account</button>
+        </form>
+
+        <hr>
+
+        <div class="text-center">
+            <p class="mb-0 small text-gray-600">Didn't receive the code?</p>
+            <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" class="small resend-link">Resend New Code</a>
+            <div id="resendMessage" class="mt-2 small"></div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a class="small text-muted" href="{{ url_for('auth.login') }}">Return to Login</a>
+        </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-
-   <script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
     const inputs = document.querySelectorAll('.otp-input');
-
-    // 1. Handle Typing and Auto-focus
     inputs.forEach((input, index) => {
         input.addEventListener('input', (e) => {
-            if (e.target.value.length === 1 && index < inputs.length - 1) {
-                inputs[index + 1].focus();
-            }
+            if (e.target.value.length === 1 && index < inputs.length - 1) { inputs[index + 1].focus(); }
         });
-
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) {
-                inputs[index - 1].focus();
-            }
-        });
-
-        input.addEventListener('paste', (e) => {
-            const data = e.clipboardData.getData('text').trim();
-            if (data.length === 6 && /^\d+$/.test(data)) {
-                const digits = data.split('');
-                inputs.forEach((input, i) => input.value = digits[i]);
-                inputs[5].focus();
-            }
-            e.preventDefault();
+            if (e.key === 'Backspace' && e.target.value.length === 0 && index > 0) { inputs[index - 1].focus(); }
         });
     });
 
-    // 2. ACCURATE TIMER LOGIC
-    // Initialize timeLeft with value from backend (defaults to 0 if none)
     let timeLeft = parseInt("{{ remaining_seconds if remaining_seconds else 0 }}");
     const timerDisplay = document.getElementById('timer-text');
     let countdown;
@@ -177,7 +118,7 @@
         if (timeLeft <= 0) {
             clearInterval(countdown);
             timerDisplay.innerHTML = "Expired";
-            timerDisplay.classList.replace('text-primary', 'text-danger');
+            timerDisplay.style.color = "#e74a3b";
             document.getElementById('otpForm').style.opacity = "0.6";
         } else {
             let minutes = Math.floor(timeLeft / 60);
@@ -188,20 +129,15 @@
     }
 
     function startTimer() {
-        clearInterval(countdown); // Prevent multiple intervals
-        updateTimerDisplay(); // Run immediately
+        clearInterval(countdown);
+        updateTimerDisplay();
         countdown = setInterval(updateTimerDisplay, 1000);
     }
-
-    // Start timer on page load
     startTimer();
 
-    // 3. Resend OTP Logic
     function resendOtp() {
         const btn = document.getElementById('resendBtn');
         const msgDiv = document.getElementById('resendMessage');
-        const otpForm = document.getElementById('otpForm');
-        
         btn.classList.add('disabled');
         btn.innerText = "Sending...";
 
@@ -212,34 +148,13 @@
         .then(response => response.json())
         .then(data => {
             msgDiv.innerHTML = `<span class="text-success">${data.message}</span>`;
-            
-            // RESET TIMER: 10 minutes = 600 seconds
             timeLeft = 600; 
-            otpForm.style.opacity = "1";
+            document.getElementById('otpForm').style.opacity = "1";
             startTimer();
-            
-            // Re-enable button after 30 second cooldown
-            setTimeout(() => {
-                btn.classList.remove('disabled');
-                btn.innerText = "Resend New Code";
-                msgDiv.innerHTML = "";
-            }, 30000);
+            setTimeout(() => { btn.classList.remove('disabled'); btn.innerText = "Resend New Code"; }, 30000);
         })
-        .catch(error => {
-            msgDiv.innerHTML = `<span class="text-danger">Error sending code.</span>`;
-            btn.classList.remove('disabled');
-            btn.innerText = "Resend New Code";
-        });
+        .catch(() => { btn.classList.remove('disabled'); btn.innerText = "Resend New Code"; });
     }
 </script>
-
-<script>
-      window.addEventListener("pageshow", function (event) {
-        if (event.persisted) {
-            window.location.reload();
-        }
-    });
-</script>
-
 </body>
 </html>

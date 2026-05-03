@@ -1,145 +1,180 @@
-{% extends "auth_base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Account Verification — TestPoint</title>
 
-{% block title %}Account Verification - TestPoint{% endblock %}
+    <!-- ── CSS Stack ── -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
 
-{% block head %}
-<style>
-    .upload-card { border-radius: 15px; border: none; }
-    
-    /* ── MODERN UPLOAD ZONE ── */
-    .upload-zone {
-        border: 2px dashed #d1d3e2;
-        border-radius: 12px;
-        padding: 40px 20px;
-        background: #f8f9fc;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        position: relative;
-    }
-    .upload-zone:hover {
-        border-color: #4e73df;
-        background-color: #fff;
-    }
-    .upload-zone i { color: #d1d3e2; transition: color 0.3s; }
-    .upload-zone:hover i { color: #4e73df; }
-    
-    /* Hide actual input but keep it clickable via label */
-    .file-input {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
-    }
+    <style>
+        :root {
+            --tp-ink:       #0f0e11;
+            --tp-ink-2:     #3a3640;
+            --tp-ink-3:     #7a7585;
+            --tp-surface:   #faf9f7;
+            --tp-surface-2: #f0ede8;
+            --tp-border:    rgba(15,14,17,0.1);
+            --tp-accent:    #2d5be3;
+            --tp-accent-lt: #e8edfb;
+            --tp-panel:     #0f0e11;
+            --tp-radius:    12px;
+            --tp-font:      'DM Sans', sans-serif;
+            --tp-serif:     'DM Serif Display', serif;
+        }
 
-    /* ── STEP INDICATOR ── */
-    .step-indicator { display: flex; justify-content: center; margin-bottom: 2rem; }
-    .step-item { text-align: center; position: relative; padding: 0 20px; }
-    .step-number {
-        width: 30px; height: 30px; line-height: 30px;
-        border-radius: 50%; background: #eaecf4;
-        display: inline-block; color: #858796; font-weight: bold; font-size: 14px;
-    }
-    .step-item.active .step-number { background: #4e73df; color: #fff; }
-    .step-text { display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; margin-top: 5px; }
-</style>
-{% endblock %}
+        body { font-family: var(--tp-font); background: var(--tp-surface) !important; overflow-x: hidden; }
+        .tp-wrapper { display: flex; min-height: 100vh; }
 
-{% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-xl-6 col-lg-7 col-md-9">
+        /* ─── LEFT PANEL ─── */
+        .tp-left {
+            width: 40%; background: var(--tp-panel);
+            padding: 52px 56px; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; overflow: hidden;
+        }
+        .tp-left::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse 70% 60% at 20% 80%, rgba(45,91,227,.25) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .tp-brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+        .tp-brand-icon { width: 40px; height: 40px; background: var(--tp-accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; }
+        .tp-brand-name { font-family: var(--tp-serif); font-size: 22px; color: #fff; }
+
+        .tp-panel-body { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+        .tp-eyebrow { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--tp-accent); font-weight: 600; margin-bottom: 18px; }
+        .tp-headline { font-family: var(--tp-serif); font-size: clamp(32px, 3.5vw, 48px); line-height: 1.1; color: #fff; margin-bottom: 20px; }
+        .tp-headline em { font-style: italic; color: rgba(255,255,255,.42); }
+
+        /* ─── RIGHT PANEL ─── */
+        .tp-right { flex: 1; background: var(--tp-surface); display: flex; align-items: center; justify-content: center; padding: 64px; }
+        .tp-form-shell { width: 100%; max-width: 480px; animation: tpSlideUp .5s ease-out; }
+        @keyframes tpSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ─── STEP INDICATOR ─── */
+        .step-indicator { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; padding: 0 10px; }
+        .step-item { display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; flex: 1; }
+        .step-number { 
+            width: 28px; height: 28px; border-radius: 50%; background: var(--tp-surface-2); 
+            display: flex; align-items: center; justify-content: center; font-size: 11px; 
+            font-weight: 700; color: var(--tp-ink-3); border: 2px solid transparent; transition: all .3s;
+        }
+        .step-text { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--tp-ink-3); }
+        
+        .step-item.active .step-number { background: var(--tp-accent-lt); color: var(--tp-accent); border-color: var(--tp-accent); }
+        .step-item.active .step-text { color: var(--tp-accent); }
+        .step-item.completed .step-number { background: #1a7a5e; color: #fff; }
+
+        /* ─── UPLOAD ZONE ─── */
+        .upload-zone {
+            border: 2px dashed var(--tp-border); border-radius: 16px; padding: 48px 24px;
+            background: #fff; transition: all 0.2s ease; cursor: pointer; position: relative; text-align: center;
+        }
+        .upload-zone:hover { border-color: var(--tp-accent); background: var(--tp-accent-lt); }
+        .upload-zone i { color: var(--tp-ink-3); transition: color 0.2s; margin-bottom: 16px; }
+        .upload-zone:hover i { color: var(--tp-accent); }
+        
+        .file-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+        .admin-feedback {
+            background: #fff9eb; border: 1px solid #ffeeba; border-left: 4px solid #f59e0b;
+            padding: 16px; border-radius: 12px; margin-bottom: 24px;
+        }
+
+        .btn-primary { height: 52px !important; background: var(--tp-ink) !important; border: none !important; border-radius: var(--tp-radius) !important; font-weight: 600 !important; }
+
+        @media (max-width: 991px) { .tp-left { display: none; } .tp-right { padding: 40px 24px; } }
+    </style>
+</head>
+
+<body>
+<div class="tp-wrapper">
+    <div class="tp-left d-none d-lg-flex">
+        <div class="tp-brand">
+            <div class="tp-brand-icon"><i class="fas fa-book-reader"></i></div>
+            <span class="tp-brand-name">TestPoint</span>
+        </div>
+        <div class="tp-panel-body">
+            <div class="tp-eyebrow">Final Step</div>
+            <h1 class="tp-headline">Secure your<br><em>academic</em><br>credentials.</h1>
+            <p style="color: rgba(255,255,255,0.4); font-size: 14.5px; line-height: 1.7;">To maintain the integrity of our platform, we require a quick verification of your institutional ID or credentials.</p>
+        </div>
+    </div>
+
+    <div class="tp-right">
+        <div class="tp-form-shell">
             
-            <!-- Progress Steps -->
-            <div class="step-indicator mt-5">
-                <div class="step-item">
+            <div class="step-indicator">
+                <div class="step-item completed">
                     <span class="step-number"><i class="fas fa-check"></i></span>
-                    <span class="step-text text-muted">Register</span>
+                    <span class="step-text">Profile</span>
                 </div>
-                <div class="step-item">
+                <div class="step-item completed">
                     <span class="step-number"><i class="fas fa-check"></i></span>
-                    <span class="step-text text-muted">OTP</span>
+                    <span class="step-text">OTP</span>
                 </div>
                 <div class="step-item active">
                     <span class="step-number">3</span>
-                    <span class="step-text text-primary">Verify ID</span>
+                    <span class="step-text">Verify ID</span>
                 </div>
             </div>
 
-            <div class="card shadow-lg upload-card mb-5 animate__animated animate__fadeInUp">
-                <div class="card-body p-0">
-                    <div class="p-5">
-                        <div class="text-center mb-4">
-                            <h1 class="h4 text-gray-900 font-weight-bold">Identity Verification</h1>
-                            <p class="text-muted small">To activate your account, please upload your institutional credentials.</p>
-                        </div>
+            <h2 style="font-family: var(--tp-serif); font-size: 30px; color: var(--tp-ink); margin-bottom: 8px;">Identity Verification</h2>
+            <p style="font-size: 14.5px; color: var(--tp-ink-3); margin-bottom: 32px;">Please upload a copy of your institutional ID in PDF format.</p>
 
-                        <!-- ── ADMIN FEEDBACK AREA ── -->
-                        {% if admin_notes %}
-                        <div class="alert alert-warning border-left-warning shadow-sm animate__animated animate__shakeX mb-4">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-exclamation-circle fa-2x mr-3"></i>
-                                <div>
-                                    <div class="font-weight-bold small uppercase">Admin Feedback:</div>
-                                    <div class="small">{{ admin_notes }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
+            {% if admin_notes %}
+            <div class="admin-feedback">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #b45309; margin-bottom: 4px;">Admin Feedback:</div>
+                <div style="font-size: 13.5px; color: #92400e;">{{ admin_notes }}</div>
+            </div>
+            {% endif %}
 
-                        <!-- Flash Messages -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-
-                        <form action="{{ url_for('auth.upload_verification') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
-                            
-                            <!-- ── CUSTOM UPLOAD AREA ── -->
-                            <div class="upload-zone text-center" id="drop-area">
-                                <i class="fas fa-file-pdf fa-4x mb-3" id="icon-display"></i>
-                                <h6 class="font-weight-bold text-dark" id="text-display">Click or Drag PDF here</h6>
-                                <p class="text-xs text-muted mb-0">Accepted Format: <strong>PDF Only</strong> (Max 5MB)</p>
-                                
-                                <input type="file" name="document" id="fileInput" class="file-input" accept=".pdf" required>
-                            </div>
-
-                            <!-- Filename Preview -->
-                            <div id="file-name-preview" class="text-center mt-3 d-none">
-                                <span class="badge badge-info p-2">
-                                    <i class="fas fa-paperclip mr-1"></i> <span id="file-name-text">filename.pdf</span>
-                                </span>
-                            </div>
-
-                            <div class="mt-4">
-                                <button type="submit" class="btn btn-primary btn-user btn-block font-weight-bold py-3 shadow-sm" id="submitBtn">
-                                    Submit for Verification
-                                </button>
-                            </div>
-                        </form>
-
-                        <hr>
-                        <div class="text-center">
-                            <a class="small text-danger font-weight-bold" href="{{ url_for('auth.logout') }}">
-                                <i class="fas fa-sign-out-alt mr-1"></i> Cancel and Logout
-                            </a>
-                        </div>
-                    </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                 </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('auth.upload_verification') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+                <div class="upload-zone" id="drop-area">
+                    <i class="fas fa-file-pdf fa-4x" id="icon-display"></i>
+                    <h6 style="font-weight: 600; color: var(--tp-ink);" id="text-display">Click or Drag PDF here</h6>
+                    <p style="font-size: 12px; color: var(--tp-ink-3); margin-top: 4px;">Accepted Format: <strong>PDF Only</strong> (Max 5MB)</p>
+                    <input type="file" name="document" id="fileInput" class="file-input" accept=".pdf" required>
+                </div>
+
+                <div id="file-name-preview" class="d-none mt-3 p-3" style="background: #f1f5f9; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-paperclip text-primary"></i>
+                    <span id="file-name-text" style="font-size: 13px; font-weight: 500; color: var(--tp-ink);">filename.pdf</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block mt-4" id="submitBtn">
+                    Submit for Verification
+                </button>
+            </form>
+
+            <div class="text-center mt-5">
+                <a class="small font-weight-bold" href="{{ url_for('auth.logout') }}" style="color: #c0392b; text-decoration: none;">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Cancel and Logout
+                </a>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 $(document).ready(function() {
     const fileInput = $('#fileInput');
@@ -151,26 +186,19 @@ $(document).ready(function() {
     fileInput.on('change', function(e) {
         if (this.files && this.files[0]) {
             const file = this.files[0];
-            
-            // Check if it's actually a PDF
             if (file.type !== "application/pdf") {
                 alert("Please select a PDF file only.");
                 this.value = "";
                 return;
             }
-
-            // Update UI to show selection
             textDisplay.text("PDF Selected Successfully!");
-            iconDisplay.removeClass('text-gray-300').addClass('text-success');
+            iconDisplay.css('color', '#1a7a5e');
             nameText.text(file.name);
             preview.removeClass('d-none');
-            
-            // Visual feedback on the zone
-            $('.upload-zone').css('border-color', '#1cc88a').css('background', '#f0fff4');
+            $('.upload-zone').css('border-color', '#1a7a5e').css('background', '#f0f9f6');
         }
     });
 
-    // Loading state on submit
     $('#uploadForm').on('submit', function() {
         const btn = $('#submitBtn');
         btn.prop('disabled', true);
@@ -178,4 +206,5 @@ $(document).ready(function() {
     });
 });
 </script>
-{% endblock %}
+</body>
+</html>

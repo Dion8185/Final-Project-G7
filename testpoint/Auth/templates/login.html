@@ -1,204 +1,681 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>TestPoint - Login</title>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"
-        type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- ── Bootstrap & SB Admin 2 (your existing stack) ── -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
+
+    <!-- ── Design skin: overrides Bootstrap visuals, keeps its structure ── -->
     <style>
-        .bg-login-exam {
-            background: url('https://images.unsplash.com/photo-1434030216411-0b793f4b4173?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80');
-            background-position: center;
-            background-size: cover;
+        /* ─── TOKENS ─── */
+        :root {
+            --tp-ink:       #0f0e11;
+            --tp-ink-2:     #3a3640;
+            --tp-ink-3:     #7a7585;
+            --tp-surface:   #faf9f7;
+            --tp-surface-2: #f0ede8;
+            --tp-border:    rgba(15,14,17,0.1);
+            --tp-accent:    #2d5be3;
+            --tp-accent-lt: #e8edfb;
+            --tp-panel:     #0f0e11;
+            --tp-radius:    12px;
+            --tp-font:      'DM Sans', sans-serif;
+            --tp-serif:     'DM Serif Display', serif;
         }
 
+        /* ─── PAGE ─── */
+        body { font-family: var(--tp-font); background: var(--tp-surface) !important; }
+
+        /* Remove SB Admin's blue gradient */
+        body.bg-gradient-primary { background: var(--tp-surface) !important; }
+
+        /* Kill the outer container padding SB Admin adds */
+        .container { max-width: 100% !important; padding: 0 !important; }
+
+        /* ─── WRAPPER: full-viewport split ─── */
+        .tp-wrapper {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ─── LEFT PANEL ─── */
+        /* Bootstrap's col-lg-6 d-none d-lg-block handles show/hide */
+        .tp-left {
+            background: var(--tp-panel);
+            padding: 52px 56px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tp-left::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 70% 60% at 20% 80%, rgba(45,91,227,.36) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 80% 10%, rgba(45,91,227,.15) 0%, transparent 55%);
+            pointer-events: none;
+        }
+
+        .tp-left::after {
+            content: '';
+            position: absolute; inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        .tp-brand {
+            display: flex; align-items: center; gap: 12px;
+            position: relative; z-index: 1;
+        }
+
+        .tp-brand-icon {
+            width: 40px; height: 40px;
+            background: var(--tp-accent);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 17px;
+        }
+
+        .tp-brand-name {
+            font-family: var(--tp-serif);
+            font-size: 22px; color: #fff; letter-spacing: -.3px;
+        }
+
+        .tp-panel-body {
+            flex: 1; display: flex; flex-direction: column;
+            justify-content: center; position: relative; z-index: 1;
+        }
+
+        .tp-eyebrow {
+            font-size: 10px; letter-spacing: 2.5px;
+            text-transform: uppercase; color: var(--tp-accent);
+            font-weight: 500; margin-bottom: 18px;
+        }
+
+        .tp-headline {
+            font-family: var(--tp-serif);
+            font-size: clamp(38px, 4vw, 58px);
+            line-height: 1.08; color: #fff; margin-bottom: 24px;
+        }
+
+        .tp-headline em { font-style: italic; color: rgba(255,255,255,.42); }
+
+        .tp-desc {
+            font-size: 14.5px; line-height: 1.75;
+            color: rgba(255,255,255,.42); max-width: 380px; margin-bottom: 48px;
+        }
+
+        .tp-stats { display: flex; gap: 36px; align-items: center; }
+
+        .tp-stat { display: flex; flex-direction: column; gap: 4px; }
+
+        .tp-stat-num {
+            font-family: var(--tp-serif);
+            font-size: 30px; color: #fff; line-height: 1;
+        }
+
+        .tp-stat-label { font-size: 11px; color: rgba(255,255,255,.3); letter-spacing: .5px; }
+
+        .tp-stat-div { width: 1px; background: rgba(255,255,255,.1); align-self: stretch; }
+
+        /* Floating exam card */
+        .tp-float-card {
+            position: absolute; bottom: 56px; right: -28px;
+            width: 196px;
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 16px; padding: 18px;
+            backdrop-filter: blur(12px); z-index: 1;
+        }
+
+        .tp-float-label {
+            font-size: 9px; letter-spacing: 1.5px;
+            text-transform: uppercase; color: rgba(255,255,255,.32); margin-bottom: 8px;
+        }
+
+        .tp-float-title {
+            font-size: 13px; font-weight: 500;
+            color: #fff; margin-bottom: 11px; line-height: 1.4;
+        }
+
+        .tp-prog-wrap {
+            height: 4px; background: rgba(255,255,255,.1);
+            border-radius: 99px; overflow: hidden; margin-bottom: 6px;
+        }
+
+        .tp-prog-fill {
+            height: 100%; width: 72%;
+            background: var(--tp-accent); border-radius: 99px;
+        }
+
+        .tp-float-meta { font-size: 10px; color: rgba(255,255,255,.28); }
+
+        /* ─── RIGHT PANEL ─── */
+        /* Bootstrap's col-lg-6 handles the column */
+        .tp-right {
+            background: var(--tp-surface);
+            display: flex; align-items: center; justify-content: center;
+            padding: 52px 64px;
+        }
+
+        /* SB Admin adds a .card — we neutralize it */
+        .tp-right .card {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .tp-right .card-body { padding: 0 !important; }
+
+        /* ─── FORM SHELL ─── */
+        .tp-form-shell {
+            width: 100%; max-width: 400px;
+            animation: tpSlideUp .5s cubic-bezier(.16,1,.3,1) both;
+        }
+
+        @keyframes tpSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .tp-form-tag {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 10px; letter-spacing: 1.5px;
+            text-transform: uppercase; color: var(--tp-accent);
+            font-weight: 500; margin-bottom: 14px;
+        }
+
+        .tp-form-tag::before {
+            content: ''; width: 18px; height: 1.5px;
+            background: var(--tp-accent); display: block;
+        }
+
+        .tp-form-title {
+            font-family: var(--tp-serif);
+            font-size: 34px; line-height: 1.15;
+            color: var(--tp-ink); margin-bottom: 8px;
+        }
+
+        .tp-form-sub {
+            font-size: 14px; color: var(--tp-ink-3);
+            line-height: 1.6; margin-bottom: 32px;
+        }
+
+        /* ─── FLASH ALERTS: skin Bootstrap's .alert ─── */
+        .alert {
+            font-size: 13.5px !important;
+            border-radius: var(--tp-radius) !important;
+            border: none !important;
+            border-left: 3px solid !important;
+            display: flex !important; align-items: center; gap: 10px;
+            font-family: var(--tp-font) !important;
+        }
+
+        .alert-danger  { background: #fdf0ef !important; color: #c0392b !important; border-left-color: #c0392b !important; }
+        .alert-success { background: #edf8f5 !important; color: #1a7a5e !important; border-left-color: #1a7a5e !important; }
+        .alert-warning { background: #fefaed !important; color: #b45309 !important; border-left-color: #b45309 !important; }
+        .alert-info    { background: var(--tp-accent-lt) !important; color: var(--tp-accent) !important; border-left-color: var(--tp-accent) !important; }
+        .alert .close  { color: inherit !important; opacity: .6 !important; }
+
+        /* ─── INPUTS: skin Bootstrap's .form-control ─── */
+        .tp-field-group { margin-bottom: 18px; }
+
+        .tp-field-label {
+            display: block; font-size: 12.5px; font-weight: 500;
+            color: var(--tp-ink-2); margin-bottom: 8px; letter-spacing: .2px;
+        }
+
+        .tp-field-wrap { position: relative; }
+
+        .tp-field-icon {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--tp-ink-3); font-size: 13px; pointer-events: none;
+            transition: color .2s; z-index: 2;
+        }
+
+        /* Override form-control */
+        .tp-right .form-control,
+        .tp-right .form-control-user {
+            height: 48px !important;
+            padding: 0 16px 0 42px !important;
+            background: #fff !important;
+            border: 1.5px solid var(--tp-border) !important;
+            border-radius: var(--tp-radius) !important;
+            font-family: var(--tp-font) !important;
+            font-size: 14.5px !important;
+            color: var(--tp-ink) !important;
+            box-shadow: none !important;
+            transition: border-color .2s, box-shadow .2s !important;
+        }
+
+        .tp-right .form-control::placeholder,
+        .tp-right .form-control-user::placeholder { color: var(--tp-ink-3) !important; }
+
+        .tp-right .form-control:focus,
+        .tp-right .form-control-user:focus {
+            border-color: var(--tp-accent) !important;
+            box-shadow: 0 0 0 4px rgba(45,91,227,.1) !important;
+        }
+
+        .tp-pw-toggle {
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%);
+            background: none; border: none; cursor: pointer;
+            color: var(--tp-ink-3); font-size: 13px; padding: 4px;
+            transition: color .2s; z-index: 2;
+        }
+
+        .tp-pw-toggle:hover { color: var(--tp-ink); }
+
+        .tp-forgot-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+        .tp-forgot-link {
+            font-size: 12.5px; color: var(--tp-accent);
+            text-decoration: none; font-weight: 500; transition: opacity .2s;
+        }
+
+        .tp-forgot-link:hover { opacity: .7; }
+
+        /* ─── BUTTONS: skin Bootstrap's .btn ─── */
+        .tp-right .btn-primary,
+        .tp-right .btn-user.btn-primary {
+            width: 100%; height: 50px;
+            background: var(--tp-ink) !important;
+            border: none !important;
+            border-radius: var(--tp-radius) !important;
+            font-family: var(--tp-font) !important;
+            font-size: 15px !important; font-weight: 500 !important;
+            color: #fff !important;
+            box-shadow: none !important;
+            transition: background .2s, transform .15s !important;
+            position: relative; overflow: hidden;
+        }
+
+        .tp-right .btn-primary:hover,
+        .tp-right .btn-user.btn-primary:hover {
+            background: var(--tp-ink-2) !important;
+        }
+
+        .tp-right .btn-primary:active,
+        .tp-right .btn-user.btn-primary:active { transform: scale(.98) !important; }
+
+        .tp-right .btn-outline-primary,
+        .tp-right .btn-user.btn-outline-primary {
+            width: 100%; height: 48px;
+            background: transparent !important;
+            border: 1.5px solid var(--tp-border) !important;
+            border-radius: var(--tp-radius) !important;
+            font-family: var(--tp-font) !important;
+            font-size: 14.5px !important; color: var(--tp-ink) !important;
+            display: flex !important; align-items: center !important;
+            justify-content: center !important; gap: 8px !important;
+            transition: border-color .2s, background .2s !important;
+        }
+
+        .tp-right .btn-outline-primary:hover,
+        .tp-right .btn-user.btn-outline-primary:hover {
+            background: var(--tp-surface-2) !important;
+            border-color: rgba(15,14,17,.22) !important;
+            color: var(--tp-ink) !important;
+        }
+
+        /* Ripple */
+        .tp-ripple {
+            position: absolute; border-radius: 50%;
+            background: rgba(255,255,255,.2);
+            transform: scale(0); animation: tpRipple .5s linear; pointer-events: none;
+        }
+
+        @keyframes tpRipple { to { transform: scale(4); opacity: 0; } }
+
+        /* ─── DIVIDER ─── */
+        .tp-divider {
+            display: flex; align-items: center;
+            gap: 16px; margin: 22px 0;
+        }
+
+        .tp-divider-line { flex: 1; height: 1px; background: var(--tp-border); }
+        .tp-divider-txt  { font-size: 12px; color: var(--tp-ink-3); }
+
+        /* ─── FOOTER LINKS ─── */
+        .tp-form-footer { margin-top: 28px; text-align: center; }
+
+        .tp-footer-link {
+            font-size: 13px; color: var(--tp-ink-3);
+            text-decoration: none; transition: color .2s;
+        }
+
+        .tp-footer-link:hover { color: var(--tp-ink); }
+        .tp-footer-link span  { color: var(--tp-accent); font-weight: 500; }
+
+        /* SB Admin hr override */
+        .tp-right hr { border-color: var(--tp-border) !important; }
+
+        /* ─── MODAL: skin Bootstrap's .modal ─── */
         .modal-content {
-            border-radius: 15px;
-            border: none;
+            border: none !important;
+            border-radius: 20px !important;
+            overflow: hidden;
+            font-family: var(--tp-font) !important;
         }
 
-        /* Validation Styles */
-        .field-feedback {
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-            display: block;
+        .modal-header {
+            background: #fff !important;
+            border-bottom: 1px solid var(--tp-border) !important;
+            padding: 24px 28px 20px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
         }
 
-        .invalid-msg {
-            color: #e74a3b;
+        .modal-header .modal-title { display: none; } /* hidden, replaced below */
+
+        .tp-modal-icon {
+            width: 44px; height: 44px;
+            background: var(--tp-accent-lt); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--tp-accent); font-size: 18px; margin-bottom: 14px;
         }
 
-        .valid-msg {
-            color: #1cc88a;
+        .tp-modal-title {
+            font-family: var(--tp-serif);
+            font-size: 22px; color: var(--tp-ink); margin-bottom: 4px;
         }
 
-        .is-invalid {
-            border-color: #e74a3b !important;
+        .tp-modal-sub {
+            font-size: 13px; color: var(--tp-ink-3); line-height: 1.6;
         }
 
-        .is-valid {
-            border-color: #1cc88a !important;
+        .modal-header .close {
+            position: absolute; top: 20px; right: 24px;
+            color: var(--tp-ink-3) !important; opacity: 1 !important;
+            font-size: 18px !important;
         }
+
+        .modal-body  { padding: 24px 28px !important; }
+        .modal-footer {
+            padding: 0 28px 24px !important;
+            border: none !important;
+            background: #fff !important;
+            gap: 10px;
+        }
+
+        .modal-footer .btn-secondary {
+            flex: 1; height: 44px;
+            background: var(--tp-surface-2) !important;
+            border: none !important;
+            border-radius: 10px !important;
+            color: var(--tp-ink-2) !important;
+            font-family: var(--tp-font) !important;
+            font-size: 14px !important;
+        }
+
+        .modal-footer .btn-primary {
+            flex: 2 !important; height: 44px !important;
+            border-radius: 10px !important;
+            font-size: 14px !important;
+        }
+
+        /* Modal input uses same skin */
+        .modal .form-control {
+            height: 48px !important;
+            padding: 0 16px 0 42px !important;
+            border: 1.5px solid var(--tp-border) !important;
+            border-radius: var(--tp-radius) !important;
+            font-family: var(--tp-font) !important;
+            font-size: 14.5px !important;
+            box-shadow: none !important;
+        }
+
+        .modal .form-control:focus {
+            border-color: var(--tp-accent) !important;
+            box-shadow: 0 0 0 4px rgba(45,91,227,.1) !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 991px) { .tp-right { padding: 40px 32px; } }
+        @media (max-width: 480px) { .tp-right { padding: 32px 20px; } }
     </style>
 </head>
 
-<body class="bg-gradient-primary animate__animated animate__fadeIn">
+<body>
+<div class="tp-wrapper">
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-xl-10 col-lg-12 col-md-9">
-                <div class="card o-hidden border-0 shadow-lg my-5">
-                    <div class="card-body p-0">
-                        <div class="row">
-                            <div class="col-lg-6 d-none d-lg-block bg-login-exam"></div>
-                            <div class="col-lg-6">
-                                <div class="p-5">
-                                    <div class="text-center">
-                                        <div class="mb-2"><i class="fas fa-book-reader fa-3x text-primary"></i></div>
-                                        <h1 class="h4 text-gray-900 mb-4">TestPoint Examination System</h1>
-                                        <p class="mb-4">Welcome back! Please login to your account.</p>
-                                    </div>
+    <!-- ── LEFT PANEL (Bootstrap col) ── -->
+    <div class="col-lg-6 d-none d-lg-flex tp-left">
+        <div class="tp-brand">
+            <div class="tp-brand-icon"><i class="fas fa-book-reader"></i></div>
+            <span class="tp-brand-name">TestPoint</span>
+        </div>
 
-                                    {% with messages = get_flashed_messages(with_categories=true) %}
-                                    {% if messages %}
-                                    {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="close"
-                                            data-dismiss="alert"><span>&times;</span></button>
-                                    </div>
-                                    {% endfor %}
-                                    {% endif %}
-                                    {% endwith %}
+        <div class="tp-panel-body">
+            <div class="tp-eyebrow">Examination System</div>
+            <h1 class="tp-headline">Assess what<br><em>truly</em><br>matters.</h1>
+            <p class="tp-desc">A modern platform built for educators and students — create, deliver, and evaluate examinations with confidence.</p>
+            <div class="tp-stats">
+                <div class="tp-stat">
+                    <span class="tp-stat-num">12k+</span>
+                    <span class="tp-stat-label">Students</span>
+                </div>
+                <div class="tp-stat-div"></div>
+                <div class="tp-stat">
+                    <span class="tp-stat-num">840</span>
+                    <span class="tp-stat-label">Exams created</span>
+                </div>
+                <div class="tp-stat-div"></div>
+                <div class="tp-stat">
+                    <span class="tp-stat-num">98%</span>
+                    <span class="tp-stat-label">Satisfaction</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                                    <form method="POST" action="{{ url_for('auth.login') }}" class="user">
-                                        <div class="form-group">
-                                            <input type="email" name="email" class="form-control form-control-user"
-                                                placeholder="Enter Email Address..." required>
-                                        </div>
-                                        <div class="form-group">
-                                            <input type="password" name="password"
-                                                class="form-control form-control-user" placeholder="Password" required>
-                                        </div>
-                                        <button class="btn btn-primary btn-user btn-block" type="submit">Login</button>
-                                        <a href="{{ url_for('auth.register_student') }}"
-                                            class="btn btn-outline-primary btn-user btn-block">Register as Student</a>
-                                    </form>
+    <!-- ── RIGHT PANEL (Bootstrap col) ── -->
+    <div class="col-lg-6 col-12 tp-right">
+        <div class="tp-form-shell">
 
-                                    <hr>
-                                    <div class="text-center">
-                                        <!-- Changed to trigger Modal -->
-                                        <a class="small" href="#" data-toggle="modal"
-                                            data-target="#forgotPasswordModal">Forgot Password?</a>
-                                    </div>
-                                    <div class="text-center">
-                                        <a href="{{ url_for('auth.register_teacher') }}" class="small">Register Teacher
-                                            Account?</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <div class="tp-form-tag">Secure Login</div>
+            <h2 class="tp-form-title">Welcome back</h2>
+            <p class="tp-form-sub">Sign in to your TestPoint account to continue.</p>
+
+            <!-- Flash messages — Bootstrap alerts, skinned -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <i class="fas {% if category == 'danger' %}fa-exclamation-circle{% elif category == 'success' %}fa-check-circle{% else %}fa-info-circle{% endif %}"></i>
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Login form -->
+            <form method="POST" action="{{ url_for('auth.login') }}" class="user">
+
+                <div class="tp-field-group">
+                    <label class="tp-field-label">Email address</label>
+                    <div class="tp-field-wrap">
+                        <i class="fas fa-envelope tp-field-icon"></i>
+                        <input type="email" name="email"
+                               class="form-control form-control-user"
+                               placeholder="you@example.com" required>
                     </div>
                 </div>
+
+                <div class="tp-field-group">
+                    <label class="tp-field-label">Password</label>
+                    <div class="tp-field-wrap">
+                        <i class="fas fa-lock tp-field-icon"></i>
+                        <input type="password" name="password" id="passwordInput"
+                               class="form-control form-control-user"
+                               placeholder="Enter your password" required>
+                        <button type="button" class="tp-pw-toggle" id="togglePw">
+                            <i class="fas fa-eye" id="pwIcon"></i>
+                        </button>
+                    </div>
+                    <div class="tp-forgot-row">
+                        <a href="#" class="tp-forgot-link"
+                           data-toggle="modal" data-target="#forgotPasswordModal">
+                            Forgot password?
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Primary button — Bootstrap class, skinned -->
+                <button type="submit" id="loginBtn"
+                        class="btn btn-primary btn-user btn-block mt-3">
+                    Sign in to TestPoint
+                </button>
+
+            </form>
+
+            <div class="tp-divider">
+                <div class="tp-divider-line"></div>
+                <span class="tp-divider-txt">or</span>
+                <div class="tp-divider-line"></div>
             </div>
+
+            <!-- Secondary button — Bootstrap class, skinned -->
+            <a href="{{ url_for('auth.register_student') }}"
+               class="btn btn-outline-primary btn-user btn-block">
+                <i class="fas fa-user-plus" style="font-size:13px;"></i>
+                Create a student account
+            </a>
+
+            <div class="tp-form-footer">
+                <a href="{{ url_for('auth.register_teacher') }}" class="tp-footer-link">
+                    Register as teacher <span>→</span>
+                </a>
+            </div>
+
         </div>
     </div>
 
-    <!-- ── FORGOT PASSWORD MODAL ── -->
-    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog shadow-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title font-weight-bold"><i class="fas fa-key mr-2"></i>Account Recovery</h5>
-                    <button class="close text-white" type="button" data-dismiss="modal"><span>×</span></button>
-                </div>
+</div><!-- /.tp-wrapper -->
 
-                <!-- Step 1: Send OTP -->
-                <div id="step1">
-                    <form action="{{ url_for('auth.forgot_password') }}" method="POST">
-                        <div class="modal-body py-4">
-                            <p class="text-muted small">Enter your registered email address below. We will send you a
-                                6-digit code to reset your password.</p>
-                            <div class="form-group">
-                                <label class="small font-weight-bold text-dark">Email Address</label>
-                                <input type="email" name="email" class="form-control" placeholder="example@email.com"
-                                    required>
-                            </div>
-                        </div>
-                        <div class="modal-footer bg-light">
-                            <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Cancel</button>
-                            <button class="btn btn-primary btn-sm px-4" type="submit">Send Code</button>
-                        </div>
-                    </form>
-                </div>
+
+<!-- ── FORGOT PASSWORD MODAL — Bootstrap modal, skinned ── -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog shadow-lg" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div class="tp-modal-icon"><i class="fas fa-key"></i></div>
+                <div class="tp-modal-title">Account Recovery</div>
+                <div class="tp-modal-sub">Enter your registered email — we'll send you a 6-digit code to reset your password.</div>
+                <button class="close" type="button" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
             </div>
+
+            <form action="{{ url_for('auth.forgot_password') }}" method="POST">
+                <div class="modal-body">
+                    <label class="tp-field-label">Email address</label>
+                    <div class="tp-field-wrap">
+                        <i class="fas fa-envelope tp-field-icon"></i>
+                        <input type="email" name="email" class="form-control"
+                               placeholder="example@email.com" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Send recovery code</button>
+                </div>
+            </form>
+
         </div>
     </div>
+</div>
 
-    <!-- JavaScript Section -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
 
-    <script>
-        $(document).ready(function () {
-            // Password Validation Logic
-            function validatePassword(password) {
-                const minLength = password.length >= 8;
-                const hasUpper = /[A-Z]/.test(password);
-                const hasNumber = /[0-9]/.test(password);
-                const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+<!-- ── JS: your existing stack, plus small enhancements ── -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/js/sb-admin-2.min.js"></script>
 
-                if (!minLength) return "Minimum 8 characters required.";
-                if (!hasUpper) return "Must contain at least one uppercase letter.";
-                if (!hasNumber) return "Must contain at least one number.";
-                if (!hasSpecial) return "Must contain at least one special character (!@#$).";
-                return true;
+<script>
+    $(function () {
+
+        // Password show/hide
+        $('#togglePw').on('click', function () {
+            var input = $('#passwordInput');
+            var icon  = $('#pwIcon');
+            if (input.attr('type') === 'password') {
+                input.attr('type', 'text');
+                icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                input.attr('type', 'password');
+                icon.removeClass('fa-eye-slash').addClass('fa-eye');
             }
-
-            $(document).on('input', '.reset-password-field', function () {
-                const input = $(this);
-                const val = input.val();
-                const feedback = input.siblings('.field-feedback');
-                const result = validatePassword(val);
-
-                if (result === true) {
-                    input.removeClass('is-invalid').addClass('is-valid');
-                    feedback.text('✓ Strong password').removeClass('invalid-msg').addClass('valid-msg');
-                } else {
-                    input.removeClass('is-valid').addClass('is-invalid');
-                    feedback.text(result).removeClass('valid-msg').addClass('invalid-msg');
-                }
-            });
-
-            // Confirm Password Check
-            $(document).on('input', '.confirm-password-field', function () {
-                const confirmInput = $(this);
-                const passwordInput = $('.reset-password-field');
-                const feedback = confirmInput.siblings('.field-feedback');
-
-                if (confirmInput.val() === passwordInput.val() && confirmInput.val() !== "") {
-                    confirmInput.removeClass('is-invalid').addClass('is-valid');
-                    feedback.text('✓ Passwords match').removeClass('invalid-msg').addClass('valid-msg');
-                } else {
-                    confirmInput.removeClass('is-valid').addClass('is-invalid');
-                    feedback.text('Passwords do not match').removeClass('valid-msg').addClass('invalid-msg');
-                }
-            });
         });
-    </script>
-</body>
 
+        // Ripple on login button
+        $('#loginBtn').on('click', function (e) {
+            var btn  = $(this);
+            var off  = btn.offset();
+            var size = Math.max(btn.outerWidth(), btn.outerHeight());
+            var x    = e.pageX - off.left  - size / 2;
+            var y    = e.pageY - off.top   - size / 2;
+            var rip  = $('<span class="tp-ripple">').css({
+                width: size, height: size, left: x, top: y
+            });
+            btn.append(rip);
+            setTimeout(function () { rip.remove(); }, 600);
+        });
+
+        // Password validation (reused from your original for reset flows)
+        function validatePassword(pw) {
+            if (pw.length < 8)          return 'Minimum 8 characters required.';
+            if (!/[A-Z]/.test(pw))      return 'Must contain at least one uppercase letter.';
+            if (!/[0-9]/.test(pw))      return 'Must contain at least one number.';
+            if (!/[!@#$%^&*(),.?":{}|<>]/.test(pw)) return 'Must contain one special character.';
+            return true;
+        }
+
+        $(document).on('input', '.reset-password-field', function () {
+            var input    = $(this);
+            var feedback = input.siblings('.field-feedback');
+            var result   = validatePassword(input.val());
+            if (result === true) {
+                input.removeClass('is-invalid').addClass('is-valid');
+                feedback.text('✓ Strong password').removeClass('invalid-msg').addClass('valid-msg');
+            } else {
+                input.removeClass('is-valid').addClass('is-invalid');
+                feedback.text(result).removeClass('valid-msg').addClass('invalid-msg');
+            }
+        });
+
+        $(document).on('input', '.confirm-password-field', function () {
+            var confirmInput  = $(this);
+            var passwordInput = $('.reset-password-field');
+            var feedback      = confirmInput.siblings('.field-feedback');
+            if (confirmInput.val() === passwordInput.val() && confirmInput.val() !== '') {
+                confirmInput.removeClass('is-invalid').addClass('is-valid');
+                feedback.text('✓ Passwords match').removeClass('invalid-msg').addClass('valid-msg');
+            } else {
+                confirmInput.removeClass('is-valid').addClass('is-invalid');
+                feedback.text('Passwords do not match').removeClass('valid-msg').addClass('invalid-msg');
+            }
+        });
+
+    });
+</script>
+</body>
 </html>

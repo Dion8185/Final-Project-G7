@@ -1,274 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Teacher Register</title>
+    <title>TestPoint — Teacher Registration</title>
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"
-        type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
-        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
+
     <style>
-        .bg-register-teacher {
-            background: url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?ixlib=rb-1.2.1&auto=format&fit=crop&w=600&q=80');
-            background-position: center;
-            background-size: cover;
+        /* ─── TOKENS (Teacher Red) ─── */
+        :root {
+            --tp-ink:       #0f0e11;
+            --tp-ink-2:     #3a3640;
+            --tp-ink-3:     #7a7585;
+            --tp-surface:   #faf9f7;
+            --tp-surface-2: #f0ede8;
+            --tp-border:    rgba(15,14,17,0.1);
+            --tp-accent:    #d93025; /* Professional Red */
+            --tp-accent-lt: #fdecea;
+            --tp-panel:     #0f0e11;
+            --tp-radius:    12px;
+            --tp-font:      'DM Sans', sans-serif;
+            --tp-serif:     'DM Serif Display', serif;
         }
 
-        .register-subtitle {
-            min-height: 2.8rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem !important;
+        body { font-family: var(--tp-font); background: var(--tp-surface) !important; }
+        .container { max-width: 100% !important; padding: 0 !important; }
+        .tp-wrapper { display: flex; min-height: 100vh; }
+
+        /* ─── LEFT PANEL ─── */
+        .tp-left {
+            width: 40%; background: var(--tp-panel);
+            padding: 52px 56px; display: flex; flex-direction: column;
+            position: sticky; top: 0; height: 100vh; overflow: hidden;
         }
 
-        .text-danger-theme {
-            color: #e74a3b !important;
+        .tp-left::before {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(ellipse 70% 60% at 20% 80%, rgba(217,48,37,.25) 0%, transparent 60%);
+            pointer-events: none;
         }
 
-        .form-control.is-valid,
-        .form-control.is-valid:focus {
-            border-color: #28a745 !important;
-            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, .25) !important;
-            background-image: none !important;
-        }
+        .tp-brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+        .tp-brand-icon { width: 40px; height: 40px; background: var(--tp-accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 17px; }
+        .tp-brand-name { font-family: var(--tp-serif); font-size: 22px; color: #fff; }
 
-        .form-control.is-invalid,
-        .form-control.is-invalid:focus {
-            border-color: #dc3545 !important;
-            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, .25) !important;
-            background-image: none !important;
+        .tp-panel-body { flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+        .tp-role-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(217,48,37,.15); border: 1px solid rgba(217,48,37,0.3);
+            color: #ff9a94; font-size: 10px; font-weight: 600; letter-spacing: 1.5px;
+            text-transform: uppercase; padding: 6px 14px; border-radius: 99px; margin-bottom: 24px;
         }
+        .tp-headline { font-family: var(--tp-serif); font-size: clamp(32px, 3.5vw, 48px); line-height: 1.1; color: #fff; margin-bottom: 20px; }
+        .tp-headline em { font-style: italic; color: rgba(255,255,255,.4); }
 
-        select.form-control-user {
-            border-radius: 10rem;
-            height: auto;
-            padding: .375rem 1rem;
-        }
+        /* ─── RIGHT PANEL ─── */
+        .tp-right { flex: 1; background: var(--tp-surface); padding: 64px; overflow-y: auto; }
+        .tp-form-shell { width: 100%; max-width: 580px; margin: 0 auto; animation: tpSlideUp .5s ease-out; }
 
-        .field-feedback {
-            font-size: 0.70rem;
-            margin-top: 0.2rem;
-            padding-left: 1rem;
-            min-height: 1rem;
-            display: block;
-        }
+        @keyframes tpSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .field-feedback.valid-msg {
-            color: #28a745;
-        }
+        .tp-form-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--tp-accent); font-weight: 600; margin-bottom: 12px; }
+        .tp-form-tag::before { content: ''; width: 18px; height: 1.5px; background: var(--tp-accent); }
+        .tp-form-title { font-family: var(--tp-serif); font-size: 32px; color: var(--tp-ink); margin-bottom: 8px; }
+        .tp-form-sub { font-size: 14px; color: var(--tp-ink-3); margin-bottom: 32px; }
 
-        .field-feedback.invalid-msg {
-            color: #dc3545;
-        }
+        .tp-section { display: flex; align-items: center; gap: 12px; margin: 28px 0 16px; }
+        .tp-section-line { flex: 1; height: 1px; background: var(--tp-border); }
+        .tp-section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--tp-ink-3); }
 
-        .address-section-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: #6c757d;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            margin-bottom: .5rem;
-        }
+        .tp-label { display: block; font-size: 12.5px; font-weight: 500; color: var(--tp-ink-2); margin-bottom: 8px; }
+
+        .tp-right .form-control { height: 48px !important; border-radius: 10px !important; border: 1.5px solid var(--tp-border) !important; font-size: 14.5px !important; }
+        .tp-right .form-control:focus { border-color: var(--tp-accent) !important; box-shadow: 0 0 0 4px rgba(217,48,37,.1) !important; }
+
+        .field-feedback { font-size: 11px; margin-top: 5px; min-height: 16px; display: block; }
+        .valid-msg { color: #1a7a5e; }
+        .invalid-msg { color: #c0392b; }
+
+        .tp-right .btn-primary { height: 52px !important; background: var(--tp-ink) !important; border: none !important; border-radius: var(--tp-radius) !important; font-weight: 500 !important; }
+        .tp-right .btn-primary:hover { background: var(--tp-ink-2) !important; transform: translateY(-1px); }
+
+        .alert { border: none !important; border-left: 3px solid !important; border-radius: var(--tp-radius) !important; font-size: 13.5px !important; }
+        .alert-danger { background: #fdf0ef !important; color: #c0392b !important; border-left-color: #c0392b !important; }
+
+        @media (max-width: 991px) { .tp-left { display: none; } .tp-right { padding: 40px 24px; } }
     </style>
 </head>
 
-<body class="bg-gradient-danger">
+<body>
+    <div class="tp-wrapper">
+        <div class="tp-left d-none d-lg-flex">
+            <div class="tp-brand">
+                <div class="tp-brand-icon"><i class="fas fa-book-reader"></i></div>
+                <span class="tp-brand-name">TestPoint</span>
+            </div>
+            <div class="tp-panel-body">
+                <div class="tp-role-badge"><i class="fas fa-chalkboard-teacher mr-2"></i> Teacher Account</div>
+                <h1 class="tp-headline">Empower your<br><em>teaching</em><br>excellence.</h1>
+                <p style="color: rgba(255,255,255,0.4); font-size: 14.5px; line-height: 1.7; max-width: 380px;">Access powerful tools to create complex examinations, automate grading, and gain insights into student performance.</p>
+            </div>
+        </div>
 
-    <div class="container">
-        <div class="card o-hidden border-0 shadow-lg my-5">
-            <div class="card-body p-0">
-                <div class="row">
-                    <div class="col-lg-5 d-none d-lg-block bg-register-teacher"></div>
-                    <div class="col-lg-7">
-                        <div class="p-5">
+        <div class="tp-right">
+            <div class="tp-form-shell">
+                <div class="tp-form-tag">Professional Registration</div>
+                <h2 class="tp-form-title">Join as a Teacher</h2>
+                <p class="tp-form-sub">Create your professional educator profile to manage exams.</p>
 
-                            <div class="text-center">
-                                <div class="mb-2">
-                                    <i class="fas fa-book-reader fa-3x text-danger-theme"></i>
-                                </div>
-                                <h1 class="h4 text-gray-900 mb-2">Teacher Registration</h1>
-                                <p class="register-subtitle">Create a professional account to manage exams and students.
-                                </p>
-                            </div>
-
-                            {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                            {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            {% endfor %}
-                            {% endif %}
-                            {% endwith %}
-
-                            <!-- ── Updated Form for register_teacher.html ── -->
-                            <form id="teacherRegisterForm" class="user" method="POST"
-                                action="{{ url_for('auth.register_teacher') }}" novalidate>
-
-                                <input type="hidden" name="role" value="teacher">
-
-                                <!-- ── Name ── -->
-                                <div class="form-group row">
-                                    <div class="col-sm-4 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user" id="firstname"
-                                            name="firstname" placeholder="First Name"
-                                            value="{{ request.form.get('firstname', '') }}" required>
-                                        <span class="field-feedback" id="firstname-feedback"></span>
-                                    </div>
-                                    <div class="col-sm-4 mb-3 mb-sm-0">
-                                        <input type="text" class="form-control form-control-user" id="middlename"
-                                            name="middlename" placeholder="Middle Name (Optional)"
-                                            value="{{ request.form.get('middlename', '') }}">
-                                        <span class="field-feedback" id="middlename-feedback"></span>
-                                    </div>
-                                    <div class="col-sm-4">
-                                        <input type="text" class="form-control form-control-user" id="lastname"
-                                            name="lastname" placeholder="Last Name"
-                                            value="{{ request.form.get('lastname', '') }}" required>
-                                        <span class="field-feedback" id="lastname-feedback"></span>
-                                    </div>
-                                </div>
-
-                                <!-- ── Email ── -->
-                                <div class="form-group">
-                                    <input type="email" class="form-control form-control-user" id="email" name="email"
-                                        placeholder="Professional Email Address"
-                                        value="{{ request.form.get('email', '') }}" required>
-                                    <span class="field-feedback" id="email-feedback"></span>
-                                </div>
-
-                                <!-- ── Password (Empty for security) ── -->
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <input type="password" class="form-control form-control-user" id="password"
-                                            name="password" placeholder="Password" required>
-                                        <small class="text-muted ml-3" style="font-size:0.7rem;">
-                                            Min. 8 chars, Upper, Lower, Digit, Special
-                                        </small>
-                                        <span class="field-feedback" id="password-feedback"></span>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <input type="password" class="form-control form-control-user"
-                                            id="confirm_password" name="confirm_password" placeholder="Repeat Password"
-                                            required>
-                                        <span class="field-feedback" id="confirm-feedback"></span>
-                                    </div>
-                                </div>
-
-                                <!-- ── Philippine Address ── -->
-                                <hr>
-                                <div class="address-section-label">
-                                    <i class="fas fa-map-marker-alt mr-1"></i>Philippine Address
-                                </div>
-
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <select name="region" class="form-control form-control-user" id="region"
-                                            required>
-                                            <option value="">— Region —</option>
-                                        </select>
-                                        <!-- Hidden text fields allow the JS to re-select these on page load -->
-                                        <input type="hidden" name="region_text" id="region-text"
-                                            value="{{ request.form.get('region_text', '') }}">
-                                        <span class="field-feedback" id="region-feedback"></span>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <select name="province" class="form-control form-control-user" id="province"
-                                            required>
-                                            <option value="">— Province —</option>
-                                        </select>
-                                        <input type="hidden" name="province_text" id="province-text"
-                                            value="{{ request.form.get('province_text', '') }}">
-                                        <span class="field-feedback" id="province-feedback"></span>
-                                    </div>
-                                </div>
-
-                                <div class="form-group row">
-                                    <div class="col-sm-6 mb-3 mb-sm-0">
-                                        <select name="city" class="form-control form-control-user" id="city" required>
-                                            <option value="">— City / Municipality —</option>
-                                        </select>
-                                        <input type="hidden" name="city_text" id="city-text"
-                                            value="{{ request.form.get('city_text', '') }}">
-                                        <span class="field-feedback" id="city-feedback"></span>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <select name="barangay" class="form-control form-control-user" id="barangay"
-                                            required>
-                                            <option value="">— Barangay —</option>
-                                        </select>
-                                        <input type="hidden" name="barangay_text" id="barangay-text"
-                                            value="{{ request.form.get('barangay_text', '') }}">
-                                        <span class="field-feedback" id="barangay-feedback"></span>
-                                    </div>
-                                </div>
-
-                                <hr>
-                                <button type="submit" class="btn btn-danger btn-user btn-block">
-                                    Register Account
-                                </button>
-                            </form>
-
-                            <!-- ── Added Script to handle the "re-validation" on page load ── -->
-                            <script>
-                                document.addEventListener('DOMContentLoaded', function () {
-                                    // This triggers your JS validation rules immediately for fields filled by Jinja
-                                    const fieldsToValidate = ['firstname', 'middlename', 'lastname', 'email'];
-                                    fieldsToValidate.forEach(id => {
-                                        const el = document.getElementById(id);
-                                        if (el && el.value.trim() !== "") {
-                                            // Trigger 'input' event to fire the existing validation logic
-                                            el.dispatchEvent(new Event('input'));
-                                        }
-                                    });
-
-                                    // The Address Selector logic uses the values in the hidden inputs
-                                    // to automatically re-populate the selects.
-                                    const rText = document.getElementById('region-text').value;
-                                    const pText = document.getElementById('province-text').value;
-                                    const cText = document.getElementById('city-text').value;
-                                    const bText = document.getElementById('barangay-text').value;
-
-                                    if (rText) {
-                                        setTimeout(() => {
-                                            $("#region option").filter(function () { return $(this).text() === rText; }).prop('selected', true).trigger('change');
-                                            if (pText) {
-                                                setTimeout(() => {
-                                                    $("#province option").filter(function () { return $(this).text() === pText; }).prop('selected', true).trigger('change');
-                                                    if (cText) {
-                                                        setTimeout(() => {
-                                                            $("#city option").filter(function () { return $(this).text() === cText; }).prop('selected', true).trigger('change');
-                                                            if (bText) {
-                                                                setTimeout(() => {
-                                                                    $("#barangay option").filter(function () { return $(this).text() === bText; }).prop('selected', true).trigger('change');
-                                                                }, 300);
-                                                            }
-                                                        }, 300);
-                                                    }
-                                                }, 300);
-                                            }
-                                        }, 500); // Small delay to let the ph-address-selector.js load regions
-                                    }
-                                });
-                            </script>
-                            <hr>
-                            <div class="text-center">
-                                <a class="small" href="{{ url_for('auth.login') }}">Already have an account? Login!</a>
-                            </div>
-                        </div>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                     </div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                <form id="teacherRegisterForm" class="user" method="POST" action="{{ url_for('auth.register_teacher') }}" novalidate>
+                    <input type="hidden" name="role" value="teacher">
+                    
+                    <div class="tp-section">
+                        <div class="tp-section-label">Identity</div>
+                        <div class="tp-section-line"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3"><label class="tp-label">First Name</label><input type="text" class="form-control" id="firstname" name="firstname" value="{{ request.form.get('firstname', '') }}" required><span class="field-feedback" id="firstname-feedback"></span></div>
+                        <div class="col-md-4 mb-3"><label class="tp-label">Middle Name</label><input type="text" class="form-control" id="middlename" name="middlename" value="{{ request.form.get('middlename', '') }}"><span class="field-feedback" id="middlename-feedback"></span></div>
+                        <div class="col-md-4 mb-3"><label class="tp-label">Last Name</label><input type="text" class="form-control" id="lastname" name="lastname" value="{{ request.form.get('lastname', '') }}" required><span class="field-feedback" id="lastname-feedback"></span></div>
+                    </div>
+
+                    <div class="tp-section">
+                        <div class="tp-section-label">Security</div>
+                        <div class="tp-section-line"></div>
+                    </div>
+
+                    <div class="form-group"><label class="tp-label">Professional Email</label><input type="email" class="form-control" id="email" name="email" value="{{ request.form.get('email', '') }}" required><span class="field-feedback" id="email-feedback"></span></div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="tp-label">Password</label><input type="password" class="form-control" id="password" name="password" required><span class="field-feedback" id="password-feedback"></span></div>
+                        <div class="col-md-6 mb-3"><label class="tp-label">Confirm Password</label><input type="password" class="form-control" id="confirm_password" name="confirm_password" required><span class="field-feedback" id="confirm-feedback"></span></div>
+                    </div>
+
+                    <div class="tp-section">
+                        <div class="tp-section-label">Institutional Address</div>
+                        <div class="tp-section-line"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="tp-label">Region</label><select name="region" class="form-control" id="region" required><option value="">— Region —</option></select><input type="hidden" name="region_text" id="region-text" value="{{ request.form.get('region_text', '') }}"><span class="field-feedback" id="region-feedback"></span></div>
+                        <div class="col-md-6 mb-3"><label class="tp-label">Province</label><select name="province" class="form-control" id="province" required><option value="">— Province —</option></select><input type="hidden" name="province_text" id="province-text" value="{{ request.form.get('province_text', '') }}"><span class="field-feedback" id="province-feedback"></span></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="tp-label">City</label><select name="city" class="form-control" id="city" required><option value="">— City —</option></select><input type="hidden" name="city_text" id="city-text" value="{{ request.form.get('city_text', '') }}"><span class="field-feedback" id="city-feedback"></span></div>
+                        <div class="col-md-6 mb-3"><label class="tp-label">Barangay</label><select name="barangay" class="form-control" id="barangay" required><option value="">— Barangay —</option></select><input type="hidden" name="barangay_text" id="barangay-text" value="{{ request.form.get('barangay_text', '') }}"><span class="field-feedback" id="barangay-feedback"></span></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block mt-4">Register Teacher Account</button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('auth.login') }}" class="tp-footer-link" style="font-size: 13px; color: var(--tp-ink-3); text-decoration: none;">
+                        Already have an account? <span style="color: var(--tp-accent); font-weight: 600;">Sign in →</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -594,5 +497,4 @@
     </script>
 
 </body>
-
 </html>
