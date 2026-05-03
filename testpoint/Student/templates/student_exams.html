@@ -3,7 +3,7 @@
 {% set sidebar_active = 'exams' %}
 
 {% block head %}
-{# Refresh every 30 seconds to update 'Upcoming' or 'Expired' statuses automatically #}
+{# Refresh every 30 seconds to update 'Upcoming', 'Expired', or 'Blocked' statuses automatically #}
 <meta http-equiv="refresh" content="30">
 <style>
     /* ── UI ENHANCEMENTS ── */
@@ -12,11 +12,33 @@
         border-radius: 15px;
         overflow: hidden;
         border: none !important;
+        position: relative;
+        padding-top: 35px;
+        /* Space for the Block Ribbon */
     }
 
     .exam-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 1rem 3rem rgba(0, 0, 0, .1) !important;
+    }
+
+    /* BLOCK VISIBILITY RIBBON */
+    .block-ribbon-student {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 35px;
+        background: #f8f9fc;
+        border-bottom: 1px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+        padding: 0 15px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #4e73df;
+        letter-spacing: 1px;
     }
 
     .course-header {
@@ -25,7 +47,7 @@
         padding-bottom: 0.8rem;
     }
 
-    /* Soft Badges for Consistency */
+    /* Soft Badges */
     .badge-soft-success {
         background-color: #e1f7ec;
         color: #0d6832;
@@ -56,6 +78,11 @@
         color: #0369a1;
     }
 
+    .badge-soft-dark {
+        background-color: #343a40;
+        color: #ffffff;
+    }
+
     /* Info Grid Styling */
     .exam-info-grid {
         background-color: #f8f9fc;
@@ -78,21 +105,21 @@
         color: #3a3b45;
     }
 
-    .status-badge-container {
-        position: absolute;
-        top: 20px;
-        right: 20px;
+    /* HIGH VISIBILITY CLASS CODE TAG */
+    .class-code-tag-student {
+        background: #4e73df;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        font-weight: bold;
     }
 
-    .icon-box-sm {
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 8px;
-        background: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    .status-badge-container {
+        position: absolute;
+        top: 50px;
+        right: 20px;
     }
 </style>
 {% endblock %}
@@ -132,7 +159,7 @@
                     <div class="text-xs text-uppercase text-muted font-weight-bold mt-1">
                         Course: <span class="text-primary">{{ course_exams[0].course_code }}</span>
                         <span class="mx-2 text-gray-300">|</span>
-                        Class Code: <span class="text-danger">{{ course_exams[0].course_id }}</span>
+                        Class Code: <span class="class-code-tag-student">{{ course_exams[0].course_id }}</span>
                     </div>
                 </div>
             </div>
@@ -143,6 +170,12 @@
             {% for exam in course_exams %}
             <div class="col-xl-4 col-md-6 mb-4">
                 <div class="card shadow-sm h-100 exam-card border-left-{{ exam.status_class }}">
+
+                    {# HIGH VISIBILITY TOP RIBBON #}
+                    <div class="block-ribbon-student">
+                        <i class="fas fa-layer-group mr-2"></i> Class ID: {{ exam.course_id }}
+                    </div>
+
                     <div class="card-body position-relative">
 
                         {# DYNAMIC STATUS BADGE #}
@@ -150,7 +183,7 @@
                             <span
                                 class="badge badge-soft-{{ exam.status_class }} px-3 py-2 rounded-pill font-weight-bold shadow-xs">
                                 <i
-                                    class="fas {% if exam.status_label == 'Completed' %}fa-check-circle{% elif exam.status_label == 'Upcoming' %}fa-clock{% elif exam.status_label == 'Ongoing' %}fa-bolt{% else %}fa-info-circle{% endif %} mr-1"></i>
+                                    class="fas {% if exam.status_label == 'Completed' %}fa-check-circle{% elif exam.status_label == 'Upcoming' %}fa-clock{% elif exam.status_label == 'Ongoing' %}fa-bolt{% elif exam.status_label == 'Blocked' %}fa-user-slash{% else %}fa-info-circle{% endif %} mr-1"></i>
                                 {{ exam.status_label|upper }}
                             </span>
                         </div>
@@ -162,29 +195,29 @@
                             <div class="row no-gutters">
                                 <div class="col-6 mb-3">
                                     <span class="info-label">Date</span>
-                                    <span class="info-value"><i class="far fa-calendar-alt mr-1 text-primary"></i> {{
-                                        exam.date_time.strftime('%b %d, %Y') }}</span>
+                                    <span class="info-value"><i class="far fa-calendar-alt mr-1 text-primary"></i>
+                                        {{ exam.date_time.strftime('%b %d, %Y') if exam.date_time else 'TBA' }}</span>
                                 </div>
                                 <div class="col-6 mb-3 pl-2">
                                     <span class="info-label">Start Time</span>
-                                    <span class="info-value"><i class="far fa-clock mr-1 text-primary"></i> {{
-                                        exam.date_time.strftime('%I:%M %p') }}</span>
+                                    <span class="info-value"><i class="far fa-clock mr-1 text-primary"></i>
+                                        {{ exam.date_time.strftime('%I:%M %p') if exam.date_time else 'TBA' }}</span>
                                 </div>
                                 <div class="col-6">
                                     <span class="info-label">Duration</span>
-                                    <span class="info-value"><i class="fas fa-hourglass-start mr-1 text-info"></i> {{
-                                        exam.duration_minutes }}m</span>
+                                    <span class="info-value"><i class="fas fa-hourglass-start mr-1 text-info"></i>
+                                        {{ exam.duration_minutes }}m</span>
                                 </div>
                                 <div class="col-6 pl-2">
                                     <span class="info-label">Passing Grade</span>
-                                    <span class="info-value"><i class="fas fa-award mr-1 text-warning"></i> {{
-                                        exam.pass_percentage }}%</span>
+                                    <span class="info-value"><i class="fas fa-award mr-1 text-warning"></i>
+                                        {{ exam.pass_percentage }}%</span>
                                 </div>
                             </div>
                         </div>
 
-                        {# DYNAMIC BUTTON LOGIC #}
-                        {% if exam.can_start %}
+                        {# DYNAMIC BUTTON LOGIC WITH PER-EXAM BLOCKING SECURITY #}
+                        {% if exam.can_start and exam.attempt_status != 'blocked' %}
                         <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}"
                             class="btn btn-block {% if exam.attempt_status == 'in-progress' %}btn-info{% else %}btn-primary{% endif %} font-weight-bold shadow rounded-pill py-2"
                             onclick="return confirm('Attention: Starting this exam activates Secure Lockdown Mode. You must remain in Fullscreen. Proceed?')">
@@ -197,12 +230,15 @@
                         {% else %}
                         <button class="btn btn-block btn-light text-muted font-weight-bold border rounded-pill py-2"
                             disabled>
-                            {% if exam.status_label == 'Completed' %}
+                            {% if exam.attempt_status == 'blocked' %}
+                            <i class="fas fa-user-slash mr-2 text-danger"></i> ACCESS BLOCKED FOR THIS EXAM
+                            {% elif exam.status_label == 'Completed' %}
                             <i class="fas fa-check-double mr-2 text-success"></i> ATTEMPT SUBMITTED
                             {% elif exam.status_label == 'Upcoming' %}
-                            <i class="fas fa-lock mr-2"></i> OPENS AT {{ exam.date_time.strftime('%I:%M %p') }}
-                            {% elif exam.status_label == 'Expired' %}
-                            <i class="fas fa-calendar-times mr-2"></i> SESSION EXPIRED
+                            <i class="fas fa-lock mr-2"></i> OPENS AT {{ exam.date_time.strftime('%I:%M %p') if
+                            exam.date_time else 'TBA' }}
+                            {% elif exam.status_label == 'Missed / Expired' %}
+                            <i class="fas fa-calendar-times mr-2 text-danger"></i> SESSION EXPIRED
                             {% else %}
                             <i class="fas fa-ban mr-2"></i> CURRENTLY UNAVAILABLE
                             {% endif %}

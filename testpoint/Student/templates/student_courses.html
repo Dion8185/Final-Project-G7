@@ -9,11 +9,12 @@
 
     <!-- Page Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">{{ course.course_name }}</h1>
+        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">{{ course.course_name }}</h1>
         <div>
-            <span class="badge badge-primary p-2 mr-2">{{ course.course_code }}</span>
-            <!-- Added Class Code Badge to reflect the specific section/block -->
-            <span class="badge badge-info p-2">Class: {{ course.class_code }}</span>
+            <span class="badge badge-primary p-2 mr-2 shadow-sm">{{ course.course_code }}</span>
+            <!-- Highlighted Class Code Badge for easy visibility -->
+            <span class="badge badge-info p-2 shadow-sm" style="letter-spacing: 0.5px;">CLASS ID: <strong>{{
+                    course.class_code }}</strong></span>
         </div>
     </div>
 
@@ -99,27 +100,35 @@
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table m-0 table-hover">
-                            <thead class="bg-light">
+                            <thead class="bg-light text-dark">
                                 <tr>
                                     <th>Exam Title</th>
                                     <th>Status</th>
                                     <th class="text-center">Score</th>
-                                    <th class="text-center">Time</th>
+                                    <th class="text-center">Schedule</th>
                                     <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% if course_exams %}
                                 {% for exam in course_exams %}
-                                <tr>
-                                    <td class="align-middle font-weight-bold">{{ exam.title }}</td>
+                                <tr {% if exam.attempt_status=='blocked' %}class="table-light" {% endif %}>
+                                    <td class="align-middle font-weight-bold text-dark">{{ exam.title }}</td>
                                     <td class="align-middle">
-                                        {% if exam.attempt_status == 'finished' %}
+                                        {% if exam.attempt_status == 'blocked' %}
+                                        <span class="badge badge-dark">Blocked</span>
+                                        {% elif exam.attempt_status == 'finished' %}
                                         <span class="badge badge-success">Completed</span>
+                                        {% elif exam.is_active == 0 %}
+                                        <span class="badge badge-secondary">Unavailable</span>
+                                        {% elif exam.is_upcoming %}
+                                        <span class="badge badge-warning">Upcoming</span>
+                                        {% elif exam.is_expired %}
+                                        <span class="badge badge-danger">Missed / Expired</span>
                                         {% elif exam.attempt_status == 'in-progress' %}
-                                        <span class="badge badge-warning">In Progress</span>
+                                        <span class="badge badge-info">In Progress</span>
                                         {% else %}
-                                        <span class="badge badge-secondary">Pending</span>
+                                        <span class="badge badge-primary">Available</span>
                                         {% endif %}
                                     </td>
                                     <td class="align-middle text-center">
@@ -127,55 +136,60 @@
                                         <span class="font-weight-bold text-dark">{{ exam.score | int }} / {{
                                             exam.total_q }} </span>
                                         {% else %}
-                                        <span class="font-weight-bold text-dark">--</span>
+                                        <span class="text-muted">--</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-center">{{ exam.date_time.strftime("%B %d, %Y %I:%M %p") }}</td>
-                                    <td class="text-center">
-                                        {% if exam.attempt_status == 'finished' %}
+                                    <td class="text-center align-middle small">
+                                        <span class="text-dark d-block">{{ exam.date_time.strftime("%b %d, %Y") if
+                                            exam.date_time else 'TBA' }}</span>
+                                        <span class="text-muted">{{ exam.date_time.strftime("%I:%M %p") if
+                                            exam.date_time else '' }}</span>
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        {% if exam.attempt_status == 'blocked' %}
+                                        <button class="btn btn-sm btn-secondary rounded-pill px-3" disabled
+                                            title="Access restricted for this specific exam">
+                                            <i class="fas fa-lock"></i> Locked
+                                        </button>
+
+                                        {% elif exam.attempt_status == 'finished' %}
                                         <a href="{{ url_for('student.review_exam', attempt_id=exam.attempt_id) }}"
                                             class="btn btn-sm btn-outline-primary shadow-sm rounded-pill px-3">
-                                            <i class="fas fa-poll mr-1"></i> View Review
+                                            <i class="fas fa-poll mr-1"></i> Review
                                         </a>
 
                                         {% elif exam.is_active == 0 %}
-                                        <span class="badge badge-secondary p-2">
-                                            <i class="fas fa-eye-slash mr-1"></i> Unavailable
-                                        </span>
+                                        <span class="text-muted small">Inactive</span>
 
                                         {% elif exam.is_upcoming %}
                                         <span class="text-warning font-weight-bold small">
-                                            <i class="fas fa-calendar-day mr-1"></i> Upcoming<br>
-                                            <span class="text-muted" style="font-size: 10px;">Opens: {{
-                                                exam.date_time.strftime("%b %d, %I:%M %p") }}</span>
+                                            <i class="fas fa-clock mr-1"></i> Opens Soon
                                         </span>
 
                                         {% elif exam.is_expired %}
                                         <span class="text-danger font-weight-bold small">
-                                            <i class="fas fa-exclamation-circle mr-1"></i> Exam Expired<br>
-                                            <span class="text-muted" style="font-size: 10px;">Closed: {{
-                                                exam.end_time.strftime("%I:%M %p") }}</span>
+                                            <i class="fas fa-times-circle mr-1"></i> Closed
                                         </span>
 
                                         {% else %}
-                                        {# EXAM IS ONGOING #}
                                         <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}"
-                                            class="btn btn-sm btn-primary shadow-sm px-4 font-weight-bold">
+                                            class="btn btn-sm btn-primary shadow-sm px-4 font-weight-bold rounded-pill">
                                             {% if exam.attempt_status == 'in-progress' %}
-                                            Resume Exam
+                                            Resume
                                             {% else %}
-                                            Start Exam
+                                            Start
                                             {% endif %}
                                         </a>
                                         {% endif %}
                                     </td>
-                                </tr> <!-- Added missing closing <tr> tag here -->
+                                </tr>
                                 {% endfor %}
                                 {% else %}
                                 <tr>
-                                    <!-- Changed colspan from 4 to 5 to match the 5 table headers -->
-                                    <td colspan="5" class="text-center py-4 text-muted">No exams have been posted for
-                                        this course yet.</td>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i><br>
+                                        No exams have been posted for this course yet.
+                                    </td>
                                 </tr>
                                 {% endif %}
                             </tbody>
@@ -195,7 +209,8 @@
                     </div>
                     <h5 class="font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname }}</h5>
                     <p class="small text-muted mb-3">Course Instructor</p>
-                    <a href="mailto:{{ course.t_email }}" class="btn btn-sm btn-outline-secondary btn-block">
+                    <a href="mailto:{{ course.t_email }}"
+                        class="btn btn-sm btn-outline-secondary btn-block rounded-pill">
                         <i class="fas fa-envelope mr-1"></i> Send Message
                     </a>
                 </div>

@@ -27,27 +27,22 @@ def enforce_lockdown():
 def inject_enrolled_courses():
     if 'user_id' in session and session.get('role') == 'student':
         student_id = session.get('user_id')
-        
         try:
             connection = mysql.connector.connect(**db_config)
             cursor = connection.cursor(dictionary=True)
-            
-            # Query all classes the student is enrolled in, linked to their respective courses
-            # Aliased cl.class_code as course_id to maintain backward compatibility with existing Jinja templates
+            # Fetch all classes where the student is enrolled (removed the status filter)
             cursor.execute("""
                 SELECT cl.class_code as course_id, cl.class_code, c.course_name, c.course_code 
                 FROM classes cl
                 JOIN courses c ON cl.course_code = c.course_code
                 JOIN enrollments e ON cl.class_code = e.class_code
-                WHERE e.student_id = %s AND e.status = 'active'
+                WHERE e.student_id = %s
             """, (student_id,))
             courses = cursor.fetchall()
-            
             cursor.close()
             connection.close()
             return dict(enrolled_courses=courses)
         except Exception as e:
-            print(f"DEBUG ERROR: {e}") # This will show in your terminal
             return dict(enrolled_courses=[])
     return dict(enrolled_courses=[])
 
@@ -94,7 +89,7 @@ def student_dashboard():
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
                 WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
-                ORDER BY ea.end_time DESC LIMIT 5
+                ORDER BY ea.end_time ASC LIMIT 5
             """, (student_id,))
             performance_trend = cursor.fetchall()
             trend_labels = [p['title'] for p in performance_trend]
@@ -228,6 +223,7 @@ def student_exams():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
+        # We no longer check enrollment status for blocking, we check ea.status
         cursor.execute("""
             SELECT e.*, c.course_name, c.course_code, ea.status as attempt_status, cl.class_code as course_id
             FROM exams e
@@ -240,34 +236,39 @@ def student_exams():
         exams = cursor.fetchall()
         
         now = datetime.now()
-        
         for exam in exams:
             start_time = exam['date_time']
-            end_time = start_time + timedelta(minutes=exam['duration_minutes'])
+            end_time = start_time + timedelta(minutes=exam['duration_minutes']) if start_time else None
             
             exam['status_label'] = "Available"
             exam['status_class'] = "primary"
             exam['can_start'] = False
 
-            if exam['attempt_status'] == 'finished':
+            # SPECIFIC BLOCK CHECK
+            if exam['attempt_status'] == 'blocked':
+                exam['status_label'] = "Blocked"
+                exam['status_class'] = "dark"
+            elif exam['attempt_status'] == 'finished':
                 exam['status_label'] = "Completed"
                 exam['status_class'] = "success"
             elif exam['is_active'] == 0:
                 exam['status_label'] = "Unavailable"
                 exam['status_class'] = "secondary"
+            elif not start_time:
+                exam['status_label'] = "TBA"
+                exam['status_class'] = "secondary"
             elif now < start_time:
                 exam['status_label'] = "Upcoming"
                 exam['status_class'] = "warning"
             elif now > end_time:
-                exam['status_label'] = "Expired"
+                exam['status_label'] = "Missed / Expired"
                 exam['status_class'] = "danger"
             else:
                 exam['status_label'] = "Ongoing"
                 exam['status_class'] = "success"
                 exam['can_start'] = True
 
-        cursor.close()
-        connection.close()
+        cursor.close(); connection.close()
         return render_template('student_exams.html', exams=exams)
     return redirect(url_for('auth.login'))
 
@@ -282,8 +283,16 @@ def save_progress():
     current_idx = data.get('current_idx', 0)
 
     connection = mysql.connector.connect(**db_config)
-    cursor = connection.cursor()
+    cursor = connection.cursor(dictionary=True)
     try:
+        # REAL-TIME SECURITY CHECK: Verify student isn't blocked mid-exam
+        cursor.execute("SELECT status FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+        attempt = cursor.fetchone()
+        
+        if not attempt or attempt['status'] == 'blocked':
+            return jsonify({"status": "blocked", "message": "Access restricted by instructor."}), 403
+
+        # Proceed with saving if not blocked
         cursor.execute("""
             INSERT INTO student_answers (attempt_id, question_id, submitted_answer, is_flagged)
             VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE submitted_answer = %s, is_flagged = %s
@@ -291,99 +300,139 @@ def save_progress():
         
         cursor.execute("UPDATE exam_attempts SET current_q_index = %s WHERE attempt_id = %s", (current_idx, attempt_id))
         connection.commit()
+        return jsonify({"status": "saved"})
     finally:
         cursor.close()
         connection.close()
-    return jsonify({"status": "saved"})
 
 #! 2. TAKE EXAM (PERSISTENT LOGIC)
 @student.route('/take_exam/<int:exam_id>')
 def take_exam(exam_id):
-    if not user_logged_in(): return redirect(url_for('auth.login'))
+    if not user_logged_in(): 
+        return redirect(url_for('auth.login'))
+        
     student_id = session.get('user_id')
     
     connection = mysql.connector.connect(**db_config)
-    # Use buffered=True to avoid "Unread Result" errors during the loop
+    # Using buffered=True to handle multiple queries without "Unread Result" errors
     cursor = connection.cursor(dictionary=True, buffered=True)
 
-    # 1. Fetch Exam Meta & Timer Info
-    cursor.execute("""
-        SELECT *, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(date_time, INTERVAL duration_minutes MINUTE)) as rem 
-        FROM exams WHERE exam_id = %s
-    """, (exam_id,))
-    exam = cursor.fetchone()
-    
-    if not exam or exam['rem'] <= 0:
-        session.pop('active_exam_id', None) 
-        flash("Exam session has ended or not found.", "danger")
-        return redirect(url_for('student.student_exams'))
-
-    # 2. Check for existing Attempt
-    cursor.execute("SELECT * FROM exam_attempts WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
-    attempt = cursor.fetchone()
-
-    if not attempt:
-        # --- FIRST TIME STARTING ---
-        cursor.execute("INSERT INTO exam_attempts (student_id, exam_id, status, start_time) VALUES (%s, %s, 'in-progress', NOW())", (student_id, exam_id))
-        connection.commit()
-        attempt_id = cursor.lastrowid
-        
-        # Pick the randomized subset from the total pool and save them to attempt_questions
-        limit = exam.get('question_limit') or 50
+    try:
+        # 1. SECURITY: ENROLLMENT & BLOCKING CHECK
+        # Checks if the student is 'active' in the class. If teacher set them to 'dropped', they are blocked.
         cursor.execute("""
-            INSERT INTO attempt_questions (attempt_id, question_id)
-            SELECT %s, question_id FROM exam_questions 
-            WHERE exam_id = %s 
-            ORDER BY RAND() 
-            LIMIT %s
-        """, (attempt_id, exam_id, limit))
-        connection.commit()
-        current_q = 0
-        tab_switches = 0
-    else:
-        # --- RELOADING EXISTING EXAM ---
-        if attempt['status'] == 'finished':
-            session.pop('active_exam_id', None)
+            SELECT en.status FROM enrollments en
+            JOIN exams e ON en.class_code = e.class_code
+            WHERE e.exam_id = %s AND en.student_id = %s
+        """, (exam_id, student_id))
+        enrollment = cursor.fetchone()
+        
+        if not enrollment or enrollment['status'] != 'active':
+            flash("You are currently blocked from taking this exam. Please contact your instructor.", "danger")
             return redirect(url_for('student.student_exams'))
+
+        # 2. EXAM METADATA & TIMER LOGIC
+        # rem = remaining seconds until the exam window (Start + Duration) closes
+        cursor.execute("""
+            SELECT *, TIMESTAMPDIFF(SECOND, NOW(), DATE_ADD(date_time, INTERVAL duration_minutes MINUTE)) as rem 
+            FROM exams WHERE exam_id = %s
+        """, (exam_id,))
+        exam = cursor.fetchone()
         
-        attempt_id = attempt['attempt_id']
-        current_q = attempt['current_q_index']
-        tab_switches = attempt['tab_switches']
+        # Check if exam exists or is deactivated by teacher
+        if not exam or exam['is_active'] == 0:
+            flash("This exam is currently unavailable.", "warning")
+            return redirect(url_for('student.student_exams'))
 
-    # 3. LOCK SESSION
-    session['active_exam_id'] = exam_id
+        # Automatic detection of missed/expired exam
+        if exam['rem'] <= 0:
+            session.pop('active_exam_id', None) 
+            flash("This exam session has already expired.", "danger")
+            return redirect(url_for('student.student_exams'))
 
-    # 4. LOAD THE QUESTIONS SERVED FOR THIS ATTEMPT
-    cursor.execute("""
-        SELECT q.* FROM questions q
-        JOIN attempt_questions aq ON q.question_id = aq.question_id
-        WHERE aq.attempt_id = %s
-        ORDER BY FIELD(q.difficulty, 'easy', 'medium', 'hard')
-    """, (attempt_id,))
-    questions = cursor.fetchall()
+        # 3. ATTEMPT PERSISTENCE CHECK
+        cursor.execute("SELECT * FROM exam_attempts WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
+        attempt = cursor.fetchone()
 
-    # 5. THE MISSING PART: Load Options and Saved Progress for every question
-    for q in questions:
-        # Fetch the multiple choice/true-false options
-        cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
-        q['options'] = cursor.fetchall() # <--- This makes choices visible!
+        if not attempt:
+            # --- START NEW ATTEMPT ---
+            cursor.execute("""
+                INSERT INTO exam_attempts (student_id, exam_id, status, start_time) 
+                VALUES (%s, %s, 'in-progress', NOW())
+            """, (student_id, exam_id))
+            connection.commit()
+            attempt_id = cursor.lastrowid
+            
+            # Serve randomized subset from the total pool based on teacher's 'question_limit'
+            limit = exam.get('question_limit') or 50
+            cursor.execute("""
+                INSERT INTO attempt_questions (attempt_id, question_id)
+                SELECT %s, question_id FROM exam_questions 
+                WHERE exam_id = %s 
+                ORDER BY RAND() 
+                LIMIT %s
+            """, (attempt_id, exam_id, limit))
+            connection.commit()
+            
+            current_q = 0
+            tab_switches = 0
+        else:
+            # --- RESUME EXISTING ATTEMPT ---
+            if attempt['status'] == 'finished':
+                session.pop('active_exam_id', None)
+                flash("You have already completed this exam.", "info")
+                return redirect(url_for('student.student_results'))
+            
+            attempt_id = attempt['attempt_id']
+            current_q = attempt['current_q_index']
+            tab_switches = attempt['tab_switches']
+
+        # 4. LOCKDOWN ENFORCEMENT
+        # Set this ID in session so before_app_request prevents navigation
+        session['active_exam_id'] = exam_id
+
+        # 5. LOAD QUESTIONS SERVED FOR THIS SPECIFIC ATTEMPT
+        cursor.execute("""
+            SELECT q.* FROM questions q
+            JOIN attempt_questions aq ON q.question_id = aq.question_id
+            WHERE aq.attempt_id = %s
+            ORDER BY FIELD(q.difficulty, 'easy', 'medium', 'hard')
+        """, (attempt_id,))
+        questions = cursor.fetchall()
+
+        # 6. ATTACH OPTIONS & SAVED ANSWERS TO EACH QUESTION
+        for q in questions:
+            # Load options (Multiple Choice/TF)
+            cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
+            q['options'] = cursor.fetchall()
+            
+            # Load student's previously saved answer (if they refreshed the page)
+            cursor.execute("""
+                SELECT submitted_answer, is_flagged FROM student_answers 
+                WHERE attempt_id = %s AND question_id = %s
+            """, (attempt_id, q['question_id']))
+            ans_row = cursor.fetchone()
+            
+            q['saved_answer'] = ans_row['submitted_answer'] if ans_row else ""
+            q['is_flagged'] = ans_row['is_flagged'] if ans_row else 0
+
+        return render_template('take_exam.html', 
+                               exam=exam, 
+                               questions=questions, 
+                               attempt_id=attempt_id, 
+                               remaining_seconds=exam['rem'], 
+                               current_q=current_q, 
+                               tab_switches=tab_switches)
+
+    except mysql.connector.Error as err:
+        if connection:
+            connection.rollback()
+        flash(f"Database Error: {err}", "danger")
+        return redirect(url_for('student.student_exams'))
         
-        # Fetch any answer the student already saved (for persistence)
-        cursor.execute("SELECT submitted_answer, is_flagged FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q['question_id']))
-        ans = cursor.fetchone()
-        q['saved_answer'] = ans['submitted_answer'] if ans else ""
-        q['is_flagged'] = ans['is_flagged'] if ans else 0
-
-    cursor.close()
-    connection.close()
-    
-    return render_template('take_exam.html', 
-                           exam=exam, 
-                           questions=questions, 
-                           attempt_id=attempt_id, 
-                           remaining_seconds=exam['rem'], 
-                           current_q=current_q, 
-                           tab_switches=tab_switches)
+    finally:
+        cursor.close()
+        connection.close()
 
 @student.route('/review_results/<int:attempt_id>')
 def review_results(attempt_id):
@@ -453,7 +502,6 @@ def review_exam(attempt_id):
     connection.close()
     return render_template('student_review.html', attempt=attempt, questions=review_questions)
 
-#! 3. VIOLATION LOGGING
 @student.route('/log_violation', methods=['POST'])
 def log_violation():
     data = request.get_json()
@@ -462,17 +510,25 @@ def log_violation():
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
     
-    cursor.execute("UPDATE exam_attempts SET tab_switches = tab_switches + 1 WHERE attempt_id = %s", (attempt_id,))
-    connection.commit()
-    
-    cursor.execute("SELECT tab_switches FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
-    result = cursor.fetchone()
-    new_count = result['tab_switches'] if result else 0
-    
-    cursor.close()
-    connection.close()
-    
-    return jsonify({"status": "logged", "new_count": new_count})
+    try:
+        # REAL-TIME SECURITY CHECK
+        cursor.execute("SELECT status FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+        attempt = cursor.fetchone()
+        
+        if not attempt or attempt['status'] == 'blocked':
+            return jsonify({"status": "blocked"}), 403
+
+        cursor.execute("UPDATE exam_attempts SET tab_switches = tab_switches + 1 WHERE attempt_id = %s", (attempt_id,))
+        connection.commit()
+        
+        cursor.execute("SELECT tab_switches FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+        result = cursor.fetchone()
+        new_count = result['tab_switches'] if result else 0
+        return jsonify({"status": "logged", "new_count": new_count})
+    finally:
+        cursor.close()
+        connection.close()
+
 
 #! 4. FINAL SUBMISSION
 @student.route('/submit_exam/<int:attempt_id>', methods=['POST'])
@@ -480,61 +536,43 @@ def submit_exam(attempt_id):
     if not user_logged_in(): 
         return redirect(url_for('auth.login'))
     
-    # Remove exam lockdown
-    session.pop('active_exam_id', None)
-    
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True, buffered=True)
     
     try:
-        # 1. Get the exam ID associated with this attempt
-        cursor.execute("SELECT exam_id FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
+        # REAL-TIME SECURITY CHECK: Reject submission if blocked
+        cursor.execute("SELECT status, exam_id FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
         attempt_info = cursor.fetchone()
-        if not attempt_info:
-            return redirect(url_for('student.student_dashboard'))
         
-        # 2. Get only the questions that were specifically served during THIS attempt
+        if not attempt_info or attempt_info['status'] == 'blocked':
+            session.pop('active_exam_id', None)
+            flash("Submission failed: Your access to this exam was restricted by the instructor.", "danger")
+            return redirect(url_for('student.student_exams'))
+
+        # Remove exam lockdown
+        session.pop('active_exam_id', None)
+        
+        # Grading Logic (Existing)
         cursor.execute("SELECT question_id FROM attempt_questions WHERE attempt_id = %s", (attempt_id,))
         questions = cursor.fetchall()
-
         total_score = 0
         
-        # 3. Loop through each question to check student's answer
         for q in questions:
             q_id = q['question_id']
-            
-            # Fetch the student's saved answer from the DB
-            cursor.execute("""
-                SELECT submitted_answer FROM student_answers 
-                WHERE attempt_id = %s AND question_id = %s
-            """, (attempt_id, q_id))
+            cursor.execute("SELECT submitted_answer FROM student_answers WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
             student_row = cursor.fetchone()
             student_ans = str(student_row['submitted_answer']).strip().lower() if student_row else ""
 
-            # Fetch the actual correct answer from the options table
-            cursor.execute("""
-                SELECT option_text FROM options 
-                WHERE question_id = %s AND is_correct = 1
-            """, (q_id,))
+            cursor.execute("SELECT option_text FROM options WHERE question_id = %s AND is_correct = 1", (q_id,))
             correct_row = cursor.fetchone()
             correct_ans = str(correct_row['option_text']).strip().lower() if correct_row else None
 
-            # 4. Compare and Grade
             if correct_ans and student_ans == correct_ans:
-                # Mark as correct in individual answer row
-                cursor.execute("""
-                    UPDATE student_answers SET is_correct = 1 
-                    WHERE attempt_id = %s AND question_id = %s
-                """, (attempt_id, q_id))
+                cursor.execute("UPDATE student_answers SET is_correct = 1 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
                 total_score += 1
             else:
-                # Explicitly mark as wrong
-                cursor.execute("""
-                    UPDATE student_answers SET is_correct = 0 
-                    WHERE attempt_id = %s AND question_id = %s
-                """, (attempt_id, q_id))
+                cursor.execute("UPDATE student_answers SET is_correct = 0 WHERE attempt_id = %s AND question_id = %s", (attempt_id, q_id))
 
-        # 5. Finalize the main attempt record
         cursor.execute("""
             UPDATE exam_attempts 
             SET status = 'finished', end_time = NOW(), score = %s 
@@ -545,15 +583,10 @@ def submit_exam(attempt_id):
         flash(f"Exam submitted successfully! Final Score: {total_score}", "success")
         
     except mysql.connector.Error as err:
-        if connection:
-            connection.rollback()
+        if connection: connection.rollback()
         flash(f"Grading Error: {err}", "danger")
-        print(f"ERROR: {err}")
     finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+        cursor.close(); connection.close()
     
     return redirect(url_for('student.student_results'))
 
@@ -598,69 +631,59 @@ def student_results():
         
     return render_template('student_results.html', results=results)
 
-#! 5. COURSE CONTENT
 @student.route('/course/<string:course_id>')
 def view_course(course_id):
     if not user_logged_in():
         return redirect(url_for('auth.login'))
     
     student_id = session.get('user_id')
-    # Use class_code variable conceptually as it represents the unique class linked in the database
-    class_code = course_id
     
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
     
     try:
-        # 1. Fetch Course & Teacher Details mapped through the classes table
+        # Fetch Course & Teacher Details
         cursor.execute("""
             SELECT c.*, cl.class_code, t.firstname as t_fname, t.lastname as t_lname, t.email as t_email 
             FROM classes cl
             JOIN courses c ON cl.course_code = c.course_code
             LEFT JOIN teachers t ON cl.teacher_id = t.teacher_id
             WHERE cl.class_code = %s
-        """, (class_code,))
+        """, (course_id,))
         course = cursor.fetchone()
     
-        # 2. Fetch Student Progress stats for the header
-        cursor.execute("SELECT COUNT(*) as total FROM exams WHERE class_code = %s AND archived = 0", (class_code,))
-        total_exams = cursor.fetchone()['total']
-
-        # 3. Fetch how many of those active exams the student has completed
-        cursor.execute("""
-            SELECT COUNT(*) as completed FROM exam_attempts ea
-            JOIN exams e ON ea.exam_id = e.exam_id
-            WHERE e.class_code = %s AND ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0;
-        """, (class_code, student_id))
-        completed_exams = cursor.fetchone()['completed']
-
-        progress_pct = int((completed_exams / total_exams) * 100) if total_exams > 0 else 0
-
+        # Fetch Exam List with per-exam attempt status
         cursor.execute("""
             SELECT 
                 e.*, 
                 ea.attempt_id,
                 ea.status as attempt_status, 
                 ea.score, 
-                COALESCE(
-                    (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id),
-                    e.question_limit
-                ) as total_q
+                (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as total_q
             FROM exams e
             LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
             WHERE e.class_code = %s AND e.archived = 0
-        """, (student_id, class_code))
+        """, (student_id, course_id))
         course_exams = cursor.fetchall()
+
+        # Stats for header
+        total_exams = len(course_exams)
+        completed_exams = sum(1 for ex in course_exams if ex['attempt_status'] == 'finished')
+        progress_pct = int((completed_exams / total_exams) * 100) if total_exams > 0 else 0
         
         now = datetime.now()
         for exam in course_exams:
-            # Calculate the exact second the exam window closes
-            exam['end_time'] = exam['date_time'] + timedelta(minutes=exam['duration_minutes'])
-            
-            # Logic: Can start if (Active) AND (Started) AND (Not Finished) AND (Not Expired)
-            exam['is_expired'] = now > exam['end_time']
-            exam['is_upcoming'] = now < exam['date_time']
-            exam['can_take'] = (exam['is_active'] == 1 and not exam['is_upcoming'] and not exam['is_expired'] and exam['attempt_status'] != 'finished')
+            if exam['date_time']:
+                exam['end_time'] = exam['date_time'] + timedelta(minutes=exam['duration_minutes'])
+                exam['is_expired'] = now > exam['end_time']
+                exam['is_upcoming'] = now < exam['date_time']
+            else:
+                exam['is_expired'] = False
+                exam['is_upcoming'] = True
+
+            # can_take is true if active, not upcoming, not expired, and NOT finished or blocked
+            exam['can_take'] = (exam['is_active'] == 1 and not exam['is_upcoming'] and 
+                               not exam['is_expired'] and exam['attempt_status'] not in ['finished', 'blocked'])
 
         return render_template('student_courses.html', 
                                course=course, 

@@ -6,7 +6,10 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Exam Performance: <span class="text-danger">{{ exam.title }}</span></h1>
-        <div style="display: flex; gap: 10px;">
+        <div class="d-flex" style="gap: 10px;">
+            <button class="btn btn-sm btn-primary shadow-sm" data-toggle="modal" data-target="#timeModal">
+                <i class="fas fa-clock fa-sm mr-1"></i> Change Exam Time
+            </button>
             <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary shadow-sm">
                 <i class="fas fa-arrow-left fa-sm mr-1"></i> Back to Exams
             </a>
@@ -15,18 +18,22 @@
 
     <!-- Summary Info -->
     <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card border-left-info shadow py-2">
+        <div class="col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
                 <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Course Context</div>
-                            <div class="h6 mb-0 font-weight-bold text-gray-800">{{ exam.course_name }} ({{
-                                exam.class_code }})</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-info-circle fa-2x text-gray-300"></i>
-                        </div>
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Schedule & Duration</div>
+                    <div class="h6 mb-0 font-weight-bold text-gray-800">
+                        {{ exam.date_time.strftime('%Y-%m-%d %H:%M') if exam.date_time else 'Not set' }}
+                        ({{ exam.duration_minutes }} mins)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-left-dark shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-dark text-uppercase mb-1">Course & Block</div>
+                    <div class="h6 mb-0 font-weight-bold text-gray-800">{{ exam.course_name }} ({{ exam.class_code }})
                     </div>
                 </div>
             </div>
@@ -36,16 +43,15 @@
     <!-- Results Table Card -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Student Submissions</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Student Tracking List</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-hover" id="resultsTable" width="100%" cellspacing="0">
                     <thead class="bg-light text-dark">
                         <tr>
-                            <th>Student ID</th>
                             <th>Student Name</th>
-                            <th>Score / Total</th>
+                            <th>Score</th>
                             <th>Percentage</th>
                             <th>Violations</th>
                             <th>Status</th>
@@ -54,62 +60,79 @@
                     </thead>
                     <tbody>
                         {% for r in results %}
-                        {% set percent = ((r.score / r.total_questions) * 100)|round(1) if r.total_questions > 0 else 0
-                        %}
-                        <tr>
-                            <td class="align-middle small">{{ r.student_id }}</td>
-                            <td class="align-middle font-weight-bold text-dark">
-                                {{ r.firstname }} {{ r.lastname }}
+                        {% set percent = ((r.score / r.total_questions) * 100)|round(1) if r.attempt_id and
+                        r.total_questions > 0 else 0 %}
+                        <tr {% if r.enrollment_status=='dropped' %}style="background-color: #fff5f5;" {% endif %}>
+                            <td class="align-middle">
+                                <div class="font-weight-bold text-dark">{{ r.firstname }} {{ r.lastname }}</div>
+                                <small class="text-muted">{{ r.student_id }}</small>
+                                {% if r.enrollment_status == 'dropped' %}
+                                <span class="badge badge-danger ml-2">BLOCKED</span>
+                                {% endif %}
                             </td>
                             <td class="align-middle">
-                                {{ r.score }} / {{ r.total_questions }}
+                                {% if r.attempt_id %}{{ r.score }} / {{ r.total_questions }}{% else %}--{% endif %}
                             </td>
                             <td class="align-middle">
+                                {% if r.attempt_id %}
                                 <span
                                     class="font-weight-bold {% if percent >= exam.pass_percentage %}text-success{% else %}text-danger{% endif %}">
                                     {{ percent }}%
                                 </span>
+                                {% else %}--{% endif %}
                             </td>
                             <td class="align-middle text-center">
-                                {% if r.tab_switches > 0 %}
-                                <span class="badge badge-warning text-dark px-2">
-                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ r.tab_switches }}
+                                {% if r.attempt_id %}
+                                <span
+                                    class="badge {% if r.tab_switches > 0 %}badge-warning text-dark{% else %}badge-light border{% endif %}">
+                                    {{ r.tab_switches }}
                                 </span>
-                                {% else %}
-                                <span class="text-success small"><i class="fas fa-check-circle"></i> 0</span>
-                                {% endif %}
+                                {% else %}--{% endif %}
                             </td>
                             <td class="align-middle">
+                                {% if r.attempt_id %}
                                 <span
-                                    class="badge {% if r.status == 'finished' %}badge-success{% else %}badge-primary{% endif %} px-3 py-2">
-                                    {{ r.status|upper }}
+                                    class="badge {% if r.attempt_status == 'finished' %}badge-success{% else %}badge-primary{% endif %} px-2 py-1">
+                                    {{ r.attempt_status|upper }}
                                 </span>
+                                {% else %}
+                                {% if is_past_due %}
+                                <span class="badge badge-danger px-2 py-1">NO SHOW / MISSED</span>
+                                {% else %}
+                                <span class="badge badge-secondary px-2 py-1">PENDING</span>
+                                {% endif %}
+                                {% endif %}
                             </td>
                             <td class="align-middle text-center">
-                                <div class="d-flex justify-content-center align-items-center" style="gap: 8px;">
-                                    <!-- Reset Action -->
+                                <div class="d-flex justify-content-center" style="gap: 5px;">
+                                    {% if r.attempt_id and r.attempt_status != 'blocked' %}
                                     <form
                                         action="{{ url_for('teacher.reset_exam', attempt_id=r.attempt_id, exam_id=exam.exam_id) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('Reset this student\'s exam? All progress will be deleted.')">
-                                        <button type="submit" class="btn btn-danger btn-sm shadow-sm rounded-pill px-3">
-                                            <i class="fas fa-redo-alt mr-1"></i> Reset
+                                        method="POST" onsubmit="return confirm('Reset progress?')">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill"
+                                            title="Reset Attempt"><i class="fas fa-redo"></i></button>
+                                    </form>
+                                    <a href="{{ url_for('teacher.review_student_attempt', attempt_id=r.attempt_id) }}"
+                                        class="btn btn-outline-info btn-sm rounded-pill"><i
+                                            class="fas fa-search"></i></a>
+                                    {% endif %}
+
+                                    <!-- ✅ Block / Unblock ONLY if NOT finished -->
+                                    {% if r.attempt_status != 'finished' %}
+                                    <form
+                                        action="{{ url_for('teacher.toggle_block_student', student_id=r.student_id, exam_id=exam.exam_id) }}"
+                                        method="POST">
+                                        <button type="submit"
+                                            class="btn btn-sm rounded-pill {% if r.attempt_status == 'blocked' %}btn-success{% else %}btn-dark{% endif %}">
+                                            {% if r.attempt_status == 'blocked' %}
+                                            <i class="fas fa-user-check"></i> Unblock
+                                            {% else %}
+                                            <i class="fas fa-user-slash"></i> Block
+                                            {% endif %}
                                         </button>
                                     </form>
-
-                                    <!-- Details Action -->
-                                    <a href="{{ url_for('teacher.review_student_attempt', attempt_id=r.attempt_id) }}"
-                                        class="btn btn-sm btn-info shadow-sm rounded-pill px-3">
-                                        <i class="fas fa-search mr-1"></i> Details
-                                    </a>
+                                    {% endif %}
                                 </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i>
-                                <p class="text-muted">No students have attempted this exam yet.</p>
                             </td>
                         </tr>
                         {% endfor %}
@@ -119,4 +142,35 @@
         </div>
     </div>
 </div>
-{% endblock %}  
+
+<!-- Change Time Modal -->
+<div class="modal fade" id="timeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Adjust Exam Schedule</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <form action="{{ url_for('teacher.update_exam_schedule', exam_id=exam.exam_id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold">NEW START DATE & TIME</label>
+                        <input type="datetime-local" name="new_time" class="form-control"
+                            value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="small font-weight-bold">DURATION (MINUTES)</label>
+                        <input type="number" name="new_duration" class="form-control"
+                            value="{{ exam.duration_minutes }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

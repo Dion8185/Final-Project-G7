@@ -4,7 +4,7 @@ from testpoint.Auth.login import teacher_logged_in
 import mysql.connector
 import pandas as pd 
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
 
 teacher = Blueprint('teacher', __name__, template_folder='templates', static_folder='static',
@@ -727,21 +727,71 @@ def exam_results(exam_id):
             flash("Exam not found or access denied.", "danger")
             return redirect(url_for('teacher.manage_exams'))
 
-        # 2. Fetch Student Results
         cursor.execute("""
-            SELECT ea.*, s.firstname, s.lastname, s.student_id,
-                (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_questions
-            FROM exam_attempts ea
-            JOIN students s ON ea.student_id = s.student_id
-            WHERE ea.exam_id = %s
+            SELECT 
+                s.student_id, s.firstname, s.lastname,
+                ea.attempt_id, ea.score, ea.status as attempt_status, ea.tab_switches,
+                (SELECT COUNT(*) FROM exam_questions WHERE exam_id = %s) as total_questions
+            FROM enrollments en
+            JOIN students s ON en.student_id = s.student_id
+            LEFT JOIN exam_attempts ea ON s.student_id = ea.student_id AND ea.exam_id = %s
+            WHERE en.class_code = %s
             ORDER BY s.lastname ASC
-        """, (exam_id,))
+        """, (exam_id, exam_id, exam['class_code']))
         results = cursor.fetchall()
         
-        return render_template('teacher_exam_results.html', exam=exam, results=results)
+        now = datetime.now()
+        exam_end_time = exam['date_time'] + timedelta(minutes=exam['duration_minutes']) if exam['date_time'] else None
+        is_past_due = (now > exam_end_time) if exam_end_time else False
+
+        return render_template('teacher_exam_results.html', exam=exam, results=results, is_past_due=is_past_due, now=now)
     finally:
-        cursor.close()
-        connection.close()
+        cursor.close(); connection.close()
+
+        
+@teacher.route('/toggle_block_student/<string:student_id>/<int:exam_id>', methods=['POST'])
+def toggle_block_student(student_id, exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    # Check if an attempt record already exists for this specific exam
+    cursor.execute("SELECT status FROM exam_attempts WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
+    attempt = cursor.fetchone()
+    
+    if attempt:
+        if attempt['status'] == 'blocked':
+            # Unblock: Since we want them to be able to take it, we can just delete the blocked record
+            cursor.execute("DELETE FROM exam_attempts WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
+            flash("Student has been unblocked from this exam.", "success")
+        else:
+            # Block: Change existing status to blocked
+            cursor.execute("UPDATE exam_attempts SET status = 'blocked' WHERE student_id = %s AND exam_id = %s", (student_id, exam_id))
+            flash("Student has been blocked from this exam.", "warning")
+    else:
+        # Create a new attempt record with status 'blocked'
+        cursor.execute("INSERT INTO exam_attempts (student_id, exam_id, status) VALUES (%s, %s, 'blocked')", (student_id, exam_id))
+        flash("Student has been blocked from this exam.", "warning")
+        
+    connection.commit()
+    cursor.close(); connection.close()
+    return redirect(url_for('teacher.exam_results', exam_id=exam_id))
+
+
+@teacher.route('/update_exam_schedule/<int:exam_id>', methods=['POST'])
+def update_exam_schedule(exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    new_time = request.form.get('new_time')
+    new_duration = request.form.get('new_duration')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    cursor.execute("UPDATE exams SET date_time = %s, duration_minutes = %s WHERE exam_id = %s", (new_time, new_duration, exam_id))
+    connection.commit()
+    cursor.close()
+    connection.close()
+    flash("Exam schedule updated successfully.", "success")
+    return redirect(url_for('teacher.exam_results', exam_id=exam_id))
 
 # Updated Reset Route: Redirects to the correct exam_results route
 @teacher.route('/reset_exam/<int:attempt_id>/<int:exam_id>', methods=['POST'])

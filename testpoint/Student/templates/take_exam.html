@@ -91,14 +91,12 @@
         }
     }
 
-    /* ── PROGRESS BAR ── */
     .progress {
         height: 8px;
         border-radius: 0;
         background-color: #eaecf4;
     }
 
-    /* ── CARD HEAD / FOOT ── */
     .card-header {
         background-color: #fff;
         border-bottom: 1px solid #e3e6f0;
@@ -114,7 +112,6 @@
         color: #858796;
     }
 
-    /* ── FLAG BUTTON ── */
     .btn-flag {
         font-size: 0.8rem;
         font-weight: 700;
@@ -128,7 +125,6 @@
         color: #fff;
     }
 
-    /* ── QUESTION BODY ── */
     .question-step {
         display: none;
     }
@@ -144,7 +140,6 @@
         line-height: 1.5;
     }
 
-    /* ── RADIO OPTIONS ── */
     .options-wrap {
         display: flex;
         flex-direction: column;
@@ -206,7 +201,6 @@
         background: #fff;
     }
 
-    /* ── TEXT INPUT ── */
     .id-input {
         width: 100%;
         padding: 15px;
@@ -220,12 +214,6 @@
         transition: all .2s;
     }
 
-    .id-input:focus {
-        border-color: #4e73df;
-        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.1);
-    }
-
-    /* ── VIOLATION BANNER ── */
     #violation-banner {
         display: none;
         background: #e74a3b;
@@ -238,7 +226,6 @@
         box-shadow: 0 4px 10px rgba(231, 74, 59, 0.3);
     }
 
-    /* ── SIDEBAR: TIMER ── */
     .timer-section {
         padding: 20px;
         text-align: center;
@@ -277,7 +264,6 @@
         }
     }
 
-    /* ── SIDEBAR: MAP ── */
     .map-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -302,11 +288,6 @@
         transition: all .15s;
     }
 
-    .q-indicator:hover {
-        border-color: #4e73df;
-        color: #4e73df;
-    }
-
     .q-indicator.active {
         border: 2px solid #4e73df;
         color: #4e73df;
@@ -326,11 +307,25 @@
         color: #fff !important;
         border-color: #f6c23e !important;
     }
+
+    /* ── BLOCKING MODAL FIXES ── */
+    #blockedModal {
+        z-index: 1000001 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1000000 !important;
+    }
+
+    body.is-blocked .exam-grid {
+        filter: blur(5px);
+        pointer-events: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- LOCKDOWN OVERLAY -->
+<!-- LOCKDOWN OVERLAY (Removed physically on block) -->
 <div id="lockdown-overlay">
     <div class="lock-icon">
         <i class="fas fa-shield-alt fa-3x text-danger"></i>
@@ -345,7 +340,6 @@
 
 <div class="container-fluid">
     <div class="exam-grid animate__animated animate__fadeIn">
-
         <!-- LEFT: QUESTION AREA -->
         <div class="d-flex flex-column">
             <div id="violation-banner">
@@ -374,20 +368,15 @@
                         {% for q in questions %}
                         <div class="question-step" id="step-{{ loop.index0 }}" data-q-id="{{ q.question_id }}"
                             data-q-type="{{ q.question_type }}">
-
                             <div class="q-badges mb-3">
                                 <span
-                                    class="badge badge-pill {% if q.difficulty == 'easy' %}badge-success{% elif q.difficulty == 'medium' %}badge-warning{% else %}badge-danger{% endif %} text-uppercase px-3">
-                                    {{ q.difficulty }}
-                                </span>
-                                <span class="badge badge-pill badge-secondary text-uppercase px-3 ml-1">
-                                    {{ q.question_type.replace('_',' ') }}
-                                </span>
+                                    class="badge badge-pill {% if q.difficulty == 'easy' %}badge-success{% elif q.difficulty == 'medium' %}badge-warning{% else %}badge-danger{% endif %} text-uppercase px-3">{{
+                                    q.difficulty }}</span>
+                                <span class="badge badge-pill badge-secondary text-uppercase px-3 ml-1">{{
+                                    q.question_type.replace('_',' ') }}</span>
                             </div>
-
                             <p class="q-text mb-4">{{ q.question_text }}</p>
                             <hr class="mb-4">
-
                             {% if q.question_type in ['multiple_choice', 'true_false'] %}
                             <div class="options-wrap">
                                 {% for opt in q.options %}
@@ -415,16 +404,12 @@
 
                 <div class="card-footer py-3">
                     <div class="d-flex justify-content-between">
-                        <button class="btn btn-secondary px-4 rounded-pill font-weight-bold" id="btn-prev">
-                            <i class="fas fa-chevron-left mr-2"></i> Previous
-                        </button>
-                        <button class="btn btn-primary px-4 rounded-pill font-weight-bold" id="btn-next">
-                            Next Question <i class="fas fa-chevron-right ml-2"></i>
-                        </button>
+                        <button class="btn btn-secondary px-4 rounded-pill font-weight-bold"
+                            id="btn-prev">Previous</button>
+                        <button class="btn btn-primary px-4 rounded-pill font-weight-bold" id="btn-next">Next
+                            Question</button>
                         <button class="btn btn-success px-4 rounded-pill font-weight-bold" id="btn-submit"
-                            style="display:none" onclick="confirmFinalSubmit()">
-                            <i class="fas fa-check-double mr-2"></i> Finalize & Submit
-                        </button>
+                            style="display:none" onclick="confirmFinalSubmit()">Finalize & Submit</button>
                     </div>
                 </div>
             </div>
@@ -437,41 +422,43 @@
                     <div class="timer-label">Time Remaining</div>
                     <div class="timer-value" id="timer">00:00</div>
                 </div>
-
                 <div class="card-header py-3 bg-light border-top border-bottom">
                     <h6 class="m-0 font-weight-bold text-dark small text-uppercase">Question Map</h6>
                 </div>
                 <div class="map-grid">
                     {% for q in questions %}
-                    <div class="q-indicator
-                                {% if q.saved_answer %}answered{% endif %}
-                                {% if q.is_flagged %}flagged{% endif %}" id="map-{{ loop.index0 }}"
-                        onclick="jumpTo({{ loop.index0 }})">
-                        {{ loop.index }}
-                    </div>
+                    <div class="q-indicator {% if q.saved_answer %}answered{% endif %} {% if q.is_flagged %}flagged{% endif %}"
+                        id="map-{{ loop.index0 }}" onclick="jumpTo({{ loop.index0 }})">{{ loop.index }}</div>
                     {% endfor %}
                 </div>
-
-                <div class="card-footer small">
-                    <div class="d-flex flex-wrap" style="gap: 10px;">
-                        <div class="d-flex align-items-center">
-                            <div style="width: 12px; height: 12px; background:#1cc88a; border-radius: 2px;"
-                                class="mr-2"></div> Answered
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <div style="width: 12px; height: 12px; background:#f6c23e; border-radius: 2px;"
-                                class="mr-2"></div> Flagged
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <div style="width: 12px; height: 12px; background:#fff; border: 1px solid #d1d3e2; border-radius: 2px;"
-                                class="mr-2"></div> Empty
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="text-center text-muted font-italic">
-                        <i class="fas fa-cloud-upload-alt mr-1"></i> Auto-saving progress...
-                    </div>
+                <div class="card-footer small text-center text-muted font-italic">
+                    <i class="fas fa-cloud-upload-alt mr-1"></i> Auto-saving progress...
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BLOCKING MODAL (Placed outside wrappers) -->
+<div class="modal fade" id="blockedModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static"
+    data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-body text-center p-5">
+                <div class="mb-4">
+                    <i
+                        class="fas fa-user-shield fa-4x text-danger animate__animated animate__pulse animate__infinite"></i>
+                </div>
+                <h3 class="font-weight-bold text-dark mb-3">Security Alert</h3>
+                <p class="text-muted mb-4">Your access to this exam has been restricted by the instructor. You can no
+                    longer continue this session.</p>
+                <div class="alert alert-light border small text-left mb-4">
+                    <i class="fas fa-info-circle mr-2 text-primary"></i>
+                    <strong>Note:</strong> Your progress has been frozen. You will be automatically logged out in <span
+                        id="logout-countdown" class="font-weight-bold text-danger">5</span> seconds.
+                </div>
+                <a href="{{ url_for('auth.logout') }}"
+                    class="btn btn-danger btn-block rounded-pill font-weight-bold py-2">Logout Now</a>
             </div>
         </div>
     </div>
@@ -488,48 +475,38 @@
     let timeLeft = {{ remaining_seconds }};
     let currentIdx = {{ current_q }};
     let isUnloading = false;
+    let isBlocked = false;
 
-    // SHUFFLE FUNCTION: Randomizes position of multiple choice options
     function shuffleOptions() {
         $('.options-wrap').each(function () {
             var container = $(this);
             var options = container.children('.option-label').get();
-
             for (var i = options.length - 1; i > 0; i--) {
                 var j = Math.floor(Math.random() * (i + 1));
                 var temp = options[i];
-                options[i] = options[j];
-                options[j] = temp;
+                options[i] = options[j]; options[j] = temp;
             }
-
-            $.each(options, function (index, item) {
-                container.append(item);
-            });
+            $.each(options, function (index, item) { container.append(item); });
         });
     }
 
-    /* ── LOCKDOWN ── */
     window.startLockdown = function () {
         const el = document.documentElement;
-        if (el.requestFullscreen) {
-            el.requestFullscreen();
-        } else if (el.webkitRequestFullscreen) {
-            el.webkitRequestFullscreen();
-        } else if (el.msRequestFullscreen) {
-            el.msRequestFullscreen();
-        }
+        if (el.requestFullscreen) { el.requestFullscreen(); }
+        else if (el.webkitRequestFullscreen) { el.webkitRequestFullscreen(); }
+        else if (el.msRequestFullscreen) { el.msRequestFullscreen(); }
         $('#lockdown-overlay').fadeOut(300);
     };
 
     document.addEventListener('fullscreenchange', () => {
-        if (!isUnloading && !document.fullscreenElement) {
+        if (!isUnloading && !document.fullscreenElement && !isBlocked) {
             $('#lockdown-overlay').fadeIn(200);
             throttledViolation('Fullscreen exited');
         }
     });
 
-    /* ── TIMER ── */
     function renderTimer() {
+        if (isBlocked) return;
         const m = Math.floor(timeLeft / 60);
         const s = timeLeft % 60;
         const $t = $('#timer');
@@ -539,19 +516,41 @@
     renderTimer();
 
     const timerInt = setInterval(() => {
+        if (isBlocked) return;
         if (timeLeft <= 0) {
-            clearInterval(timerInt);
-            isUnloading = true;
-            document.getElementById('exam-form').submit();
-            return;
+            clearInterval(timerInt); isUnloading = true;
+            document.getElementById('exam-form').submit(); return;
         }
-        timeLeft--;
-        renderTimer();
+        timeLeft--; renderTimer();
     }, 1000);
 
-    /* ── NAVIGATION ── */
+    function triggerBlockedState() {
+        if (isBlocked) return;
+        isBlocked = true; isUnloading = true;
+
+        // 1. Force Exit Fullscreen (Crucial for rendering)
+        if (document.fullscreenElement) { document.exitFullscreen().catch(() => { }); }
+
+        // 2. Kill the Overlay physically
+        $('#lockdown-overlay').remove();
+        $('body').addClass('is-blocked');
+
+        // 3. Disable all inputs
+        $('input, button, .ajax-save').prop('disabled', true);
+        $('.q-indicator').css('pointer-events', 'none');
+
+        // 4. Show the Modal with high priority
+        $('#blockedModal').modal({ backdrop: 'static', keyboard: false, show: true });
+
+        let count = 5;
+        const logoutInt = setInterval(() => {
+            count--; $('#logout-countdown').text(count);
+            if (count <= 0) { clearInterval(logoutInt); window.location.href = "{{ url_for('auth.logout') }}"; }
+        }, 1000);
+    }
+
     function showStep(idx) {
-        if (idx < 0 || idx >= totalQ) return;
+        if (idx < 0 || idx >= totalQ || isBlocked) return;
         $('.question-step').hide().removeClass('active');
         $('.q-indicator').removeClass('active');
         $(`#step-${idx}`).show().addClass('active');
@@ -561,127 +560,84 @@
         $('#btn-next').toggle(idx < totalQ - 1);
         $('#btn-submit').toggle(idx === totalQ - 1);
         $('#btn-flag').toggleClass('active', $(`#map-${idx}`).hasClass('flagged'));
-        currentIdx = idx;
-        updateProgressBar();
+        currentIdx = idx; updateProgressBar();
     }
 
-    window.jumpTo = idx => {
-        saveCurrentProgress();
-        showStep(idx);
-    };
+    window.jumpTo = idx => { saveCurrentProgress(); showStep(idx); };
+    $('#btn-next').click(() => { saveCurrentProgress(); showStep(currentIdx + 1); });
+    $('#btn-prev').click(() => { saveCurrentProgress(); showStep(currentIdx - 1); });
 
-    $('#btn-next').click(() => {
-        saveCurrentProgress();
-        showStep(currentIdx + 1);
-    });
-
-    $('#btn-prev').click(() => {
-        saveCurrentProgress();
-        showStep(currentIdx - 1);
-    });
-
-    /* ── FLAG ── */
     $('#btn-flag').click(function () {
+        if (isBlocked) return;
         $(`#map-${currentIdx}`).toggleClass('flagged');
-        $(this).toggleClass('active');
-        saveCurrentProgress();
+        $(this).toggleClass('active'); saveCurrentProgress();
     });
 
-    /* ── SYNC / SAVE ── */
     function updateProgressBar() {
         const progress = Math.round(($('.q-indicator.answered').length / totalQ) * 100);
         $('#progress-fill').css('width', progress + '%');
     }
 
     function saveCurrentProgress() {
-        if (isUnloading) return;
+        if (isUnloading || isBlocked) return;
         const $step = $(`#step-${currentIdx}`);
         const qId = $step.data('q-id');
         const qType = $step.data('q-type');
-
-        let val = "";
-        if (qType === 'identification') {
-            val = $step.find('input[type="text"]').val();
-        } else {
-            val = $step.find('input:checked').val();
-        }
+        let val = (qType === 'identification') ? $step.find('input[type="text"]').val() : $step.find('input:checked').val();
         val = val || '';
-
         const $indicator = $(`#map-${currentIdx}`);
-        if (val.trim() !== "") {
-            $indicator.addClass('answered');
-        } else {
-            $indicator.removeClass('answered');
-        }
-
+        if (val.trim() !== "") { $indicator.addClass('answered'); } else { $indicator.removeClass('answered'); }
         updateProgressBar();
 
         fetch("{{ url_for('student.save_progress') }}", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                attempt_id: {{ attempt_id }},
-            question_id: qId,
-            answer: val,
-            is_flagged: $indicator.hasClass('flagged') ? 1 : 0,
-            current_idx: currentIdx
+                attempt_id: {{ attempt_id }}, question_id: qId, answer: val,
+            is_flagged: $indicator.hasClass('flagged') ? 1 : 0, current_idx: currentIdx
                 })
-            });
+            }).then(res => { if (res.status === 403) triggerBlockedState(); });
         }
 
-    $(document).on('change keyup', '.ajax-save', function () {
-        saveCurrentProgress();
-    });
+    $(document).on('change keyup', '.ajax-save', function () { saveCurrentProgress(); });
 
-    /* ── VIOLATIONS ── */
     function handleViolation(reason) {
-        if (isUnloading) return;
+        if (isUnloading || isBlocked) return;
         $('#violation-banner').slideDown(200);
         fetch("{{ url_for('student.log_violation') }}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ attempt_id: {{ attempt_id }} })
-            });
+            }).then(res => { if (res.status === 403) triggerBlockedState(); });
         }
 
     let violationCooldown = false;
     function throttledViolation(reason) {
-        if (violationCooldown || isUnloading) return;
-        violationCooldown = true;
-        handleViolation(reason);
+        if (violationCooldown || isUnloading || isBlocked) return;
+        violationCooldown = true; handleViolation(reason);
         setTimeout(() => { violationCooldown = false; }, 2000);
     }
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden && !isUnloading) throttledViolation('Tab switch');
-    });
-    window.addEventListener('blur', () => {
-        if (!isUnloading) throttledViolation('Window blur');
-    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden && !isUnloading) throttledViolation('Tab switch'); });
+    window.addEventListener('blur', () => { if (!isUnloading) throttledViolation('Window blur'); });
 
-    /* ── UTILITIES ── */
-    window.onbeforeunload = (e) => {
-        if (!isUnloading) {
-            return "Are you sure you want to leave? Your exam progress is saved but the timer continues.";
-        }
-    };
-
+    window.onbeforeunload = (e) => { if (!isUnloading && !isBlocked) return "Are you sure?"; };
     history.pushState(null, null, location.href);
     window.onpopstate = () => history.go(1);
     document.addEventListener('contextmenu', e => e.preventDefault());
 
     window.confirmFinalSubmit = () => {
-        violationCooldown = true;
-        const confirmed = confirm('Finalize and submit your answers? This cannot be undone.');
-        if (confirmed) {
-            isUnloading = true;
-            document.getElementById('exam-form').submit();
-        } else {
-            setTimeout(() => { violationCooldown = false; }, 500);
-        }
-    };
+        if (isBlocked) return;
+        if (confirm('Finalize and submit?')) {
+            fetch("{{ url_for('student.save_progress') }}", {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ attempt_id: {{ attempt_id }}, current_idx: currentIdx })
+    }).then(res => {
+        if (res.status === 403) triggerBlockedState();
+        else { isUnloading = true; document.getElementById('exam-form').submit(); }
+    });
+            }
+        };
 
-    /* ── INIT ── */
     shuffleOptions();
     if (!document.fullscreenElement) $('#lockdown-overlay').show();
     showStep(currentIdx);
