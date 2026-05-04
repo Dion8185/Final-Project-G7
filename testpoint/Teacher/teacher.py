@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
 from testpoint import db_config
 from testpoint.Auth.login import teacher_logged_in
 import mysql.connector
@@ -622,6 +622,7 @@ def bulk_unlink_questions(exam_id):
     connection.commit(); cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
+
 @teacher.route('/exam/<int:exam_id>/questions/bulk_action', methods=['POST'])
 def bulk_question_action(exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
@@ -663,6 +664,85 @@ def delete_question(q_id, exam_id):
     cursor.execute("DELETE FROM exam_questions WHERE question_id = %s AND exam_id = %s", (q_id, exam_id))
     connection.commit(); cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+@teacher.route('/export_bank_questions/<string:course_code>')
+def export_bank_questions(course_code):
+    if not teacher_logged_in():
+        return redirect(url_for('auth.login'))
+    
+    teacher_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # 1. Fetch all bank questions for this course
+        cursor.execute("""
+            SELECT question_id, question_text, question_type, difficulty 
+            FROM questions 
+            WHERE course_code = %s AND teacher_id = %s AND is_isolated = 0
+        """, (course_code, teacher_id))
+        questions = cursor.fetchall()
+
+        export_data = []
+
+        for q in questions:
+            # 2. Fetch options for each question
+            cursor.execute("SELECT option_text, is_correct FROM options WHERE question_id = %s", (q['question_id'],))
+            options = cursor.fetchall()
+
+            row = {
+                'Question': q['question_text'],
+                'Type': q['question_type'],
+                'Difficulty': q['difficulty'],
+                'Answer': '',
+                'OptA': '',
+                'OptB': '',
+                'OptC': '',
+                'OptD': ''
+            }
+
+            if q['question_type'] == 'multiple_choice':
+                for i, opt in enumerate(options):
+                    letter = chr(65 + i) # A, B, C, D
+                    if i < 4:
+                        row[f'Opt{letter}'] = opt['option_text']
+                    if opt['is_correct']:
+                        row['Answer'] = opt['option_text']
+
+            elif q['question_type'] == 'true_false':
+                for opt in options:
+                    if opt['is_correct']:
+                        row['Answer'] = opt['option_text']
+
+            elif q['question_type'] == 'identification':
+                if options:
+                    row['Answer'] = options[0]['option_text']
+
+            export_data.append(row)
+
+        # 3. Create Excel in memory
+        df = pd.DataFrame(export_data)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Questions')
+        
+        output.seek(0)
+        
+        filename = f"Bank_{course_code}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        flash(f"Export Error: {str(e)}", "danger")
+        return redirect(url_for('teacher.course_question_bank', course_code=course_code))
+    finally:
+        cursor.close()
+        connection.close()
 
 #! 5. ENROLLEE MANAGEMENT
 @teacher.route('/manage_enrollees/<string:class_code>')
