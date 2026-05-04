@@ -109,6 +109,7 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <div>
         <h1 class="h3 mb-1 text-gray-800 font-weight-bold" style="font-family: var(--tp-serif);">Account Manager</h1>
@@ -288,6 +289,11 @@
                         <div class="col-md-6 mb-3">
                             <label class="small font-weight-bold">First Name</label>
                             <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}"
+                                required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small font-weight-bold">Middle Name</label>
+                            <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}"
                                 required>
                         </div>
                         <div class="col-md-6 mb-3">
