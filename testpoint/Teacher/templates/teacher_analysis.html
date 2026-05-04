@@ -1,146 +1,256 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>TestPoint</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <style>
-        .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
-        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 0.5rem 2rem rgba(231, 74, 59, 0.2) !important; }
-        .badge-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } }
-    </style>
-</head>
-<body id="page-top">
-    <div id="wrapper">
-        <!-- SIDE BAR -->
-        <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
-                <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-                <div class="sidebar-brand-text mx-3">Teacher Panel</div>
-            </a>
-            <hr class="sidebar-divider my-0">
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}"><i class="fas fa-fw fa-tachometer-alt"></i><span>My Dashboard</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Classroom</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Classes / Enrollees</span></a></li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Exam Control</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Create/Edit Exams</span></a></li>
-            <li class="nav-item">
-                <a class="nav-link collapsed" href="{{ url_for('teacher.question_bank') }}" data-toggle="collapse" data-target="#collapseQuestions"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
-                <div id="collapseQuestions" class="collapse"><div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">Manage Questions</a>
-                    <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">Excel Import</a>
-                </div></div>
-            </li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Results</div>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a></li>
-            <li class="nav-item active"><a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}"><i class="fas fa-fw fa-chart-pie"></i><span>Exam Analysis</span></a></li>
-            <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
-        </ul>
+{% extends "teacher_base.html" %}
+{% block title %}Performance Analytics | TestPoint Instructor{% endblock %}
 
-        <!-- TOP BAR -->
-        <div id="content-wrapper" class="d-flex flex-column">
-            <div id="content">
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger"><i class="fa fa-bars"></i></button>
-                    <ul class="navbar-nav ml-auto">
-                        
-                        <!-- NOTIFICATION DROP DOWN -->
-                        <li class="nav-item dropdown no-arrow mx-1">
-                            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                                <i class="fas fa-exclamation-triangle fa-fw text-danger"></i><span class="badge badge-danger badge-counter badge-pulse">4</span>
-                            </a>
-                            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <h6 class="dropdown-header bg-danger border-danger">Live Cheating Alerts</h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Student detected tab-switching in Exam #4.</div></a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">View Monitor Log</a>
-                            </div>
-                        </li>
-                        
-                        <!-- PROFILE DROP DOWN -->
-                        <div class="topbar-divider d-none d-sm-block"></div>
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Prof. {{ session['firstname'] }} {{ session['lastname'] }}</span>
-                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                <a class="dropdown-item" href="#"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('auth.logout') }}" method="POST"><button type="submit" class="dropdown-item border-0 bg-transparent w-100 text-left"><i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout</button></form>
-                            </div>
-                        </li>
-                    </ul>
-                </nav>
+{% block extra_head %}
+<style>
+    /* ── ANALYTICS UI ── */
+    .analysis-card {
+        border: 1px solid var(--tp-teacher-border) !important;
+        border-radius: var(--tp-teacher-radius) !important;
+        background: #fff;
+    }
 
-                <!-- MAIN PAGE CONTENT -->
-                <div class="container-fluid animate__animated animate__fadeInUp">
-                    <h1 class="h3 mb-4 text-gray-800">Exam Performance Analysis</h1>
-                    
-                    <div class="row">
-                        <!-- Most Difficult Items -->
-                        <div class="col-lg-7">
-                            <div class="card shadow mb-4">
-                                <div class="card-header py-3 bg-danger text-white">
-                                    <h6 class="m-0 font-weight-bold">Most Failed Questions (Item Difficulty)</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="mb-4">
-                                        <h4 class="small font-weight-bold">Question #12: Recursive Algorithms <span class="float-right text-danger">82% Fail Rate</span></h4>
-                                        <div class="progress progress-sm"><div class="progress-bar bg-danger" style="width: 82%"></div></div>
-                                    </div>
-                                    <div class="mb-4">
-                                        <h4 class="small font-weight-bold">Question #5: Pointer Logic <span class="float-right text-warning">45% Fail Rate</span></h4>
-                                        <div class="progress progress-sm"><div class="progress-bar bg-warning" style="width: 45%"></div></div>
-                                    </div>
-                                    <div class="mb-4">
-                                        <h4 class="small font-weight-bold">Question #2: Syntax Errors <span class="float-right text-info">15% Fail Rate</span></h4>
-                                        <div class="progress progress-sm"><div class="progress-bar bg-info" style="width: 15%"></div></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    /* Table Typography */
+    .table thead th {
+        background: #f8f9fa;
+        color: #64748b;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        font-weight: 800;
+        border-top: none;
+        padding: 1rem 1.25rem;
+    }
 
-                        <!-- Class Distribution -->
-                        <div class="col-lg-5">
-                            <div class="card shadow mb-4">
-                                <div class="card-header py-3 bg-dark text-white">
-                                    <h6 class="m-0 font-weight-bold text-center">Score Summary</h6>
-                                </div>
-                                <div class="card-body text-center p-5">
-                                    <div class="h1 font-weight-bold text-danger">74.5%</div>
-                                    <p class="text-muted mb-4 small">Average Class Percentage</p>
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-6 border-right"><div class="h4 font-weight-bold">14</div><p class="small">Passed</p></div>
-                                        <div class="col-6"><div class="h4 font-weight-bold text-danger">4</div><p class="small">Failed</p></div>
+    /* Rank Medals */
+    .rank-badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 11px;
+    }
+    .rank-1 { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .rank-2 { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .rank-3 { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
+    .rank-gen { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
+
+    /* Item Analysis Bars */
+    .killer-q-item {
+        padding: 1rem;
+        border-radius: 10px;
+        background: #f8fafc;
+        margin-bottom: 12px;
+        border: 1px solid #f1f5f9;
+    }
+    
+    .killer-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--tp-teacher-ink);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .progress-analytics {
+        height: 6px;
+        border-radius: 10px;
+        background: #e2e8f0;
+    }
+
+    /* Summary Components */
+    .stat-box {
+        text-align: center;
+        padding: 1.5rem;
+        border-right: 1px solid var(--tp-teacher-border);
+    }
+    .stat-box:last-child { border-right: none; }
+    
+    .stat-val { font-family: var(--tp-serif); font-size: 2rem; color: var(--tp-teacher-accent); line-height: 1; }
+    .stat-desc { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ── HEADER SECTION ── -->
+<div class="row mb-4 align-items-end">
+    <div class="col-md-7">
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.25rem;" class="mb-1">
+            Performance <span style="color: var(--tp-teacher-accent);">Analytics</span>
+        </h1>
+        <p class="text-muted mb-0">Deep-dive insights into student rankings and assessment difficulty.</p>
+    </div>
+    <div class="col-md-5 text-md-right mt-3 mt-md-0">
+        <div class="d-inline-block text-left mr-2">
+            <select class="form-control form-control-sm rounded-pill border shadow-sm font-weight-bold" style="min-width: 200px;">
+                <option>Select Assessment...</option>
+                <option selected>Midterm Exam - CC1100</option>
+                <option>Quiz 1 - Logic Formulation</option>
+            </select>
+        </div>
+        <button class="btn btn-dark px-3 rounded-pill font-weight-bold shadow-sm" style="font-size: 12px;">
+            <i class="fas fa-download mr-2"></i> Export Report
+        </button>
+    </div>
+</div>
+
+<!-- ── TOP SUMMARY ROW ── -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card analysis-card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="d-flex flex-wrap flex-md-nowrap">
+                    <div class="stat-box flex-fill">
+                        <div class="stat-val">42</div>
+                        <div class="stat-desc">Total Takers</div>
+                    </div>
+                    <div class="stat-box flex-fill">
+                        <div class="stat-val">78.4%</div>
+                        <div class="stat-desc">Class Average</div>
+                    </div>
+                    <div class="stat-box flex-fill">
+                        <div class="stat-val">92%</div>
+                        <div class="stat-desc">Passing Rate</div>
+                    </div>
+                    <div class="stat-box flex-fill">
+                        <div class="stat-val text-warning">14</div>
+                        <div class="stat-desc">Integrity Flags</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── LEFT: STUDENT RANKINGS ── -->
+    <div class="col-xl-7">
+        <div class="card analysis-card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between" style="border-bottom: 1.5px solid var(--tp-teacher-border) !important;">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Top Performers (Leaderboard)</h6>
+                <span class="badge badge-light border text-muted px-2 py-1" style="font-size: 10px;">Top 10 Percentile</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="pl-4">Rank</th>
+                                <th>Student</th>
+                                <th class="text-center">Score</th>
+                                <th class="text-center">Percentile</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-dark" style="font-size: 14px;">
+                            <!-- Placeholder Rank 1 -->
+                            <tr>
+                                <td class="pl-4 py-3">
+                                    <div class="rank-badge rank-1 shadow-sm">1</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name=Justin+Salaveria&background=fef3c7&color=92400e&bold=true" class="rounded-circle mr-3" style="width: 32px; height: 32px;">
+                                        <div class="font-weight-bold">Salaveria, Justin</div>
                                     </div>
-                                </div>
-                            </div>
+                                </td>
+                                <td class="text-center font-weight-bold">48/50</td>
+                                <td class="text-center"><span class="text-success font-weight-bold">96%</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-light btn-circle-sm border"><i class="fas fa-search fa-xs"></i></button>
+                                </td>
+                            </tr>
+                            <!-- Placeholder Rank 2 -->
+                            <tr>
+                                <td class="pl-4 py-3">
+                                    <div class="rank-badge rank-2 shadow-sm">2</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name=Aldous+Garcia&background=f1f5f9&color=475569&bold=true" class="rounded-circle mr-3" style="width: 32px; height: 32px;">
+                                        <div class="font-weight-bold">Garcia, Aldous</div>
+                                    </div>
+                                </td>
+                                <td class="text-center font-weight-bold">45/50</td>
+                                <td class="text-center"><span class="text-primary font-weight-bold">90%</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-light btn-circle-sm border"><i class="fas fa-search fa-xs"></i></button>
+                                </td>
+                            </tr>
+                            <!-- Placeholder Rank 3 -->
+                            <tr>
+                                <td class="pl-4 py-3">
+                                    <div class="rank-badge rank-3 shadow-sm">3</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://ui-avatars.com/api/?name=Tyrael+Gonzalvo&background=fff7ed&color=9a3412&bold=true" class="rounded-circle mr-3" style="width: 32px; height: 32px;">
+                                        <div class="font-weight-bold">Gonzalvo, Tyrael</div>
+                                    </div>
+                                </td>
+                                <td class="text-center font-weight-bold">44/50</td>
+                                <td class="text-center"><span class="text-primary font-weight-bold">88%</span></td>
+                                <td class="text-center">
+                                    <button class="btn btn-light btn-circle-sm border"><i class="fas fa-search fa-xs"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top-0 text-center py-3">
+                <a href="#" class="text-danger font-weight-bold small text-uppercase" style="letter-spacing: 0.5px; text-decoration: none;">View Full Class Standing <i class="fas fa-chevron-right ml-1"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RIGHT: ITEM ANALYSIS (CLASS KILLERS) ── -->
+    <div class="col-xl-5">
+        <div class="card analysis-card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom" style="border-bottom: 1.5px solid var(--tp-teacher-border) !important;">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Item Analysis (Class Killers)</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-4">The following questions had the highest failure rates across all attempts.</p>
+                
+                <!-- Q1 Placeholder -->
+                <div class="killer-q-item">
+                    <span class="killer-label">Question #12: Recursive Algorithms <span class="float-right text-danger">82% Fail Rate</span></span>
+                    <div class="progress progress-analytics">
+                        <div class="progress-bar bg-danger" style="width: 82%"></div>
+                    </div>
+                </div>
+
+                <!-- Q2 Placeholder -->
+                <div class="killer-q-item">
+                    <span class="killer-label">Question #05: Memory Management <span class="float-right text-warning">45% Fail Rate</span></span>
+                    <div class="progress progress-analytics">
+                        <div class="progress-bar bg-warning" style="width: 45%"></div>
+                    </div>
+                </div>
+
+                <!-- Q3 Placeholder -->
+                <div class="killer-q-item">
+                    <span class="killer-label">Question #22: Big O Notation <span class="float-right text-warning">38% Fail Rate</span></span>
+                    <div class="progress progress-analytics">
+                        <div class="progress-bar bg-warning" style="width: 38%"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 rounded bg-light border">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-lightbulb text-warning mr-3 fa-lg"></i>
+                        <div>
+                            <h6 class="font-weight-bold text-dark mb-1 small">Instructor Tip</h6>
+                            <p class="mb-0 text-muted" style="font-size: 11px;">High fail rates in Section #12 suggest a need for a review session on Recursion concepts before the Final exam.</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- FOOTER -->
-            <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
         </div>
     </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> (function($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
-</body>
-</html>
+</div>
+{% endblock %}

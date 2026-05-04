@@ -19,6 +19,28 @@ load_dotenv("testpoint/passwordDB.env")
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 ai_model = genai.GenerativeModel('gemini-3-flash-preview')
 
+@teacher.context_processor
+def inject_teacher_courses():
+    if session.get('role') == 'teacher':
+        teacher_id = session.get('user_id')
+        try:
+            connection = mysql.connector.connect(**db_config)
+            cursor = connection.cursor(dictionary=True)
+            # Fetch courses assigned to this teacher
+            cursor.execute("""
+                SELECT cl.class_code, c.course_name 
+                FROM classes cl 
+                JOIN courses c ON cl.course_code = c.course_code 
+                WHERE cl.teacher_id = %s AND cl.is_active = 1
+            """, (teacher_id,))
+            courses = cursor.fetchall()
+            cursor.close()
+            connection.close()
+            return dict(assigned_courses=courses)
+        except Exception:
+            return dict(assigned_courses=[])
+    return dict(assigned_courses=[])
+
 #! 1. DASHBOARD & OVERVIEW
 @teacher.route('/')
 def teacher_dashboard():
@@ -27,11 +49,10 @@ def teacher_dashboard():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         try:
-            # 1. Course Count
+            # 1. Dashboard Stats
             cursor.execute("SELECT COUNT(DISTINCT course_code) as count FROM classes WHERE teacher_id = %s", (teacher_id,))
             course_count = cursor.fetchone()['count']
 
-            # 2. Active Examinees
             cursor.execute("""
                 SELECT COUNT(*) as count FROM exam_attempts ea 
                 JOIN exams ex ON ea.exam_id = ex.exam_id 
@@ -40,11 +61,9 @@ def teacher_dashboard():
             """, (teacher_id,))
             active_examinees = cursor.fetchone()['count']
             
-            # 3. Question Bank Count (Total Questions)
             cursor.execute("SELECT COUNT(*) as count FROM questions WHERE teacher_id = %s AND is_isolated = 0", (teacher_id,))
             total_q = cursor.fetchone()['count']
 
-            # 4. Total Violations
             cursor.execute("""
                 SELECT SUM(ea.tab_switches) as total FROM exam_attempts ea 
                 JOIN exams ex ON ea.exam_id = ex.exam_id 
@@ -53,26 +72,47 @@ def teacher_dashboard():
             """, (teacher_id,))
             total_violations = cursor.fetchone()['total'] or 0
 
-            # 5. Class Average
+            # 2. Exam Pipeline (Drafts vs published)
+            cursor.execute("SELECT is_active, COUNT(*) as count FROM exams WHERE created_by = %s AND archived = 0 GROUP BY is_active", (teacher_id,))
+            exam_stats = cursor.fetchall()
+            draft_count = sum(item['count'] for item in exam_stats if item['is_active'] == 0)
+            published_count = sum(item['count'] for item in exam_stats if item['is_active'] == 1)
+
+            # 3. Course Performance (Chart Data)
             cursor.execute("""
-                SELECT AVG((ea.score / (SELECT COUNT(*) FROM exam_questions WHERE exam_id = ea.exam_id)) * 100) as avg_score
+                SELECT c.course_name, AVG((ea.score / ex.question_limit) * 100) as avg_score
                 FROM exam_attempts ea
                 JOIN exams ex ON ea.exam_id = ex.exam_id
                 JOIN classes cl ON ex.class_code = cl.class_code
+                JOIN courses c ON cl.course_code = c.course_code
                 WHERE cl.teacher_id = %s AND ea.status = 'finished'
+                GROUP BY c.course_code LIMIT 5
             """, (teacher_id,))
-            class_avg = cursor.fetchone()['avg_score'] or 0
+            course_data = cursor.fetchall()
+            course_labels = [d['course_name'][:15] + '...' if len(d['course_name']) > 15 else d['course_name'] for d in course_data]
+            course_avgs = [round(float(d['avg_score']), 1) for d in course_data]
 
-            # 6. Question Type Distribution
+            # 4. Upcoming Schedule
+            cursor.execute("""
+                SELECT ex.title, ex.date_time, c.course_name 
+                FROM exams ex 
+                JOIN classes cl ON ex.class_code = cl.class_code 
+                JOIN courses c ON cl.course_code = c.course_code
+                WHERE cl.teacher_id = %s AND ex.date_time > NOW() AND ex.archived = 0
+                ORDER BY ex.date_time ASC LIMIT 3
+            """, (teacher_id,))
+            upcoming_exams = cursor.fetchall()
+
+            # 5. Question Type Distribution (Pie)
             cursor.execute("SELECT question_type, COUNT(*) as count FROM questions WHERE teacher_id = %s AND is_isolated = 0 GROUP BY question_type", (teacher_id,))
             dist_data = cursor.fetchall()
             type_mapping = {'multiple_choice': 'MCQ', 'true_false': 'T/F', 'identification': 'Ident.', 'essay': 'Essay'}
             dist_labels = [type_mapping.get(d['question_type'], d['question_type']) for d in dist_data]
             dist_values = [int(d['count']) for d in dist_data]
 
-            # 7. Recent Submissions
+            # 6. Recent Submissions
             cursor.execute("""
-                SELECT ea.score, s.firstname, s.lastname, ex.title, ea.end_time
+                SELECT ea.score, s.firstname, s.lastname, ex.title, ea.end_time, ex.question_limit
                 FROM exam_attempts ea
                 JOIN students s ON ea.student_id = s.student_id
                 JOIN exams ex ON ea.exam_id = ex.exam_id
@@ -83,12 +123,16 @@ def teacher_dashboard():
             recent_submissions = cursor.fetchall()
 
             return render_template('teacher_dashboard.html', 
-                                   firstname=session.get('firstname'), 
+                                   firstname=session.get('firstname'),
                                    course_count=course_count,
                                    active_examinees=active_examinees,
                                    total_q=total_q, 
                                    total_violations=total_violations, 
-                                   class_avg=round(class_avg, 1), 
+                                   draft_count=draft_count,
+                                   published_count=published_count,
+                                   course_labels=course_labels,
+                                   course_avgs=course_avgs,
+                                   upcoming_exams=upcoming_exams,
                                    dist_labels=dist_labels, 
                                    dist_values=dist_values, 
                                    recent_submissions=recent_submissions)
@@ -878,15 +922,34 @@ def manage_enrollees(class_code):
     cursor = connection.cursor(dictionary=True)
     
     try:
-        # Concatenating Program Name and Block Name into one field
+        # 1. Fetch Course and Class Metadata
         cursor.execute("""
-            SELECT 
-                s.student_id, 
-                s.firstname, 
-                s.middlename, 
-                s.lastname, 
-                s.email,
-                CONCAT(p.program_name, ' - ', b.block_name) AS academic_block
+            SELECT c.*, cl.class_code, b.block_name 
+            FROM classes cl
+            JOIN courses c ON cl.course_code = c.course_code
+            JOIN blocks b ON cl.block_id = b.block_id
+            WHERE cl.class_code = %s AND cl.teacher_id = %s
+        """, (class_code, session.get('user_id')))
+        course = cursor.fetchone()
+
+        if not course:
+            flash("Class not found.", "danger")
+            return redirect(url_for('teacher.my_courses'))
+
+        # 2. Fetch Exams specifically for this class
+        cursor.execute("""
+            SELECT e.*, 
+                (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as q_count,
+                (SELECT COUNT(*) FROM exam_attempts WHERE exam_id = e.exam_id) as attempt_count
+            FROM exams e 
+            WHERE e.class_code = %s AND e.archived = 0
+        """, (class_code,))
+        class_exams = cursor.fetchall()
+
+        # 3. Fetch Enrolled Students
+        cursor.execute("""
+            SELECT s.student_id, s.firstname, s.lastname, s.email,
+                   CONCAT(p.program_name, ' - ', b.block_name) AS academic_block
             FROM enrollments e 
             JOIN students s ON e.student_id = s.student_id 
             LEFT JOIN blocks b ON s.block_id = b.block_id
@@ -896,11 +959,14 @@ def manage_enrollees(class_code):
         """, (class_code,))
         enrollees = cursor.fetchall()
         
+        return render_template('teacher_enrollees.html', 
+                               course=course, 
+                               class_exams=class_exams, 
+                               enrollees=enrollees, 
+                               class_code=class_code)
     finally:
         cursor.close()
         connection.close()
-        
-    return render_template('teacher_enrollees.html', class_code=class_code, enrollees=enrollees )
 
 #! 6. MONITORING & RESULTS
 @teacher.route('/student_monitor')
@@ -1065,12 +1131,57 @@ def review_student_attempt(attempt_id):
 #! 7. PROFILE
 @teacher.route('/profile', methods=['GET', 'POST'])
 def profile():
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    if not teacher_logged_in():
+        return redirect(url_for('auth.login'))
+        
     user_id = session.get('user_id')
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    if request.method == 'POST':
-        cursor.execute("UPDATE teachers SET firstname = %s, middlename = %s, lastname = %s WHERE teacher_id = %s", (request.form.get('firstname'), request.form.get('middlename'), request.form.get('lastname'), user_id))
-        connection.commit()
-    cursor.execute("SELECT * FROM teachers WHERE teacher_id = %s", (user_id,))
-    user = cursor.fetchone(); cursor.close(); connection.close()
-    return render_template('teacher_profile.html', user=user)
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        if request.method == 'POST':
+            # Handle profile update logic (keeping your existing logic)
+            firstname = request.form.get('firstname')
+            middlename = request.form.get('middlename')
+            lastname = request.form.get('lastname')
+            cursor.execute("""
+                UPDATE teachers SET firstname = %s, middlename = %s, lastname = %s 
+                WHERE teacher_id = %s
+            """, (firstname, middlename, lastname, user_id))
+            connection.commit()
+            flash("Profile updated successfully.", "success")
+
+        # 1. Fetch Detailed Teacher Info
+        cursor.execute("""
+            SELECT t.*, u.created_at, u.email 
+            FROM teachers t 
+            JOIN users u ON t.teacher_id = u.user_id 
+            WHERE t.teacher_id = %s
+        """, (user_id,))
+        user = cursor.fetchone()
+
+        # 2. Analytics: Active Classes Count
+        cursor.execute("SELECT COUNT(*) as count FROM classes WHERE teacher_id = %s AND is_active = 1", (user_id,))
+        class_count = cursor.fetchone()['count']
+
+        # 3. Analytics: Question Bank Size
+        cursor.execute("SELECT COUNT(*) as count FROM questions WHERE teacher_id = %s AND is_isolated = 0", (user_id,))
+        pool_size = cursor.fetchone()['count']
+
+        # 4. Analytics: Student Reach (Unique students across all classes)
+        cursor.execute("""
+            SELECT COUNT(DISTINCT e.student_id) as count 
+            FROM enrollments e 
+            JOIN classes cl ON e.class_code = cl.class_code 
+            WHERE cl.teacher_id = %s
+        """, (user_id,))
+        student_reach = cursor.fetchone()['count']
+
+        return render_template('teacher_profile.html', 
+                               user=user, 
+                               class_count=class_count, 
+                               pool_size=pool_size, 
+                               student_reach=student_reach)
+    finally:
+        cursor.close()
+        connection.close()

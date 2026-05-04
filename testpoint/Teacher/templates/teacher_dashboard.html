@@ -1,238 +1,287 @@
 {% extends "teacher_base.html" %}
-{% block title %}Teacher Dashboard - TestPoint{% endblock %}
+
+{% block title %}Instructor Dashboard | TestPoint{% endblock %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Welcome back, Prof. {{ firstname }}!</h1>
-        <div class="d-flex">
-            <a href="{{ url_for('teacher.manage_exams') }}"
-                class="d-none d-sm-inline-block btn btn-sm btn-danger shadow-sm mr-2">
-                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> Create New Exam
-            </a>
-            <a href="{{ url_for('teacher.question_bank') }}"
-                class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-                <i class="fas fa-database fa-sm text-white-50 mr-1"></i> Manage Bank
-            </a>
-        </div>
-    </div>
-
-    <!-- Content Row: Summary Cards -->
-    <div class="row">
-
-        <!-- Live Examinees Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Live Examinees</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_examinees }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-clock fa-2x text-gray-300"></i>
-                        </div>
+<!-- ── HERO / QUICK ACTIONS ── -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--tp-teacher-radius); background: #fff;">
+            <div class="card-body p-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-7 mb-3 mb-lg-0">
+                        <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.1rem; line-height: 1.1;" class="mb-2">
+                            Good Day, <span style="color: var(--tp-teacher-accent);">Prof. {{ firstname }}</span>
+                        </h1>
+                        <p class="text-muted mb-0">Manage your classroom, monitor exams in real-time, and analyze student outcomes.</p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Integrity Alerts Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Integrity Alerts
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_violations }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Average Score Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Class Avg. Score
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ class_avg }}%</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bank Inventory Card -->
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Bank Inventory</div>
-                            <!-- Updated from bank_count to total_q to match Python context -->
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_q }} Items</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                    <div class="col-lg-5 text-lg-right">
+                        <div class="d-flex flex-wrap justify-content-lg-end" style="gap: 10px;">
+                            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-danger px-3 rounded-pill shadow-sm font-weight-bold btn-sm">
+                                <i class="fas fa-plus mr-1"></i> New Exam
+                            </a>
+                            <a href="{{ url_for('teacher.student_monitor') }}" class="btn btn-dark px-3 rounded-pill shadow-sm font-weight-bold btn-sm">
+                                <i class="fas fa-broadcast-tower mr-1"></i> Live Monitor
+                            </a>
+                            <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm font-weight-bold btn-sm bg-white">
+                                <i class="fas fa-database mr-1"></i> Bank
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Content Row: Charts & Tables -->
-    <div class="row">
-
-        <!-- Pie Chart: Bank Composition -->
-        <div class="col-xl-4 col-lg-5 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-danger">Bank Composition</h6>
+<!-- ── MAIN STATS ── -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2 border-left-danger" style="border-left: 4px solid var(--tp-teacher-accent) !important;">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1" style="letter-spacing: 1.2px;">Live Examinees</div>
+                <div class="h4 mb-0 font-weight-bold text-gray-800">{{ active_examinees }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-muted text-uppercase mb-1" style="letter-spacing: 1.2px;">Integrity Alerts</div>
+                <div class="h4 mb-0 font-weight-bold text-warning">{{ total_violations }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-muted text-uppercase mb-1" style="letter-spacing: 1.2px;">Active Subjects</div>
+                <div class="h4 mb-0 font-weight-bold text-gray-800">{{ course_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2">
+            <div class="card-body">
+                <div class="text-xs font-weight-bold text-muted text-uppercase mb-1" style="letter-spacing: 1.2px;">Exam Pipeline</div>
+                <div class="h6 mb-0 font-weight-bold text-gray-800">
+                    <span class="text-success">{{ published_count }} Live</span> / <span class="text-muted">{{ draft_count }} Drafts</span>
                 </div>
-                <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2" style="height: 320px; position: relative;">
-                        <canvas id="bankDistChart"></canvas>
-                    </div>
-                    <div class="mt-4 text-center small">
-                        <p class="text-muted italic small">Breakdown of question types in your global question bank.</p>
-                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── LEFT COLUMN: ANALYTICS ── -->
+    <div class="col-xl-8 col-lg-7">
+        
+        <!-- Course Performance Chart -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header py-3 bg-white border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Class Performance Overview (%)</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-bar" style="height: 300px;">
+                    <canvas id="coursePerformanceChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Recent Activity Feed -->
-        <div class="col-xl-8 col-lg-7 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-danger">Recent Exam Submissions</h6>
-                    <span class="badge badge-danger">Recent Results</span>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table m-0 table-hover">
-                            <thead class="bg-light">
-                                <tr class="small text-uppercase text-muted">
-                                    <th>Student Name</th>
-                                    <th>Exam Title</th>
-                                    <th>Score</th>
-                                    <th>Submitted At</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for sub in recent_submissions %}
-                                <tr>
-                                    <td class="align-middle">
-                                        <div class="font-weight-bold text-dark">{{ sub.firstname }} {{ sub.lastname }}
+        <!-- Recent Submissions -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header py-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Recent Submissions</h6>
+                <a href="{{ url_for('teacher.exam_analysis') }}" class="small font-weight-bold text-danger">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase" style="font-size: 10px; letter-spacing: 1px;">
+                            <tr>
+                                <th class="px-4 py-3 border-0">Examinee</th>
+                                <th class="py-3 border-0">Assessment</th>
+                                <th class="text-center py-3 border-0">Result</th>
+                                <th class="py-3 border-0">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size: 13.5px;">
+                            {% for sub in recent_submissions %}
+                            <tr>
+                                <td class="px-4 py-3 border-0">
+                                    <div class="d-flex align-items-center">
+                                        <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center mr-2" style="width: 28px; height: 28px; font-size: 10px; font-weight: bold;">
+                                            {{ sub.firstname[0] }}{{ sub.lastname[0] }}
                                         </div>
-                                    </td>
-                                    <td class="align-middle small">{{ sub.title }}</td>
-                                    <td class="align-middle">
-                                        {# Score badge logic - uses a generic high score indicator since total per exam
-                                        varies #}
-                                        <span class="badge badge-success shadow-sm px-2 py-1">
-                                            <i class="fas fa-star mr-1"></i> {{ sub.score|int }} Pts
-                                        </span>
-                                    </td>
-                                    <td class="align-middle small text-muted">
-                                        {{ sub.end_time.strftime('%b %d, %I:%M %p') }}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-5">
-                                        <i class="fas fa-inbox fa-3x text-gray-200 mb-3"></i>
-                                        <p class="text-muted">No recent submissions found.</p>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer text-center bg-white border-top-0">
-                    <a href="{{ url_for('teacher.manage_exams') }}"
-                        class="small font-weight-bold text-danger text-uppercase">
-                        View All Assessment Records <i class="fas fa-chevron-right ml-1"></i>
-                    </a>
+                                        <span class="font-weight-bold">{{ sub.firstname }} {{ sub.lastname }}</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 border-0">{{ sub.title }}</td>
+                                <td class="text-center py-3 border-0">
+                                    <span class="badge px-2 py-1" style="background: #f0fdf4; color: #16a34a; font-size: 11px;">
+                                        {{ sub.score|int }}/{{ sub.question_limit }}
+                                    </span>
+                                </td>
+                                <td class="py-3 border-0 text-muted small">{{ sub.end_time.strftime('%I:%M %p') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- ── RIGHT COLUMN: SCHEDULE & COMPOSITION ── -->
+    <div class="col-xl-4 col-lg-5">
+        
+        <!-- Schedule Widget -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header py-3 bg-white border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Upcoming Exams</h6>
+            </div>
+            <div class="card-body">
+                {% for exam in upcoming_exams %}
+                <div class="mb-3 p-3 rounded border shadow-none" style="background: #fafafa; border-color: #eee !important;">
+                    <div class="small font-weight-bold text-danger mb-1">{{ exam.date_time.strftime('%b %d • %I:%M %p') }}</div>
+                    <div class="font-weight-bold text-dark mb-0">{{ exam.title }}</div>
+                    <div class="text-muted" style="font-size: 11px;">{{ exam.course_name }}</div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="far fa-calendar-check text-gray-200 fa-3x mb-3"></i>
+                    <p class="text-muted small">No upcoming exams scheduled.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Question Bank Composition (Pie) -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header py-3 bg-white border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Question Bank Mix</h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie pt-2 pb-2" style="height: 220px; position: relative;">
+                    <canvas id="bankDistChart"></canvas>
+                </div>
+                <div class="mt-3 text-center small text-muted italic" style="font-size: 11px;">
+                    Diversity of items in your global pool.
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- FORCE VERSION 2.9.4 TO MATCH SB ADMIN 2 SYNTAX -->
+<!-- Ensure Chart.js 2.9.4 is loaded -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
 
 <script>
-    // Styling Defaults
-    Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    // Global Configuration
+    Chart.defaults.global.defaultFontFamily = "'DM Sans', sans-serif";
     Chart.defaults.global.defaultFontColor = '#858796';
 
-    // Initialize Pie Chart
-    var ctx = document.getElementById("bankDistChart");
-    var dataValues = {{ dist_values| tojson }};
+    // 1. BAR CHART: Course Performance
+    var ctxBar = document.getElementById("coursePerformanceChart");
+    var barLabels = {{ course_labels | tojson }};
+    var barData = {{ course_avgs | tojson }};
 
-    if (dataValues.length > 0 && dataValues.reduce((a, b) => a + b, 0) > 0) {
-        var myPieChart = new Chart(ctx, {
-            type: 'doughnut',
+    if (barLabels.length > 0) {
+        new Chart(ctxBar, {
+            type: 'bar',
             data: {
-                labels: {{ dist_labels| tojson }},
-    datasets: [{
-        data: dataValues,
-        backgroundColor: ['#e74a3b', '#f6c23e', '#36b9cc', '#4e73df'],
-        hoverBackgroundColor: ['#be2617', '#dda20a', '#2a96a5', '#2e59d9'],
-        hoverBorderColor: "rgba(234, 236, 244, 1)",
-    }],
+                labels: barLabels,
+                datasets: [{
+                    label: 'Avg Score %',
+                    data: barData,
+                    backgroundColor: 'rgba(217, 48, 37, 0.8)',
+                    hoverBackgroundColor: '#d93025',
+                    borderWidth: 0
+                }]
             },
-    options: {
-        maintainAspectRatio: false,
-            tooltips: {
-            backgroundColor: "rgb(255,255,255)",
-                bodyFontColor: "#858796",
-                    borderColor: '#dddfeb',
-                        borderWidth: 1,
-                            xPadding: 15,
-                                yPadding: 15,
-                                    displayColors: true,
-                                        caretPadding: 10,
+            options: {
+                maintainAspectRatio: false,
+                layout: { padding: { left: 10, right: 25, top: 25, bottom: 0 } },
+                scales: {
+                    xAxes: [{
+                        gridLines: { display: false, drawBorder: false },
+                        ticks: { maxTicksLimit: 6 },
+                        maxBarLength: 50
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            min: 0,
+                            max: 100,
+                            maxTicksLimit: 5,
+                            padding: 10,
+                            callback: function(value) { return value + '%'; }
+                        },
+                        gridLines: { color: "rgb(234, 236, 244)", zeroLineColor: "rgb(234, 236, 244)", drawBorder: false, borderDash: [2], zeroLineBorderDash: [2] }
+                    }],
                 },
-        legend: {
-            display: true,
-                position: 'bottom',
-                    labels: {
-                boxWidth: 15,
-                    padding: 20
+                legend: { display: false },
+                tooltips: {
+                    titleMarginBottom: 10,
+                    titleFontColor: '#6e707e',
+                    titleFontSize: 14,
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                }
             }
-        },
-        cutoutPercentage: 75,
-            },
         });
     } else {
-        // Fallback if no questions exist
-        ctx.style.display = "none";
-        document.querySelector(".chart-pie").innerHTML = `
-            <div class="text-center py-5 mt-4">
-                <i class="fas fa-layer-group fa-3x text-gray-200 mb-3"></i>
-                <p class="text-muted small">Add questions to your bank to see the distribution chart.</p>
-            </div>
-        `;
+        ctxBar.parentElement.innerHTML = '<div class="text-center py-5"><i class="fas fa-chart-bar fa-3x text-gray-200 mb-3"></i><p class="text-muted small">No performance data available yet.</p></div>';
+    }
+
+    // 2. PIE CHART: Question Bank Mix
+    var ctxPie = document.getElementById("bankDistChart");
+    var pieLabels = {{ dist_labels | tojson }};
+    var pieData = {{ dist_values | tojson }};
+
+    if (pieData.length > 0 && pieData.reduce((a, b) => a + b, 0) > 0) {
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData,
+                    backgroundColor: ['#d93025', '#f59e0b', '#0891b2', '#2d5be3'],
+                    hoverBackgroundColor: ['#be2617', '#d97706', '#0e7490', '#1e40af'],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                maintainAspectRatio: false,
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+                legend: {
+                    display: true,
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 20, fontStyle: 'bold' }
+                },
+                cutoutPercentage: 75
+            }
+        });
+    } else {
+        ctxPie.parentElement.innerHTML = '<div class="text-center py-4"><i class="fas fa-layer-group fa-3x text-gray-200 mb-3"></i><p class="text-muted small">Populate your bank to see analytics.</p></div>';
     }
 </script>
 {% endblock %}

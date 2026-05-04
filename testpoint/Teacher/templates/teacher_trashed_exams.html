@@ -1,97 +1,174 @@
 {% extends "teacher_base.html" %}
-{% block title %}Trash Bin - TestPoint{% endblock %}
+{% block title %}Trash Bin | TestPoint Instructor{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── TRASH BIN UI ── */
+    .tp-subject-section { margin-bottom: 3.5rem; }
+    
+    .tp-subject-header {
+        background: #fff;
+        border: 1px solid var(--tp-teacher-border);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .tp-trash-card {
+        border: 1px dashed #cbd5e1 !important; /* Dashed border to signify "deleted" */
+        border-radius: 12px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fbfcfd;
+        overflow: hidden;
+        opacity: 0.85;
+    }
+
+    .tp-trash-card:hover {
+        opacity: 1;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+        background: #fff;
+        border-style: solid !important;
+        border-color: #94a3b8 !important;
+    }
+
+    .tp-meta-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; }
+    .tp-meta-val { font-size: 13px; font-weight: 700; color: #475569; }
+
+    .btn-restore { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .btn-restore:hover { background: #16a34a; color: #fff; }
+
+    .btn-destroy { background: #fff; color: #ef4444; border: 1px solid #fee2e2; }
+    .btn-destroy:hover { background: #ef4444; color: #fff; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-    
-    <!-- HEADER SECTION -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Deleted Exams</h1>
-            <p class="mb-0 small text-muted">Exams in the trash are not visible to students.</p>
+<!-- ── HEADER SECTION ── -->
+<div class="row mb-4 align-items-end">
+    <div class="col-md-7">
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.25rem;" class="mb-1">
+            Archive <span style="color: #64748b;">Bin</span>
+        </h1>
+        <p class="text-muted mb-0">Exams in the trash are inactive and hidden from students.</p>
+    </div>
+    <div class="col-md-5 text-md-right mt-3 mt-md-0">
+        <form action="{{ url_for('teacher.empty_exam_trash') }}" method="POST" onsubmit="return confirm('PERMANENT ACTION: Are you sure you want to delete ALL exams in the trash bin? This cannot be undone.')" class="d-inline">
+            <button type="submit" class="btn btn-danger px-4 rounded-pill font-weight-bold shadow-sm" style="font-size: 12px;">
+                <i class="fas fa-eraser mr-2"></i> Empty Trash Bin
+            </button>
+        </form>
+        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-dark px-3 rounded-pill font-weight-bold shadow-sm ml-1" style="font-size: 12px;">
+            <i class="fas fa-arrow-left mr-2"></i> Back
+        </a>
+    </div>
+</div>
+
+<!-- ── TRASHED EXAMS LIST ── -->
+{% for course_name, course_exams in exams|groupby('course_name') %}
+<div class="tp-subject-section">
+    <!-- Subject Header -->
+    <div class="tp-subject-header shadow-sm" style="border-left: 4px solid #94a3b8 !important;">
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" 
+                 style="width: 40px; height: 40px; background: #f1f5f9; color: #64748b;">
+                <i class="fas fa-trash-alt fa-sm"></i>
+            </div>
+            <div>
+                <h4 class="m-0 font-weight-bold text-dark" style="font-size: 1.1rem; letter-spacing: -0.3px;">{{ course_name }}</h4>
+                <span class="small text-muted font-weight-bold text-uppercase" style="letter-spacing: 0.5px;">Archived Assessments</span>
+            </div>
         </div>
-        <div class="d-flex" style="gap: 10px;">
-            <form action="{{ url_for('teacher.empty_exam_trash') }}" method="POST" onsubmit="return confirm('PERMANENT ACTION: Are you sure you want to delete ALL exams in the trash bin? This cannot be undone.')">
-                <button type="submit" class="btn btn-sm btn-danger shadow-sm px-3">
-                    <i class="fas fa-eraser fa-sm mr-1"></i> Empty Trash
-                </button>
-            </form>
-            <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-sm btn-secondary"><i class="fas fa-arrow-left fa-sm"></i> Back</a>
+        <div>
+            <span class="badge badge-pill badge-light border px-3 text-muted small font-weight-bold">{{ course_exams|length }} Item(s)</span>
         </div>
     </div>
-    
-    <!-- TRASHED EXAMS LIST -->
-    {% for course_name, course_exams in exams|groupby('course_name') %}
-    <div class="course-group mb-5">
-        <h5 class="font-weight-bold text-secondary text-uppercase small mb-3 border-bottom pb-2">
-            <i class="fas fa-folder-open mr-2"></i>{{ course_name }}
-        </h5>
-        
-        <div class="row">
-            {% for exam in course_exams %}
-            <div class="col-xl-4 col-md-6 mb-4">
-                <div class="card shadow h-100 border-left-secondary border-0">
-                    <div class="card-body">
-                        <h5 class="font-weight-bold text-dark mb-1">{{ exam.title }}</h5>
-                        <div class="small text-muted mb-3">
-                            <i class="fas fa-stopwatch mr-1"></i> {{ exam.duration_minutes }} Mins
-                        </div>
 
-                        <div class="row no-gutters mt-3">
-                            <div class="col-6 pr-1">
-                                <!-- RESTORE BUTTON -->
-                                <form action="{{ url_for('teacher.restore_exam', exam_id=exam.exam_id) }}" method="POST">
-                                    <button type="submit" class="btn btn-success btn-sm btn-block shadow-sm">
-                                        <i class="fas fa-undo-alt mr-1"></i> Restore
-                                    </button>
-                                </form>
-                            </div>
-                            <div class="col-6 pl-1">
-                                <!-- DESTROY BUTTON -->
-                                <button class="btn btn-outline-danger btn-sm btn-block shadow-sm" 
-                                        data-toggle="modal" data-target="#permDeleteModal" 
-                                        data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}">
-                                    <i class="fas fa-times mr-1"></i> Destroy
+    <div class="row">
+        {% for exam in course_exams %}
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card tp-trash-card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge badge-light border px-2 py-1 text-muted" style="font-size: 10px; font-weight: 800;">
+                            ID: {{ exam.exam_id }}
+                        </span>
+                        <i class="fas fa-history text-gray-200"></i>
+                    </div>
+
+                    <h5 class="font-weight-bold text-dark mb-3" style="font-family: var(--tp-serif); line-height: 1.3; font-size: 1.25rem;">
+                        {{ exam.title }}
+                    </h5>
+
+                    <div class="mb-4">
+                        <span class="tp-meta-label d-block">Exam Duration</span>
+                        <span class="tp-meta-val"><i class="far fa-clock mr-1"></i> {{ exam.duration_minutes }} Minutes</span>
+                    </div>
+
+                    <div class="mt-auto row no-gutters" style="gap: 8px;">
+                        <div class="col">
+                            <form action="{{ url_for('teacher.restore_exam', exam_id=exam.exam_id) }}" method="POST">
+                                <button type="submit" class="btn btn-restore btn-block rounded-pill font-weight-bold btn-sm py-2">
+                                    <i class="fas fa-undo-alt mr-1"></i> Restore
                                 </button>
-                            </div>
+                            </form>
+                        </div>
+                        <div class="col">
+                            <button class="btn btn-destroy btn-block rounded-pill font-weight-bold btn-sm py-2" 
+                                    data-toggle="modal" data-target="#permDeleteModal" 
+                                    data-id="{{ exam.exam_id }}" data-title="{{ exam.title }}">
+                                <i class="fas fa-skull-crossbones mr-1"></i> Destroy
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
-    {% else %}
-    <!-- EMPTY STATE -->
-    <div class="text-center py-5">
-        <div class="mb-4">
-            <i class="fas fa-trash fa-4x text-gray-200"></i>
-        </div>
-        <h4 class="text-gray-500 font-weight-bold">Trash bin is empty</h4>
-        <p class="text-gray-400">Great job! No deleted exams found.</p>
-        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-primary shadow-sm mt-2">Back to Exams</a>
-    </div>
-    {% endfor %}
 </div>
+{% else %}
+<!-- ── EMPTY STATE ── -->
+<div class="card border-0 shadow-sm rounded-lg py-5 text-center">
+    <div class="card-body">
+        <div class="mb-4">
+            <i class="fas fa-trash-restore text-gray-100 fa-5x"></i>
+        </div>
+        <h4 class="text-dark font-weight-bold">Trash Bin is Empty</h4>
+        <p class="text-muted small mb-4">You don't have any archived examinations currently.</p>
+        <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-danger px-4 rounded-pill font-weight-bold shadow-sm">
+            Back to Exams Manager
+        </a>
+    </div>
+</div>
+{% endfor %}
 
-<!-- PERMANENT DELETE CONFIRMATION MODAL -->
+<!-- ── PERMANENT DELETE MODAL ── -->
 <div class="modal fade" id="permDeleteModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title font-weight-bold">Permanent Deletion</h5>
-                <button class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">Critical Confirmation</h5>
+                <button class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form id="permDeleteForm" method="POST">
-                <div class="modal-body text-center py-4">
-                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                    <p class="font-weight-bold text-dark">Are you sure you want to permanently destroy <br>
-                    <span id="delTitle" class="text-danger"></span>?</p>
-                    <p class="small text-muted">This action is irreversible. All linked questions and student progress data will be wiped from the server.</p>
+                <div class="modal-body text-center py-4 px-4">
+                    <div class="rounded-circle bg-danger text-white mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h5 class="font-weight-bold text-dark mb-2">Destroy Permanent Record?</h5>
+                    <p class="text-muted small px-3">
+                        You are about to permanently delete <span id="delTitle" class="text-danger font-weight-bold"></span>. 
+                        This action will wipe all linked questions and student attempt data. <strong>This cannot be undone.</strong>
+                    </p>
                 </div>
-                <div class="modal-footer bg-light border-0">
-                    <button class="btn btn-secondary shadow-sm btn-sm px-4" data-dismiss="modal">Cancel</button>
-                    <button class="btn btn-danger shadow-sm btn-sm px-4" type="submit">Yes, Delete Forever</button>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button class="btn btn-light rounded-pill px-4 font-weight-bold mr-2" data-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger rounded-pill px-4 font-weight-bold flex-grow-1" type="submit">Confirm Destruction</button>
                 </div>
             </form>
         </div>
@@ -102,6 +179,9 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
+        // Ultimate Modal Fix: Move to body
+        $('.modal').appendTo('body');
+
         $('#permDeleteModal').on('show.bs.modal', function (event) {
             var btn = $(event.relatedTarget);
             var examId = btn.data('id');

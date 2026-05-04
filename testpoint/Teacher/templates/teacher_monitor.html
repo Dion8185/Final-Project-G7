@@ -1,26 +1,150 @@
 {% extends "teacher_base.html" %}
-{% block title %}Live Monitor - TestPoint{% endblock %}
-{% block extra_head %}<meta http-equiv="refresh" content="10">{% endblock %}
+{% block title %}Live Monitor | TestPoint Instructor{% endblock %}
+
+{% block extra_head %}
+<meta http-equiv="refresh" content="10">
+<style>
+    /* ── MONITOR NODE STYLING ── */
+    .monitor-card {
+        border: 1px solid var(--tp-teacher-border) !important;
+        border-radius: var(--tp-teacher-radius) !important;
+        background: #fff;
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .monitor-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.05) !important;
+    }
+
+    /* Vertical Status Bar */
+    .risk-bar { width: 5px; position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; }
+    .bg-safe { background-color: #10b981 !important; }
+    .bg-risk { background-color: #ef4444 !important; }
+
+    /* Pulse for Live Status */
+    .badge-pulse-red {
+        animation: pulse-red 2s infinite;
+        background: #ef4444;
+        color: white;
+    }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    .id-tag {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .monitor-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        background: #f8fafc;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .monitor-label { font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+    .monitor-val { font-size: 12px; font-weight: 700; color: var(--tp-teacher-ink); }
+
+    .risk-banner {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Live Student Monitoring</h1>
-        <div><span class="badge badge-dark p-2 mr-2">Auto-Refreshes every 10s</span><span class="badge badge-danger badge-pulse p-2"><i class="fas fa-circle"></i> SYSTEM ONLINE</span></div>
+    
+    <!-- ── HEADER SECTION ── -->
+    <div class="row mb-4 align-items-end">
+        <div class="col-md-7">
+            <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.25rem;" class="mb-1">
+                Live <span style="color: var(--tp-teacher-accent);">Monitoring</span>
+            </h1>
+            <p class="text-muted mb-0">Active examination sessions currently being proctored by the system.</p>
+        </div>
+        <div class="col-md-5 text-md-right mt-3 mt-md-0">
+            <span class="badge badge-light border text-muted px-3 py-2 rounded-pill font-weight-bold mr-2" style="font-size: 11px;">
+                <i class="fas fa-sync fa-spin mr-2"></i> Refreshing in 10s
+            </span>
+            <span class="badge badge-pulse-red px-3 py-2 rounded-pill font-weight-bold shadow-sm" style="font-size: 11px;">
+                <i class="fas fa-circle mr-1" style="font-size: 8px;"></i> PROCTORING ONLINE
+            </span>
+        </div>
     </div>
+
+    <!-- ── ACTIVE ATTEMPTS GRID ── -->
     <div class="row">
         {% for a in attempts %}
+        {% set is_high_risk = a.tab_switches > 2 %}
         <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card shadow h-100 border-left-{{ 'danger' if a.tab_switches > 2 else 'primary' }}">
-                <div class="card-body">
-                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{{ a.title }}</div>
-                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ a.firstname }} {{ a.lastname }}</div>
-                    <div class="mt-3 small">
-                        <div>Started: <strong>{{ a.start_time.strftime('%H:%M:%S') }}</strong></div>
-                        <div>Tab Switches: <span class="badge {{ 'badge-danger' if a.tab_switches > 2 else 'badge-secondary' }}">{{ a.tab_switches }}</span></div>
+            <div class="card monitor-card shadow-sm pl-2">
+                <!-- Color-Coded Risk Bar -->
+                <div class="risk-bar {{ 'bg-risk' if is_high_risk else 'bg-safe' }}"></div>
+                
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge badge-light border id-tag px-2 py-1 text-danger">
+                            {{ a.title }}
+                        </span>
+                        <div class="text-muted"><i class="fas fa-video fa-sm opacity-25"></i></div>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="https://ui-avatars.com/api/?name={{ a.firstname }}+{{ a.lastname }}&background={{ 'fee2e2' if is_high_risk else 'f1f5f9' }}&color={{ 'b91c1c' if is_high_risk else '64748b' }}&bold=true" 
+                             class="rounded-circle mr-3 border shadow-sm" style="width: 42px; height: 42px;">
+                        <div>
+                            <h6 class="font-weight-bold text-dark mb-0">{{ a.firstname }} {{ a.lastname }}</h6>
+                            <span class="text-muted small">Current Examinee</span>
+                        </div>
+                    </div>
+
+                    <div class="monitor-info-grid">
+                        <div>
+                            <div class="monitor-label">Session Start</div>
+                            <div class="monitor-val"><i class="far fa-clock mr-1 text-primary"></i> {{ a.start_time.strftime('%H:%M:%S') }}</div>
+                        </div>
+                        <div>
+                            <div class="monitor-label">Violations</div>
+                            <div class="monitor-val {{ 'text-danger' if is_high_risk }}">
+                                <i class="fas fa-exclamation-triangle mr-1"></i> {{ a.tab_switches }} Swaps
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% if a.tab_switches > 2 %}<div class="card-footer bg-danger text-white py-1 small text-center">HIGH CHEATING RISK</div>{% endif %}
+
+                {% if is_high_risk %}
+                <div class="card-footer bg-danger text-white py-2 text-center risk-banner animate__animated animate__flash animate__infinite">
+                    <i class="fas fa-skull-crossbones mr-2"></i> High Cheating Risk Detected
+                </div>
+                {% else %}
+                <div class="card-footer bg-light text-muted py-2 text-center risk-banner" style="font-size: 9px; opacity: 0.7;">
+                    <i class="fas fa-shield-alt mr-2"></i> integrity maintained
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <!-- ── EMPTY STATE ── -->
+        <div class="col-12 text-center py-5">
+            <div class="py-5 bg-white rounded-lg border shadow-sm">
+                <i class="fas fa-desktop fa-4x text-gray-100 mb-3"></i>
+                <h4 class="text-dark font-weight-bold">No Active Sessions</h4>
+                <p class="text-muted small">The system is currently idle. Active attempts will appear here automatically.</p>
             </div>
         </div>
         {% endfor %}

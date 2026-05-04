@@ -1,87 +1,91 @@
-{# teacher_sidebar.html #}
-<ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
-    <!-- Sidebar - Brand -->
+<ul class="navbar-nav sidebar sidebar-dark accordion" id="accordionSidebar" style="min-height: 100vh;">
+
+    <!-- Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
-        <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-        <div class="sidebar-brand-text mx-3">Teacher Panel</div>
+        <div class="sidebar-brand-icon" style="color: var(--tp-teacher-accent);"><i class="fas fa-chalkboard-teacher"></i></div>
+        <div class="sidebar-brand-text mx-2" style="font-family: var(--tp-serif); font-weight: 400;">TestPoint.</div>
     </a>
 
-    <hr class="sidebar-divider my-0">
+    <hr class="sidebar-divider my-0" style="opacity: 0.05;">
 
     <!-- Dashboard -->
-    <li class="nav-item">
+    <li class="nav-item {% if request.endpoint == 'teacher.teacher_dashboard' %}active{% endif %}">
         <a class="nav-link" href="{{ url_for('teacher.teacher_dashboard') }}">
-            <i class="fas fa-fw fa-tachometer-alt"></i>
-            <span>My Dashboard</span>
+            <i class="fas fa-fw fa-th-large"></i>
+            <span>Instructor Desk</span>
         </a>
     </li>
 
-    <hr class="sidebar-divider">
-
-    <!-- Classroom Management -->
-    <div class="sidebar-heading">Academic Operations</div>
+    <!-- My Classes Accordion -->
     <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('teacher.my_courses') }}">
+        {% set is_class_active = 'course' in request.endpoint or 'enrollee' in request.endpoint %}
+        <a class="nav-link {% if not is_class_active %}collapsed{% endif %}" href="#" data-toggle="collapse" data-target="#collapseMyClasses"
+           aria-expanded="{% if is_class_active %}true{% else %}false{% endif %}" aria-controls="collapseMyClasses">
             <i class="fas fa-fw fa-users"></i>
-            <span>My Classes / Enrollees</span>
+            <span>My Classes</span>
         </a>
-    </li>
-
-    <hr class="sidebar-divider">
-
-    <!-- Exam Control Section -->
-    <div class="sidebar-heading">Assessment Control</div>
-    
-    <!-- Exams Link -->
-    <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('teacher.manage_exams') }}">
-            <i class="fas fa-fw fa-plus-circle"></i>
-            <span>Create/Edit Exams</span>
-        </a>
-    </li>
-
-    <!-- Master Question Bank (Collapsed Menu) -->
-    <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseQuestions"
-           aria-expanded="true" aria-controls="collapseQuestions">
-            <i class="fas fa-fw fa-database"></i>
-            <span>Question Bank</span>
-        </a>
-        <div id="collapseQuestions" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-            <div class="bg-white py-2 collapse-inner rounded shadow-sm border-left-danger">
-                <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.question_bank') }}" style="text-decoration:none;">
-                    Manage Subject Bank
+        <div id="collapseMyClasses" class="collapse {% if is_class_active %}show{% endif %}" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded shadow-sm border-left-danger" style="border-left: 3px solid var(--tp-teacher-accent) !important;">
+                <h6 class="collapse-header" style="font-size: 10px; letter-spacing: 0.5px; color: #b7b9cc;">Classroom Tools:</h6>
+                
+                <!-- Main Overview Link -->
+                <a class="collapse-item font-weight-bold {% if request.endpoint == 'teacher.my_courses' %}active{% endif %}" 
+                   href="{{ url_for('teacher.my_courses') }}">
+                   <i class="fas fa-list-ul mr-2 small"></i> View All Classes
                 </a>
-                <a class="collapse-inner-item text-danger d-block p-2" href="{{ url_for('teacher.manage_exams') }}" style="text-decoration:none;">
-                    Pool Overview
-                </a>
+
+                <div class="dropdown-divider mx-2" style="opacity: 0.1;"></div>
+
+                <!-- Dynamically Loaded Courses -->
+                {% if assigned_courses %}
+                    {% for course in assigned_courses %}
+                    <a class="collapse-item d-flex align-items-center {% if class_code == course.class_code %}active font-weight-bold{% endif %}"
+                        href="{{ url_for('teacher.manage_enrollees', class_code=course.class_code) }}">
+                        <i class="fas fa-circle mr-2" style="font-size: 6px; opacity: 0.5;"></i>
+                        <span style="white-space: normal; line-height: 1.3;">{{ course.course_name }}</span>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="px-3 py-2 small text-muted italic">No active classes</div>
+                {% endif %}
             </div>
         </div>
     </li>
 
-    <hr class="sidebar-divider">
+    <!-- Manage Exams -->
+    <li class="nav-item {% if 'exam' in request.endpoint and 'analysis' not in request.endpoint %}active{% endif %}">
+        <a class="nav-link" href="{{ url_for('teacher.manage_exams') }}">
+            <i class="fas fa-fw fa-scroll"></i>
+            <span>Exams Manager</span>
+        </a>
+    </li>
 
-    <!-- Results Section -->
-    <div class="sidebar-heading">Performance Insight</div>
-    
-    <li class="nav-item">
+    <!-- Question Bank -->
+    <li class="nav-item {% if 'bank' in request.endpoint %}active{% endif %}">
+        <a class="nav-link" href="{{ url_for('teacher.question_bank') }}">
+            <i class="fas fa-fw fa-database"></i>
+            <span>Question Bank</span>
+        </a>
+    </li>
+
+    <!-- Live Monitor -->
+    <li class="nav-item {% if request.endpoint == 'teacher.student_monitor' %}active{% endif %}">
         <a class="nav-link" href="{{ url_for('teacher.student_monitor') }}">
-            <i class="fas fa-fw fa-desktop"></i>
-            <span>Student Live Monitor</span>
+            <i class="fas fa-fw fa-broadcast-tower"></i>
+            <span>Live Monitoring</span>
         </a>
     </li>
-    
-    <li class="nav-item">
+
+    <!-- Analytics -->
+    <li class="nav-item {% if 'analysis' in request.endpoint %}active{% endif %}">
         <a class="nav-link" href="{{ url_for('teacher.exam_analysis') }}">
-            <i class="fas fa-fw fa-chart-pie"></i>
-            <span>Analytics & Scoring</span>
+            <i class="fas fa-fw fa-chart-line"></i>
+            <span>Results & Analytics</span>
         </a>
     </li>
 
-    <hr class="sidebar-divider d-none d-md-block">
-
-    <!-- Sidebar Toggler (Sidebar) -->
-    <div class="text-center d-none d-md-inline">
-        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+    <!-- Sidebar Toggler -->
+    <div class="text-center d-none d-md-inline mt-auto mb-4">
+        <button class="rounded-circle border-0" id="sidebarToggle" style="background: rgba(255,255,255,0.05);"></button>
     </div>
 </ul>
