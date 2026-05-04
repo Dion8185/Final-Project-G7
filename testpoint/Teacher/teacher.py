@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file
 from testpoint import db_config
 from testpoint.Auth.login import teacher_logged_in
 import mysql.connector
@@ -6,10 +6,18 @@ import pandas as pd
 import io
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
+import google.generativeai as genai
+import pdfplumber
+import json
+import os
+from dotenv import load_dotenv
 
 teacher = Blueprint('teacher', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/teacher/static')
 
+load_dotenv("testpoint/passwordDB.env")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+ai_model = genai.GenerativeModel('gemini-3-flash-preview')
 
 #! 1. DASHBOARD & OVERVIEW
 @teacher.route('/')
@@ -558,6 +566,104 @@ def delete_isolated_question(q_id, exam_id):
     connection.commit(); cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
+@teacher.route('/import_ai_questions/<int:exam_id>', methods=['POST'])
+def import_ai_questions(exam_id):
+    if not teacher_logged_in(): return redirect(url_for('auth.login'))
+    
+    # 1. Lockdown Check (Reuse your existing locking logic)
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT is_active, (SELECT COUNT(*) FROM exam_attempts WHERE exam_id = %s) as attempt_count FROM exams WHERE exam_id = %s", (exam_id, exam_id))
+    exam_status = cursor.fetchone()
+    
+    if exam_status['is_active'] == 1 or exam_status['attempt_count'] > 0:
+        flash("Exam is locked. Cannot add questions.", "danger")
+        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+    # 2. Collect Form Data
+    file = request.files.get('pdf_file')
+    num_q = min(int(request.form.get('num_questions', 10)), 50) # Strict cap of 50
+    teacher_notes = request.form.get('teacher_notes', 'General knowledge')
+    save_to_bank = request.form.get('save_to_bank') == 'on'
+    is_iso = 0 if save_to_bank else 1
+    teacher_id = session.get('user_id')
+
+    if not file or not file.filename.endswith('.pdf'):
+        flash("Please upload a valid PDF file.", "danger")
+        return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+    try:
+        # 3. Get Course Code
+        cursor.execute("SELECT cl.course_code FROM exams e JOIN classes cl ON e.class_code = cl.class_code WHERE e.exam_id = %s", (exam_id,))
+        course_code = cursor.fetchone()['course_code']
+
+        # 4. Extract Text from PDF
+        raw_text = ""
+        with pdfplumber.open(file) as pdf:
+            for page in pdf.pages:
+                raw_text += (page.extract_text() or "")
+        
+        # 5. Prompt Gemini with strict JSON requirement
+        prompt = f"""
+        Extract exactly {num_q} academic questions from the provided text based on these specific instructions: "{teacher_notes}".
+        
+        Rules:
+        - Question types allowed: multiple_choice, true_false, identification.
+        - Difficulty: Decide based on notes or text context (easy, medium, or hard).
+        - Multiple choice must have exactly 4 options.
+        - Identification answers must be concise.
+        - Return ONLY a valid JSON array of objects. No markdown formatting, no backticks.
+        
+        Structure:
+        [
+          {{
+            "text": "question",
+            "type": "multiple_choice",
+            "diff": "medium",
+            "answer": "correct_option_text",
+            "options": ["A", "B", "C", "D"]
+          }}
+        ]
+        
+        Text content: {raw_text[:10000]}
+        """
+
+        response = ai_model.generate_content(prompt)
+        # Clean potential markdown backticks from AI response
+        clean_json = response.text.replace('```json', '').replace('```', '').strip()
+        questions_list = json.loads(clean_json)
+
+        # 6. Database Insertion Loop
+        for q in questions_list:
+            cursor.execute("""
+                INSERT INTO questions (course_code, teacher_id, question_text, question_type, difficulty, is_isolated) 
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (course_code, teacher_id, q['text'], q['type'], q['diff'], is_iso))
+            
+            q_id = cursor.lastrowid
+            cursor.execute("INSERT INTO exam_questions (exam_id, question_id) VALUES (%s, %s)", (exam_id, q_id))
+
+            if q['type'] == 'multiple_choice':
+                for opt in q['options']:
+                    cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", 
+                                   (q_id, opt, 1 if opt == q['answer'] else 0))
+            elif q['type'] == 'true_false':
+                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, 'True', 1 if q['answer'].lower() == 'true' else 0))
+                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, 'False', 1 if q['answer'].lower() == 'false' else 0))
+            elif q['type'] == 'identification':
+                cursor.execute("INSERT INTO options (question_id, option_text, is_correct) VALUES (%s, %s, %s)", (q_id, q['answer'], 1))
+
+        connection.commit()
+        flash(f"AI successfully generated {len(questions_list)} questions!", "success")
+
+    except Exception as e:
+        connection.rollback()
+        flash(f"AI Generation Error: {str(e)}", "danger")
+    finally:
+        cursor.close(); connection.close()
+
+    return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
 @teacher.route('/import_questions', methods=['POST'])
 def import_questions():
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
@@ -622,6 +728,7 @@ def bulk_unlink_questions(exam_id):
     connection.commit(); cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
+
 @teacher.route('/exam/<int:exam_id>/questions/bulk_action', methods=['POST'])
 def bulk_question_action(exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
@@ -663,6 +770,85 @@ def delete_question(q_id, exam_id):
     cursor.execute("DELETE FROM exam_questions WHERE question_id = %s AND exam_id = %s", (q_id, exam_id))
     connection.commit(); cursor.close(); connection.close()
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+@teacher.route('/export_bank_questions/<string:course_code>')
+def export_bank_questions(course_code):
+    if not teacher_logged_in():
+        return redirect(url_for('auth.login'))
+    
+    teacher_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # 1. Fetch all bank questions for this course
+        cursor.execute("""
+            SELECT question_id, question_text, question_type, difficulty 
+            FROM questions 
+            WHERE course_code = %s AND teacher_id = %s AND is_isolated = 0
+        """, (course_code, teacher_id))
+        questions = cursor.fetchall()
+
+        export_data = []
+
+        for q in questions:
+            # 2. Fetch options for each question
+            cursor.execute("SELECT option_text, is_correct FROM options WHERE question_id = %s", (q['question_id'],))
+            options = cursor.fetchall()
+
+            row = {
+                'Question': q['question_text'],
+                'Type': q['question_type'],
+                'Difficulty': q['difficulty'],
+                'Answer': '',
+                'OptA': '',
+                'OptB': '',
+                'OptC': '',
+                'OptD': ''
+            }
+
+            if q['question_type'] == 'multiple_choice':
+                for i, opt in enumerate(options):
+                    letter = chr(65 + i) # A, B, C, D
+                    if i < 4:
+                        row[f'Opt{letter}'] = opt['option_text']
+                    if opt['is_correct']:
+                        row['Answer'] = opt['option_text']
+
+            elif q['question_type'] == 'true_false':
+                for opt in options:
+                    if opt['is_correct']:
+                        row['Answer'] = opt['option_text']
+
+            elif q['question_type'] == 'identification':
+                if options:
+                    row['Answer'] = options[0]['option_text']
+
+            export_data.append(row)
+
+        # 3. Create Excel in memory
+        df = pd.DataFrame(export_data)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, index=False, sheet_name='Questions')
+        
+        output.seek(0)
+        
+        filename = f"Bank_{course_code}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+
+    except Exception as e:
+        flash(f"Export Error: {str(e)}", "danger")
+        return redirect(url_for('teacher.course_question_bank', course_code=course_code))
+    finally:
+        cursor.close()
+        connection.close()
 
 #! 5. ENROLLEE MANAGEMENT
 @teacher.route('/manage_enrollees/<string:class_code>')
