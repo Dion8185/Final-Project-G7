@@ -127,6 +127,9 @@
         </div>
         <div style="display: flex; gap: 10px;">
             {% if not is_locked %}
+            <button class="btn btn-info btn-sm shadow-sm font-weight-bold" data-toggle="modal" data-target="#aiModal">
+                <i class="fas fa-magic mr-1"></i> Generate with AI
+            </button>
             <button class="btn btn-outline-primary btn-sm shadow-sm" data-toggle="modal" data-target="#bankModal">
                 <i class="fas fa-university mr-1"></i> Master Bank
             </button>
@@ -169,7 +172,7 @@
     </div>
     {% endif %}
 
-    <!-- SMART BULK ACTIONS BAR (Visible if not locked) -->
+    <!-- SMART BULK ACTIONS BAR -->
     {% if not is_locked %}
     <div class="bulk-actions-bar shadow p-3 mb-4" id="bulkBar">
         <div class="d-flex justify-content-between align-items-center">
@@ -371,7 +374,69 @@
     </form>
 </div>
 
-<!-- (Modals remain unchanged from previous response) -->
+<!-- AI GENERATION MODAL -->
+<div class="modal fade" id="aiModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-robot mr-2"></i>AI Question Generator</h5>
+                <button class="close text-white" type="button" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <form action="{{ url_for('teacher.import_ai_questions', exam_id=exam.exam_id) }}" method="POST"
+                enctype="multipart/form-data" id="aiForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Upload PDF Source</label>
+                        <div class="custom-file">
+                            <input type="file" name="pdf_file" class="custom-file-input" id="pdfFile" accept=".pdf"
+                                required>
+                            <label class="custom-file-label" for="pdfFile">Choose PDF...</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="small font-weight-bold text-uppercase">Instructions / Notes</label>
+                        <textarea name="teacher_notes" class="form-control form-control-sm" rows="3"
+                            placeholder="e.g., Focus on Chapter 2. Mixture of easy MCQs and hard identification."></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="form-group">
+                                <label class="small font-weight-bold text-uppercase">Question Quantity</label>
+                                <input type="number" name="num_questions" class="form-control" value="10" min="1"
+                                    max="50" required>
+                            </div>
+                        </div>
+                        <div class="col-6 d-flex align-items-center">
+                            <div class="custom-control custom-switch mt-2">
+                                <input type="checkbox" name="save_to_bank" class="custom-control-input" id="aiSaveBank">
+                                <label class="custom-control-label small font-weight-bold" for="aiSaveBank">SAVE TO
+                                    MASTER BANK</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="aiLoading" class="text-center py-3" style="display:none;">
+                        <div class="spinner-border text-info mb-2" role="status"></div>
+                        <p class="small font-weight-bold text-info">Gemini AI is generating questions... Please wait.
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button class="btn btn-secondary btn-sm px-4 rounded-pill" data-dismiss="modal"
+                        type="button">Cancel</button>
+                    <button class="btn btn-info btn-sm px-4 rounded-pill font-weight-bold" type="submit"
+                        id="aiSubmitBtn">
+                        <i class="fas fa-bolt mr-1"></i> Generate Questions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- OTHER MODALS -->
 {% if not is_locked %}
 <div class="modal fade" id="bankModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -385,10 +450,8 @@
             <div class="modal-body bg-light">
                 <div class="sticky-top bg-light pt-2 pb-3" style="z-index: 10; top: -1rem;">
                     <div class="row no-gutters bg-white p-3 shadow-sm rounded border">
-                        <div class="col-md-12 mb-2">
-                            <input type="text" id="bankSearch" class="form-control form-control-sm"
-                                placeholder="Search master bank...">
-                        </div>
+                        <div class="col-md-12 mb-2"><input type="text" id="bankSearch"
+                                class="form-control form-control-sm" placeholder="Search master bank..."></div>
                         <div class="col-md-5 pr-1">
                             <select id="bankTypeFilter" class="form-control form-control-sm">
                                 <option value="">All Types</option>
@@ -543,6 +606,17 @@
         const bulkBar = $('#bulkBar'), countLabel = $('#selectedCount'),
             linkBtn = $('#btnBulkUnlink'), deleteBtn = $('#btnBulkDelete'),
             linkSpan = $('#linkCount'), deleteSpan = $('#deleteCount');
+
+        // AI Logic
+        $('#aiForm').on('submit', function () {
+            $('#aiSubmitBtn').prop('disabled', true);
+            $('#aiLoading').fadeIn();
+        });
+
+        $('.custom-file-input').on('change', function () {
+            let fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').addClass("selected").html(fileName);
+        });
 
         function updateMainUI() {
             const selected = $('.q-checkbox:visible:checked');
