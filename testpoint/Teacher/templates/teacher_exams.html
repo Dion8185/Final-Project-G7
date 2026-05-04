@@ -147,7 +147,13 @@
                     {% elif exam.q_count == 0 %}card-status-warning
                     {% else %}card-status-inactive{% endif %}">
 
-                    <div class="card-body">
+                    <!-- BLOCK VISIBILITY RIBBON -->
+                    <div class="block-ribbon"
+                        style="position: absolute; top: 0; left: 0; right: 0; height: 35px; background: #f8f9fc; border-bottom: 1px solid #e3e6f0; display: flex; align-items: center; padding: 0 15px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #4e73df; letter-spacing: 0.5px; z-index: 1;">
+                        <i class="fas fa-users mr-2"></i> Class Code: {{ exam.class_code }}
+                    </div>
+
+                    <div class="card-body mt-4">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <h5 class="font-weight-bold text-dark m-0">{{ exam.title }}</h5>
 
@@ -174,13 +180,14 @@
                             <div class="row row-cols-2 no-gutters text-center">
                                 <div class="col mb-2 border-right">
                                     <small class="text-muted d-block text-uppercase font-weight-bold"
-                                        style="font-size: 0.65rem;">Pool</small>
-                                    <span class="text-dark">{{ exam.q_count }}</span>
+                                        style="font-size: 0.65rem;">Block</small>
+                                    <span class="badge badge-primary px-2"
+                                        style="font-family: monospace; font-size: 0.9rem;">{{ exam.block_name }}</span>
                                 </div>
                                 <div class="col mb-2">
                                     <small class="text-muted d-block text-uppercase font-weight-bold"
-                                        style="font-size: 0.65rem;">Attempts</small>
-                                    <span class="text-primary font-weight-bold">{{ exam.attempt_count }}</span>
+                                        style="font-size: 0.65rem;">Pool</small>
+                                    <span class="text-dark font-weight-bold">{{ exam.q_count }}</span>
                                 </div>
                                 <div class="col border-right border-top pt-2">
                                     <small class="text-muted d-block text-uppercase font-weight-bold"
@@ -189,7 +196,7 @@
                                 </div>
                                 <div class="col border-top pt-2">
                                     <small class="text-muted d-block text-uppercase font-weight-bold"
-                                        style="font-size: 0.65rem;">Question Limit</small>
+                                        style="font-size: 0.65rem;">Serve Qty</small>
                                     <span class="text-danger font-weight-bold">{{ exam.question_limit }}</span>
                                 </div>
                             </div>
@@ -201,7 +208,8 @@
                                 {{ exam.date_time.strftime('%b %d, %Y • %I:%M %p') if exam.date_time else 'Unscheduled'
                                 }}
                             </span>
-                            <span class="ml-auto badge badge-light border">Class: {{ exam.class_code }}</span>
+                            <span class="ml-auto text-primary font-weight-bold">{{ exam.attempt_count }}
+                                Submissions</span>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
@@ -209,8 +217,7 @@
                                 class="btn btn-sm {% if exam.is_active or exam.attempt_count > 0 %}btn-outline-secondary{% else %}btn-primary{% endif %} px-3 rounded-pill font-weight-bold shadow-sm">
                                 <i
                                     class="fas {% if exam.is_active or exam.attempt_count > 0 %}fa-eye{% else %}fa-layer-group{% endif %} mr-1"></i>
-                                {{ 'View Questions' if exam.is_active or exam.attempt_count > 0 else 'Manage Questions'
-                                }}
+                                {{ 'View' if exam.is_active or exam.attempt_count > 0 else 'Manage' }} Questions
                             </a>
                             <div class="d-flex" style="gap: 5px;">
                                 <!-- PUBLISH BUTTON -->
@@ -445,65 +452,65 @@
 
 {% block extra_js %}
 <script>
- $(document).ready(function () {
+    $(document).ready(function () {
         // 1. Full list of classes passed from Flask
         const teacherClasses = [
             {% for c in classes %}
             { code: "{{ c.class_code }}", course: "{{ c.course_code }}", block: "{{ c.block_name }}", name: "{{ c.course_name }}" },
-            {% endfor %}
+        {% endfor %}
         ];
 
-        // 2. Map of existing exams (to prevent the loop)
-        // We store which Class Codes already have which Exam Titles
-        const existingExams = [
-            {% for e in exams %}
-            { class_code: "{{ e.class_code }}", title: "{{ e.title }}" },
-            {% endfor %}
+    // 2. Map of existing exams (to prevent the loop)
+    // We store which Class Codes already have which Exam Titles
+    const existingExams = [
+        {% for e in exams %}
+    { class_code: "{{ e.class_code }}", title: "{{ e.title }}" },
+    {% endfor %}
         ];
 
-        // Search Filter Logic
-        $('#searchInput').on('keyup', function () {
-            var val = $(this).val().toLowerCase();
-            $('.exam-item').each(function () {
-                $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
-            });
-            $('.course-section').each(function () {
-                var visibleItems = $(this).find('.exam-item:visible').length;
-                $(this).toggle(visibleItems > 0);
-            });
+    // Search Filter Logic
+    $('#searchInput').on('keyup', function () {
+        var val = $(this).val().toLowerCase();
+        $('.exam-item').each(function () {
+            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
         });
-
-        // Delete Modal logic
-        $('#deleteExamModal').on('show.bs.modal', function (event) {
-            var btn = $(event.relatedTarget);
-            $('#delExamTitle').text(btn.data('title'));
-            var action = "{{ url_for('teacher.soft_delete_exam', exam_id='0') }}".replace('0', btn.data('id'));
-            $('#deleteExamForm').attr('action', action);
+        $('.course-section').each(function () {
+            var visibleItems = $(this).find('.exam-item:visible').length;
+            $(this).toggle(visibleItems > 0);
         });
+    });
 
-        // PUBLISH MODAL DYNAMIC FILTERING (THE FIX)
-        $('#publishExamModal').on('show.bs.modal', function (event) {
-            const btn = $(event.relatedTarget);
-            const sourceId = btn.data('id');
-            const sourceTitle = btn.data('title');
-            const courseCode = btn.data('coursecode');
-            const currentClass = btn.data('classcode');
+    // Delete Modal logic
+    $('#deleteExamModal').on('show.bs.modal', function (event) {
+        var btn = $(event.relatedTarget);
+        $('#delExamTitle').text(btn.data('title'));
+        var action = "{{ url_for('teacher.soft_delete_exam', exam_id='0') }}".replace('0', btn.data('id'));
+        $('#deleteExamForm').attr('action', action);
+    });
 
-            $('#pubSourceId').val(sourceId);
-            $('#pubExamTitle').text(sourceTitle);
-            
-            const listContainer = $('#targetClassList').empty();
-            let count = 0;
+    // PUBLISH MODAL DYNAMIC FILTERING (THE FIX)
+    $('#publishExamModal').on('show.bs.modal', function (event) {
+        const btn = $(event.relatedTarget);
+        const sourceId = btn.data('id');
+        const sourceTitle = btn.data('title');
+        const courseCode = btn.data('coursecode');
+        const currentClass = btn.data('classcode');
 
-            teacherClasses.forEach(c => {
-                // RULE 1: Must be the same course
-                // RULE 2: Must not be the source class itself
-                // RULE 3: The target class must NOT already have an exam with this title (Prevents the Loop)
-                const alreadyHasThisExam = existingExams.some(e => e.class_code === c.code && e.title === sourceTitle);
+        $('#pubSourceId').val(sourceId);
+        $('#pubExamTitle').text(sourceTitle);
 
-                if(c.course === courseCode && c.code !== currentClass && !alreadyHasThisExam) {
-                    count++;
-                    listContainer.append(`
+        const listContainer = $('#targetClassList').empty();
+        let count = 0;
+
+        teacherClasses.forEach(c => {
+            // RULE 1: Must be the same course
+            // RULE 2: Must not be the source class itself
+            // RULE 3: The target class must NOT already have an exam with this title (Prevents the Loop)
+            const alreadyHasThisExam = existingExams.some(e => e.class_code === c.code && e.title === sourceTitle);
+
+            if (c.course === courseCode && c.code !== currentClass && !alreadyHasThisExam) {
+                count++;
+                listContainer.append(`
                         <label class="list-group-item publish-item d-flex align-items-center mb-1 rounded border">
                             <input type="checkbox" name="target_class_codes[]" value="${c.code}" class="mr-3">
                             <div>
@@ -512,19 +519,19 @@
                             </div>
                         </label>
                     `);
-                }
-            });
-
-            if (count === 0) {
-                $('#targetClassList').addClass('d-none');
-                $('#noOtherClasses').removeClass('d-none');
-                $('#pubSubmitBtn').prop('disabled', true);
-            } else {
-                $('#targetClassList').removeClass('d-none');
-                $('#noOtherClasses').addClass('d-none');
-                $('#pubSubmitBtn').prop('disabled', false);
             }
         });
+
+        if (count === 0) {
+            $('#targetClassList').addClass('d-none');
+            $('#noOtherClasses').removeClass('d-none');
+            $('#pubSubmitBtn').prop('disabled', true);
+        } else {
+            $('#targetClassList').removeClass('d-none');
+            $('#noOtherClasses').addClass('d-none');
+            $('#pubSubmitBtn').prop('disabled', false);
+        }
+    });
     });
 </script>
 {% endblock %}
