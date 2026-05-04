@@ -1,127 +1,94 @@
 {% extends 'student_base.html' %}
-
-{% block title %}My Results{% endblock %}
-
+{% block title %}My Results | TestPoint{% endblock %}
 {% set sidebar_active = 'results' %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">My Examination Results</h1>
-        <a href="{{ url_for('student.student_exams') }}"
-            class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-edit fa-sm text-white-50 mr-2"></i>Take More Exams
-        </a>
+<div class="row mb-4 align-items-center">
+    <div class="col-md-7">
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink); font-size: 2rem;">Examination Results</h1>
+        <p class="text-muted small mb-0">History of your completed assessments and grading details.</p>
     </div>
-
-    <!-- Results Table Card -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">History of Completed Exams</h6>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="bg-light text-primary">
-                        <tr>
-                            <th>Exam / Course</th>
-                            <th>Date Finished</th>
-                            <th>Violations</th>
-                            <th>Score</th>
-                            <th>Percentage</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% if results %}
-                        {% for r in results %}
-                        {% set total = r.total_served %}
-                        {# Percentage is Score / Total Questions Actually Served during this specific attempt #}
-                        {% set percent = ((r.score / total) * 100)|round(1) if total > 0 else 0 %}
-
-                        <tr>
-                            <td>
-                                <div class="font-weight-bold text-dark">{{ r.title }}</div>
-                                <div class="small text-muted">{{ r.course_code }} - {{ r.course_name }}</div>
-                            </td>
-                            <td>
-                                {% if r.end_time %}
-                                <span class="text-dark">{{ r.end_time.strftime('%b %d, %Y') }}</span><br>
-                                <small class="text-muted">{{ r.end_time.strftime('%I:%M %p') }}</small>
-                                {% else %}
-                                <span class="text-muted">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if r.tab_switches > 0 %}
-                                <span class="badge badge-warning text-dark">
-                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ r.tab_switches }} Switches
-                                </span>
-                                {% else %}
-                                <span class="badge badge-light text-success border">
-                                    <i class="fas fa-check-circle mr-1"></i> Clean
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td class="font-weight-bold">{{ r.score | int }} / {{ total }}</td>
-                            <td>
-                                <span
-                                    class="font-weight-bold {% if percent >= r.pass_percentage %}text-success{% else %}text-danger{% endif %}">
-                                    {{ percent }}%
-                                </span>
-                                <div class="small text-muted">Passing: {{ r.pass_percentage }}%</div>
-                            </td>
-                            <td>
-                                {% if percent >= r.pass_percentage %}
-                                <span class="badge badge-success px-3 py-2">
-                                    <i class="fas fa-check mr-1"></i> PASSED
-                                </span>
-                                {% else %}
-                                <span class="badge badge-danger px-3 py-2">
-                                    <i class="fas fa-times mr-1"></i> FAILED
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="{{ url_for('student.review_exam', attempt_id=r.attempt_id) }}"
-                                        class="btn btn-sm btn-info shadow-sm">
-                                        <i class="fas fa-search mr-1"></i> Review
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-5">
-                                <img src="{{ url_for('student.static', filename='img/undraw_no_data.svg') }}"
-                                    alt="No Data" style="width: 150px; opacity: 0.5;" class="mb-3">
-                                <p class="text-muted">You haven't completed any exams yet.</p>
-                                <a href="{{ url_for('student.student_exams') }}" class="btn btn-primary btn-sm">Check
-                                    Available Exams</a>
-                            </td>
-                        </tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="col-md-5 text-md-right mt-3 mt-md-0">
+        <a href="{{ url_for('student.student_exams') }}" class="btn btn-primary rounded-pill px-4 shadow-sm font-weight-bold">
+            <i class="fas fa-edit mr-2"></i> Take More Exams
+        </a>
     </div>
 </div>
 
-<style>
-    .table td,
-    .table th {
-        vertical-align: middle;
-    }
-
-    .badge {
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-</style>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Assessment Records</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 table-hover">
+                <thead class="bg-light text-muted small text-uppercase" style="font-size: 10px; letter-spacing: 1.5px;">
+                    <tr>
+                        <th class="px-4 py-3 border-0">Exam Detail</th>
+                        <th class="py-3 border-0">Finished Date</th>
+                        <th class="text-center py-3 border-0">Security</th>
+                        <th class="text-center py-3 border-0">Score</th>
+                        <th class="text-center py-3 border-0">Status</th>
+                        <th class="text-right px-4 py-3 border-0">Action</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 14px;">
+                    {% if results %}
+                    {% for r in results %}
+                        {% set total = r.total_served %}
+                        {% set percent = ((r.score / total) * 100)|round(1) if total > 0 else 0 %}
+                    <tr>
+                        <td class="px-4 py-3 border-0">
+                            <div class="font-weight-bold text-dark">{{ r.title }}</div>
+                            <div class="text-muted small" style="font-size: 11px;">{{ r.course_name }} ({{ r.course_code }})</div>
+                        </td>
+                        <td class="py-3 border-0">
+                            <div class="text-dark font-weight-bold">{{ r.end_time.strftime('%b %d, %Y') if r.end_time else 'N/A' }}</div>
+                            <div class="text-muted small">{{ r.end_time.strftime('%I:%M %p') if r.end_time else '' }}</div>
+                        </td>
+                        <td class="text-center py-3 border-0">
+                            {% if r.tab_switches > 0 %}
+                                <span class="badge px-3 py-1 text-warning" style="background: #fffbeb; border: 1px solid #fef3c7;">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ r.tab_switches }} Switches
+                                </span>
+                            {% else %}
+                                <span class="badge px-3 py-1 text-success" style="background: #f0fdf4; border: 1px solid #dcfce7;">
+                                    <i class="fas fa-check-circle mr-1"></i> Clean
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-3 border-0">
+                            <div class="font-weight-bold text-dark mb-1">{{ r.score | int }} / {{ total }}</div>
+                            <div class="progress" style="height: 4px; width: 60px; margin: 0 auto; border-radius: 10px; background: #f1f5f9;">
+                                <div class="progress-bar rounded-pill" style="width: {{ percent }}%; background: {% if percent >= r.pass_percentage %}#10b981{% else %}#e11d48{% endif %};"></div>
+                            </div>
+                        </td>
+                        <td class="text-center py-3 border-0">
+                            {% if percent >= r.pass_percentage %}
+                                <span class="text-success font-weight-bold small"><i class="fas fa-check mr-1"></i> PASSED</span>
+                            {% else %}
+                                <span class="text-danger font-weight-bold small"><i class="fas fa-times mr-1"></i> FAILED</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-right px-4 py-3 border-0">
+                            <a href="{{ url_for('student.review_exam', attempt_id=r.attempt_id) }}" 
+                               class="btn btn-light btn-circle-sm border shadow-sm" title="Review Submission">
+                                <i class="fas fa-search-plus text-primary"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <img src="https://illustrations.popsy.co/gray/clumsy-person-dropping-papers.svg" style="width: 150px; opacity: 0.5;" class="mb-3">
+                            <p class="text-muted font-weight-bold mb-0">No exam results found in your history.</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,126 +1,233 @@
 {% extends 'student_base.html' %}
 
-{% block title %}Student Dashboard{% endblock %}
+{% block title %}Dashboard | TestPoint Student{% endblock %}
 
 {% set sidebar_active = 'dashboard' %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Welcome, {{ student_firstname }} {{ student_lastname }}!</h1>
+<!-- ── TOP STATUS BANNER ── -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: var(--tp-student-radius); background: #fff;">
+            <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink); font-size: 2.25rem; line-height: 1.1;" class="mb-2">
+                        Welcome, <span style="color: var(--tp-student-accent);">{{ student_firstname }}</span>!
+                    </h1>
+                    <p class="text-muted mb-0" style="font-size: 15px; font-weight: 400;">
+                        {% if available_count > 0 %}
+                        <i class="fas fa-exclamation-circle text-danger mr-2"></i>You have <span class="text-dark font-weight-bold">{{ available_count }} pending</span> examinations scheduled for this week.
+                        {% else %}
+                        <i class="fas fa-check-circle text-success mr-2"></i>Your academic schedule is currently clear.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="d-none d-md-block text-right">
+                    <div class="small text-uppercase font-weight-bold text-muted mb-1" style="letter-spacing: 1px;">Overall Average</div>
+                    <div class="h2 font-weight-bold mb-0 text-dark" style="font-family: var(--tp-serif);">{{ overall_avg }}%</div>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
-    <!-- Summary Cards Row -->
-    <div class="row">
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Enrolled Courses
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course_count }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-university fa-2x text-gray-300"></i></div>
+<!-- ── STATS GRID ── -->
+<div class="row mb-4">
+    <!-- Enrolled Courses -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-muted text-uppercase mb-1" style="letter-spacing: 1.5px; opacity: 0.6;">Active Courses</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ course_count }}</div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Available Exams</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_count }}</div>
+                    <div class="col-auto">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #eef2ff; color: var(--tp-student-accent);">
+                            <i class="fas fa-university"></i>
                         </div>
-                        <div class="col-auto"><i class="fas fa-edit fa-2x text-gray-300"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Completed Exams</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-check-double fa-2x text-gray-300"></i></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Performance Analysis Chart -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Performance Analysis (Recent Exams)</h6>
-                </div>
-                <div class="card-body">
-                    <div class="chart-area" style="height: 300px;">
-                        <canvas id="performanceChart"></canvas>
+    <!-- Available Exams -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1" style="letter-spacing: 1.5px; opacity: 0.8;">To-Do Exams</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ available_count }}</div>
                     </div>
-                    <hr>
-                    <small class="text-muted">This chart shows your score percentage across your last 5 completed
-                        examinations.</small>
+                    <div class="col-auto">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #fff1f2; color: #e11d48;">
+                            <i class="fas fa-edit"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Exams -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1" style="letter-spacing: 1.5px; opacity: 0.8;">Finished</div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ completed_count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #f0fdf4; color: #16a34a;">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Card -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <a href="{{ url_for('student.student_exams') }}" class="card border-0 shadow-sm h-100 py-2 text-decoration-none" style="background: var(--tp-student-gray); transition: transform 0.2s;">
+            <div class="card-body d-flex align-items-center">
+                <div class="col mr-2">
+                    <div class="text-xs font-weight-bold text-white text-uppercase mb-1" style="letter-spacing: 1.5px; opacity: 0.6;">Quick Link</div>
+                    <div class="h6 mb-0 font-weight-bold text-white">Open Exam List →</div>
+                </div>
+                <div class="col-auto">
+                    <i class="fas fa-arrow-circle-right text-white-50 fa-2x"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── LEFT: ANALYTICS & RANKINGS ── -->
+    <div class="col-xl-8 col-lg-7">
+        
+        <!-- Performance Trend (Admin Style Header) -->
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header py-3 bg-white border-bottom d-flex align-items-center justify-content-between" style="border-bottom: 1.5px solid var(--tp-student-border) !important;">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Academic Performance Trend</h6>
+                <div class="dropdown no-arrow">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-area" style="height: 340px;">
+                    <canvas id="performanceChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Class Rankings Table -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Class Standings</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table m-0">
-                            <thead class="bg-light small text-uppercase">
-                                <tr>
-                                    <th>Course</th>
-                                    <th class="text-center">Rank</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for rank in rankings %}
-                                <tr>
-                                    <td>
-                                        <div class="small font-weight-bold text-dark">{{ rank.course_name }}</div>
-                                        {# FIXED: Added default(0) filter before rounding #}
-                                        <div class="text-xs text-muted">Avg: {{ rank.student_avg|default(0)|round(1) }}%
-                                        </div>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <span
-                                            class="badge {% if rank.class_rank == 1 %}badge-warning{% else %}badge-primary{% endif %} p-2">
-                                            #{{ rank.class_rank }} / {{ rank.total_students }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="2" class="text-center py-4 text-muted small">No ranking data available.
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer small text-center">
-                    Rank is based on your average score vs classmates.
+        <!-- Subject Standings Table -->
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header py-3 bg-white border-bottom" style="border-bottom: 1.5px solid var(--tp-student-border) !important;">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Class Standing Catalog</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase" style="font-size: 10px; letter-spacing: 1.5px;">
+                            <tr>
+                                <th class="px-4 py-3 border-0">Subject Name</th>
+                                <th class="text-center py-3 border-0">Class Rank</th>
+                                <th class="text-center py-3 border-0">Average Score</th>
+                                <th class="text-center py-3 border-0">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size: 14px;">
+                            {% for rank in rankings %}
+                            <tr>
+                                <td class="px-4 py-3 border-0">
+                                    <div class="font-weight-bold text-dark">{{ rank.course_name }}</div>
+                                    <div class="text-muted small" style="font-size: 11px;">#{{ rank.class_code }}</div>
+                                </td>
+                                <td class="text-center py-3 border-0">
+                                    <span class="badge rounded-pill px-3 py-2" style="background: #eef2ff; color: var(--tp-student-accent); font-weight: 700;">
+                                        #{{ rank.class_rank }} / {{ rank.total_students }}
+                                    </span>
+                                </td>
+                                <td class="text-center py-3 border-0">
+                                    <div class="font-weight-bold text-dark mb-1">{{ rank.student_avg|default(0)|round(1) }}%</div>
+                                    <div class="progress" style="height: 4px; width: 60px; margin: 0 auto; border-radius: 10px; background: #f1f5f9;">
+                                        <div class="progress-bar rounded-pill" style="width: {{ rank.student_avg }}%; background: var(--tp-student-accent);"></div>
+                                    </div>
+                                </td>
+                                <td class="text-center py-3 border-0">
+                                    <a href="{{ url_for('student.view_course', course_id=rank.class_code) }}" class="btn btn-light btn-circle-sm border shadow-sm">
+                                        <i class="fas fa-eye fa-xs text-primary"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ── RIGHT: SIDEBAR WIDGETS ── -->
+    <div class="col-xl-4 col-lg-5">
+        
+        <!-- Upcoming Schedule Widget -->
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header py-3 bg-white border-0">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Upcoming Schedule</h6>
+            </div>
+            <div class="card-body pt-0">
+                {% for exam in upcoming_exams %}
+                <div class="mb-4 d-flex align-items-start">
+                    <div class="mr-3 text-center rounded border" style="min-width: 54px; background: #fafafa; border-color: var(--tp-student-border) !important;">
+                        <div class="bg-primary text-white py-1 px-2" style="font-size: 9px; font-weight: 800; border-radius: 4px 4px 0 0;">{{ exam.date_time.strftime('%b') }}</div>
+                        <div class="py-1 h5 font-weight-bold mb-0 text-dark">{{ exam.date_time.strftime('%d') }}</div>
+                    </div>
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="font-weight-bold text-dark text-truncate mb-0" style="font-size: 14px;">{{ exam.title }}</div>
+                        <div class="text-muted small text-truncate" style="opacity: 0.7;">{{ exam.course_name }}</div>
+                        <div class="text-primary font-weight-bold mt-1" style="font-size: 10px; letter-spacing: 0.5px;">
+                            <i class="fas fa-clock mr-1"></i> {{ exam.duration_minutes }} Minutes
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-check text-gray-300 fa-3x mb-3"></i>
+                    <p class="text-muted small">No exams scheduled.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header py-3 bg-white border-0">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Recent Results</h6>
+            </div>
+            <div class="card-body pt-0">
+                {% for res in recent_results %}
+                <div class="mb-3 p-3 border rounded" style="border-color: var(--tp-student-border) !important; background: #fff;">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="font-weight-bold text-dark" style="font-size: 13px;">{{ res.title }}</span>
+                        <span class="text-primary font-weight-bold" style="font-size: 13px;">{{ res.score }}/{{ res.total }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size: 10px; opacity: 0.6;">
+                        <i class="fas fa-history mr-1"></i> {{ res.end_time.strftime('%b %d, %Y • %I:%M %p') }}
+                    </div>
+                </div>
+                {% endfor %}
+                <a href="{{ url_for('student.student_results') }}" class="btn btn-outline-primary rounded-pill btn-block btn-sm mt-3 font-weight-bold" style="font-size: 11px;">
+                    View Detailed History
+                </a>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}
@@ -137,16 +244,18 @@
         data: {
             labels: labels,
             datasets: [{
-                label: 'Score Percentage (%)',
+                label: 'Score %',
                 data: scores,
                 fill: true,
-                backgroundColor: 'rgba(78, 115, 223, 0.05)',
-                borderColor: 'rgba(78, 115, 223, 1)',
-                pointRadius: 5,
-                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-                pointBorderColor: 'rgba(78, 115, 223, 1)',
-                pointHoverRadius: 7,
-                tension: 0.3
+                backgroundColor: 'rgba(45, 91, 227, 0.04)',
+                borderColor: '#2d5be3',
+                borderWidth: 3.5,
+                pointRadius: 6,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#2d5be3',
+                pointBorderWidth: 3,
+                pointHoverRadius: 8,
+                tension: 0.4
             }]
         },
         options: {
@@ -155,11 +264,26 @@
                 y: {
                     beginAtZero: true,
                     max: 100,
-                    ticks: { callback: function (value) { return value + "%"; } }
+                    grid: { borderDash: [4, 4], color: '#f0f0f0' },
+                    ticks: { 
+                        font: { size: 11, weight: '500' },
+                        callback: function (value) { return value + "%"; } 
+                    }
+                },
+                x: { 
+                    grid: { display: false },
+                    ticks: { font: { size: 11, weight: '500' } }
                 }
             },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#0f0e11',
+                    padding: 12,
+                    titleFont: { family: 'DM Sans', size: 13 },
+                    bodyFont: { family: 'DM Sans', size: 12 },
+                    displayColors: false
+                }
             }
         }
     });

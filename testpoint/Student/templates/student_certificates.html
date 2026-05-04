@@ -1,22 +1,234 @@
 {% extends 'student_base.html' %}
-{% block title %}Certificates{% endblock %}
+{% block title %}Academic Credentials | TestPoint{% endblock %}
 {% set sidebar_active = 'certificates' %}
+
+{% block head %}
+<style>
+    /* ── CERTIFICATE UI TOKENS ── */
+    .tp-cert-card {
+        border: 1.5px solid var(--tp-student-border) !important;
+        border-radius: 15px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fff;
+        overflow: hidden;
+    }
+    .tp-cert-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(45, 91, 227, 0.1) !important;
+        border-color: var(--tp-student-accent) !important;
+    }
+
+    .tp-cert-preview {
+        height: 120px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        border-bottom: 1px solid var(--tp-student-border);
+    }
+    .tp-cert-preview::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(var(--tp-student-accent) 0.5px, transparent 0.5px);
+        background-size: 10px 10px;
+        opacity: 0.1;
+    }
+
+    .tp-award-icon {
+        width: 56px;
+        height: 56px;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--tp-student-accent);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        z-index: 1;
+    }
+
+    /* ── TRANSCRIPT LIST STYLING ── */
+    .tp-transcript-row {
+        background: #fff;
+        border: 1px solid var(--tp-student-border);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .tp-transcript-row:hover {
+        background: #fcfcfc;
+        border-color: #cbd5e1;
+    }
+
+    .tp-doc-icon {
+        width: 40px;
+        height: 40px;
+        background: #f1f5f9;
+        color: #64748b;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeInUp">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">Certificates</h1>
-        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50 mr-2"></i>Download All</a>
+<!-- ── HEADER ── -->
+<div class="row mb-4 align-items-end">
+    <div class="col-md-7">
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink); font-size: 2.2rem;" class="mb-1">Credentials & Reports</h1>
+        <p class="text-muted mb-0">Official certificates and downloadable exam transcripts.</p>
     </div>
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow border-bottom-primary">
-                <div class="card-body text-center py-5">
-                    <i class="fas fa-award fa-4x text-primary mb-3"></i>
-                    <h5 class="font-weight-bold text-dark">Programming Fundamentals</h5>
-                    <p class="small text-muted">Earned on Oct 10, 2023</p>
-                    <button class="btn btn-outline-primary btn-sm px-4 shadow-sm"><i class="fas fa-file-pdf mr-2"></i>Download PDF</button>
+    <div class="col-md-5 text-md-right mt-3 mt-md-0">
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm font-weight-bold" onclick="window.print()">
+            <i class="fas fa-print mr-2"></i> Print Dashboard
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── LEFT: CERTIFICATES GRID ── -->
+    <div class="col-xl-8">
+        <div class="mb-3 d-flex align-items-center">
+            <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1.5px;">Earned Certificates</h6>
+            <div class="flex-grow-1 ml-3" style="height: 1px; background: var(--tp-student-border);"></div>
+        </div>
+
+        <div class="row">
+            <!-- Mock Certificate 1 -->
+            <div class="col-md-6 mb-4">
+                <div class="card tp-cert-card shadow-sm h-100">
+                    <div class="tp-cert-preview">
+                        <div class="tp-award-icon">
+                            <i class="fas fa-certificate fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="letter-spacing: 1px;">Academic Excellence</div>
+                        <h5 class="font-weight-bold text-dark mb-2" style="font-family: var(--tp-serif);">Programming Fundamentals</h5>
+                        <p class="small text-muted mb-4">Issued: Oct 10, 2023 • Grade: A+</p>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 mr-2">
+                                <i class="fas fa-eye mr-1"></i> Preview
+                            </button>
+                            <button class="btn btn-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 shadow-sm">
+                                <i class="fas fa-download mr-1"></i> PDF
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Mock Certificate 2 -->
+            <div class="col-md-6 mb-4">
+                <div class="card tp-cert-card shadow-sm h-100">
+                    <div class="tp-cert-preview">
+                        <div class="tp-award-icon">
+                            <i class="fas fa-award fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="card-body text-center p-4">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="letter-spacing: 1px;">Course Completion</div>
+                        <h5 class="font-weight-bold text-dark mb-2" style="font-family: var(--tp-serif);">Database Systems</h5>
+                        <p class="small text-muted mb-4">Issued: Nov 22, 2023 • Grade: B</p>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 mr-2">
+                                <i class="fas fa-eye mr-1"></i> Preview
+                            </button>
+                            <button class="btn btn-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 shadow-sm">
+                                <i class="fas fa-download mr-1"></i> PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RIGHT: PDF RESULT REPORTS ── -->
+    <div class="col-xl-4">
+        <div class="mb-3 d-flex align-items-center">
+            <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1.5px;">Exam Transcripts</h6>
+            <div class="flex-grow-1 ml-3" style="height: 1px; background: var(--tp-student-border);"></div>
+        </div>
+
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+            <div class="card-body">
+                <p class="small text-muted mb-4">Download detailed PDF results for your completed exam sessions.</p>
+                
+                <!-- Mock Transcript Row 1 -->
+                <div class="tp-transcript-row">
+                    <div class="d-flex align-items-center">
+                        <div class="tp-doc-icon mr-3">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div>
+                            <div class="font-weight-bold text-dark" style="font-size: 13px;">Midterm Exam (CS101)</div>
+                            <div class="text-muted small">Score: 48/50 • Nov 15</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-light btn-circle-sm border shadow-sm">
+                        <i class="fas fa-download fa-xs text-primary"></i>
+                    </button>
+                </div>
+
+                <!-- Mock Transcript Row 2 -->
+                <div class="tp-transcript-row">
+                    <div class="d-flex align-items-center">
+                        <div class="tp-doc-icon mr-3">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div>
+                            <div class="font-weight-bold text-dark" style="font-size: 13px;">Quiz #3 (MATH2)</div>
+                            <div class="text-muted small">Score: 18/20 • Nov 02</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-light btn-circle-sm border shadow-sm">
+                        <i class="fas fa-download fa-xs text-primary"></i>
+                    </button>
+                </div>
+
+                <!-- Mock Transcript Row 3 -->
+                <div class="tp-transcript-row">
+                    <div class="d-flex align-items-center">
+                        <div class="tp-doc-icon mr-3">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div>
+                            <div class="font-weight-bold text-dark" style="font-size: 13px;">Quiz #2 (IT-SOFT)</div>
+                            <div class="text-muted small">Score: 20/20 • Oct 28</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-light btn-circle-sm border shadow-sm">
+                        <i class="fas fa-download fa-xs text-primary"></i>
+                    </button>
+                </div>
+
+                <button class="btn btn-light btn-block btn-sm mt-3 font-weight-bold text-muted py-2" style="border-radius: 10px;">
+                    Request Full Transcript
+                </button>
+            </div>
+        </div>
+
+        <!-- Print Instructions -->
+        <div class="card border-0 shadow-sm p-4" style="background: var(--tp-student-gray); border-radius: 15px;">
+            <div class="d-flex align-items-center text-white mb-2">
+                <i class="fas fa-print mr-2 text-warning"></i>
+                <h6 class="m-0 font-weight-bold">Print Information</h6>
+            </div>
+            <p class="small text-white-50 mb-0" style="line-height: 1.6;">
+                Official certificates are best printed on A4 heavy-weight paper (180-220 GSM) for a professional finish.
+            </p>
         </div>
     </div>
 </div>

@@ -1,0 +1,164 @@
+{% extends 'student_base.html' %}
+{% block title %}Academic Insights | TestPoint{% endblock %}
+{% set sidebar_active = 'analytics' %}
+
+{% block content %}
+<div class="row mb-4 align-items-end">
+    <div class="col-md-7">
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink); font-size: 2.2rem;" class="mb-1">Insights & Standings</h1>
+        <p class="text-muted mb-0">Competitive analysis and global item statistics.</p>
+    </div>
+    <div class="col-md-5 text-md-right mt-3 mt-md-0">
+        <span class="badge badge-light border p-2 px-3 rounded-pill">
+            <i class="fas fa-info-circle mr-1 text-primary"></i> Data reflects all finalized attempts
+        </span>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── COLUMN 1: STANDINGS & LEADERBOARD ── -->
+    <div class="col-xl-7 col-lg-6">
+        {% for course_name, players in standings.items() %}
+        <div class="card shadow-sm border-0 mb-4 overflow-hidden" style="border-radius: 15px;">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">
+                    <i class="fas fa-trophy mr-2 text-warning"></i>{{ course_name }} Leaderboard
+                </h6>
+                <span class="badge badge-primary rounded-pill">{{ players[0].total_peers }} Students</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light text-muted small" style="font-size: 10px; letter-spacing: 1px;">
+                            <tr>
+                                <th class="px-4 border-0">RANK</th>
+                                <th class="border-0">STUDENT</th>
+                                <th class="text-center border-0">AVG SCORE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in players %}
+                            <tr {% if p.student_id == student_id %}style="background: rgba(45,91,227,0.05);"{% endif %}>
+                                <td class="px-4 border-0">
+                                    {% if p.rank_pos == 1 %}
+                                        <span class="h5 mb-0">🥇</span>
+                                    {% elif p.rank_pos == 2 %}
+                                        <span class="h5 mb-0">🥈</span>
+                                    {% elif p.rank_pos == 3 %}
+                                        <span class="h5 mb-0">🥉</span>
+                                    {% else %}
+                                        <span class="font-weight-bold text-muted ml-2">#{{ p.rank_pos }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="border-0">
+                                    <div class="font-weight-bold text-dark">{{ p.firstname }} {{ p.lastname }}</div>
+                                    {% if p.student_id == student_id %}<span class="badge badge-primary" style="font-size: 9px;">YOU</span>{% endif %}
+                                </td>
+                                <td class="text-center border-0">
+                                    <div class="font-weight-bold text-primary">{{ p.avg_score|round(1) }}%</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ── COLUMN 2: ITEM ANALYSIS & STATS ── -->
+    <div class="col-xl-5 col-lg-6">
+        
+        <!-- Score Distribution Chart -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Exam Outcome Ratio</h6>
+            </div>
+            <div class="card-body">
+                <div style="height: 200px;">
+                    <canvas id="outcomeChart"></canvas>
+                </div>
+                <div class="row text-center mt-3">
+                    <div class="col-6 border-right">
+                        <div class="h4 font-weight-bold text-success mb-0">{{ stats.pass_count or 0 }}</div>
+                        <div class="small text-muted text-uppercase" style="font-size: 9px;">Passed</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h4 font-weight-bold text-danger mb-0">{{ stats.fail_count or 0 }}</div>
+                        <div class="small text-muted text-uppercase" style="font-size: 9px;">Failed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Item Analysis (Most Difficult Questions) -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Item Analysis: "Class Killers"</h6>
+            </div>
+            <div class="card-body pt-0">
+                <p class="text-muted small mb-4">Questions in your courses with the highest global failure rate.</p>
+                
+                {% for item in item_analysis %}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="font-weight-bold text-dark small pr-3" style="line-height: 1.4;">{{ item.question_text }}</div>
+                        <span class="badge badge-soft-danger px-2 py-1" style="font-size: 10px;">{{ item.difficulty_index|round|int }}% Fail</span>
+                    </div>
+                    <div class="progress" style="height: 6px; border-radius: 10px;">
+                        <div class="progress-bar bg-danger" style="width: {{ item.difficulty_index }}%"></div>
+                    </div>
+                    <div class="small text-muted mt-1" style="font-size: 10px;">Course: {{ item.course_name }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tip Card -->
+        <div class="card border-0 shadow-sm" style="background: var(--tp-student-gray); color: #fff; border-radius: 15px;">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-lightbulb text-warning mr-2"></i>
+                    <h6 class="m-0 font-weight-bold">Study Tip</h6>
+                </div>
+                <p class="small mb-0" style="opacity: 0.8; line-height: 1.6;">
+                    Focus on the "Class Killers" listed above. These are concepts that most students struggle with. Mastering these will significantly improve your class standing.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .badge-soft-danger { background: #fee2e2; color: #b91c1c; }
+    .table td { vertical-align: middle; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctxOutcome = document.getElementById('outcomeChart').getContext('2d');
+    new Chart(ctxOutcome, {
+        type: 'doughnut',
+        data: {
+            labels: ['Passed', 'Failed'],
+            datasets: [{
+                data: [{{ stats.pass_count or 0 }}, {{ stats.fail_count or 0 }}],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            },
+            cutout: '70%'
+        }
+    });
+</script>
+{% endblock %}

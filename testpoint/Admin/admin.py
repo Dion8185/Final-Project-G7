@@ -941,28 +941,70 @@ def settings():
     return redirect(url_for('auth.login'))
 
 
-#! 10. PROFILE
+#! 10. PROFILE (Enhanced for Command Center Data)
 @admin.route('/profile', methods=['GET', 'POST'])
 def profile():
-    if not admin_logged_in(): return redirect(url_for('auth.login'))
-    user_id = session.get('user_id'); connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    if request.method == 'POST':
-        fname = request.form.get('firstname'); mname = request.form.get('middlename'); lname = request.form.get('lastname')
-        new_pw = request.form.get('password'); conf_pw = request.form.get('confirm_password')
-        try:
-            cursor.execute("UPDATE admins SET firstname = %s, middlename = %s, lastname = %s WHERE admin_id = %s", (fname, mname, lname, user_id))
+    if not admin_logged_in(): 
+        return redirect(url_for('auth.login'))
+        
+    user_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        if request.method == 'POST':
+            fname = request.form.get('firstname')
+            mname = request.form.get('middlename')
+            lname = request.form.get('lastname')
+            new_pw = request.form.get('password')
+            conf_pw = request.form.get('confirm_password')
+
+            cursor.execute("""
+                UPDATE admins 
+                SET firstname = %s, middlename = %s, lastname = %s 
+                WHERE admin_id = %s
+            """, (fname, mname, lname, user_id))
+
             if new_pw:
                 if new_pw == conf_pw:
-                    cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (generate_password_hash(new_pw), user_id))
+                    cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", 
+                                   (generate_password_hash(new_pw), user_id))
                 else:
-                    flash('Passwords do not match.', 'warning'); return redirect(url_for('admin.profile'))
-            connection.commit(); flash('Profile updated.', 'success')
-        finally:
-            cursor.close(); connection.close()
-        return redirect(url_for('admin.profile'))
-    cursor.execute("SELECT u.*, a.* FROM users u JOIN admins a ON u.user_id = a.admin_id WHERE u.user_id = %s", (user_id,))
-    user_data = cursor.fetchone(); cursor.close(); connection.close()
-    return render_template('admin_profile.html', user=user_data)
+                    flash('Passwords do not match.', 'warning')
+                    return redirect(url_for('admin.profile'))
+
+            connection.commit()
+            flash('Admin profile updated successfully.', 'success')
+            return redirect(url_for('admin.profile'))
+
+        # --- GET: FETCH DETAILED ADMIN DATA & SYSTEM STATS ---
+        cursor.execute("""
+            SELECT u.*, a.* 
+            FROM users u 
+            JOIN admins a ON u.user_id = a.admin_id 
+            WHERE u.user_id = %s
+        """, (user_id,))
+        user_data = cursor.fetchone()
+
+        # Fetch Global Counts for the Profile Dashboard
+        cursor.execute("SELECT COUNT(*) as count FROM students")
+        total_students = cursor.fetchone()['count']
+
+        cursor.execute("SELECT COUNT(*) as count FROM teachers")
+        total_teachers = cursor.fetchone()['count']
+
+        cursor.execute("SELECT COUNT(*) as count FROM pending_users WHERE verification_status = 'pending_approval'")
+        pending_tasks = cursor.fetchone()['count']
+
+        return render_template('admin_profile.html', 
+                               user=user_data, 
+                               total_students=total_students, 
+                               total_teachers=total_teachers,
+                               pending_tasks=pending_tasks)
+
+    finally:
+        cursor.close()
+        connection.close()
 
 
 #! 11. ENROLLMENT MANAGEMENT

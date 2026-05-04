@@ -50,110 +50,128 @@ def inject_enrolled_courses():
 #! 1. DASHBOARD
 @student.route('/student_dashboard')
 def student_dashboard():
-    if user_logged_in():
-        student_id = session.get('user_id')
-        student_firstname = session.get('firstname')
-        student_lastname = session.get('lastname')
-        connection = mysql.connector.connect(**db_config)
-        cursor = connection.cursor(dictionary=True)
+    if not user_logged_in():
+        flash('Please log in to access the dashboard.', 'danger')
+        return redirect(url_for('auth.login'))
 
-        try:
-            # Stats 1: Enrolled Courses (Active)
-            cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s AND status = 'active'", (student_id,))
-            course_count = cursor.fetchone()['count']
+    student_id = session.get('user_id')
+    student_firstname = session.get('firstname')
+    student_lastname = session.get('lastname')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
 
-            # Stats 2: Completed Exams (exclude archived exams)
-            cursor.execute("""
-                SELECT COUNT(*) as count
+    try:
+        # Stats 1: Enrolled Courses
+        cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s AND status = 'active'", (student_id,))
+        course_count = cursor.fetchone()['count']
+
+        # Stats 2: Completed Exams
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM exam_attempts ea 
+            JOIN exams e ON ea.exam_id = e.exam_id 
+            WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
+        """, (student_id,))
+        completed_count = cursor.fetchone()['count']
+        
+        # Stats 3: Available Exams Count
+        cursor.execute("""
+            SELECT COUNT(*) as count FROM exams e
+            JOIN enrollments en ON e.class_code = en.class_code
+            LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
+            WHERE en.student_id = %s AND en.status = 'active' AND e.is_active = 1 
+            AND (ea.status IS NULL OR ea.status = 'in-progress') AND e.archived = 0;
+        """, (student_id, student_id))
+        available_count = cursor.fetchone()['count']
+
+        # Stats 4: Overall Average Score
+        cursor.execute("""
+            SELECT AVG(percentage) as overall_avg FROM (
+                SELECT (ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100) as percentage
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
-                WHERE ea.student_id = %s
-                AND ea.status = 'finished'
-                AND e.archived = 0
-            """, (student_id,))
-            completed_count = cursor.fetchone()['count']
-            
-            # Stats 3: Available Exams (Active exams in enrolled classes not yet finished)
-            cursor.execute("""
-                SELECT COUNT(*) as count FROM exams e
-                JOIN enrollments en ON e.class_code = en.class_code
-                LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
-                WHERE en.student_id = %s AND en.status = 'active' AND e.is_active = 1 
-                AND (ea.status IS NULL OR ea.status = 'in-progress') AND e.archived = 0;
-            """, (student_id, student_id))
-            available_count = cursor.fetchone()['count']
+                WHERE ea.student_id = %s AND ea.status = 'finished'
+            ) as sub
+        """, (student_id,))
+        avg_res = cursor.fetchone()
+        overall_avg = round(float(avg_res['overall_avg']), 1) if avg_res['overall_avg'] else 0
 
-            # --- ANALYSIS: Performance Trend ---
-            cursor.execute("""
-                SELECT e.title, 
-                       COALESCE((ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100), 0) as percentage
+        # --- DATA: Upcoming Exams List (Detailed) ---
+        cursor.execute("""
+            SELECT e.title, e.date_time, c.course_name, e.duration_minutes
+            FROM exams e
+            JOIN enrollments en ON e.class_code = en.class_code
+            JOIN classes cl ON e.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.student_id = %s
+            WHERE en.student_id = %s AND e.is_active = 1 
+            AND (ea.status IS NULL OR ea.status = 'in-progress') AND e.archived = 0
+            ORDER BY e.date_time ASC LIMIT 3
+        """, (student_id, student_id))
+        upcoming_exams = cursor.fetchall()
+
+        # --- DATA: Recent Results (Last 3) ---
+        cursor.execute("""
+            SELECT e.title, ea.score, ea.end_time,
+                   (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total
+            FROM exam_attempts ea
+            JOIN exams e ON ea.exam_id = e.exam_id
+            WHERE ea.student_id = %s AND ea.status = 'finished'
+            ORDER BY ea.end_time DESC LIMIT 3
+        """, (student_id,))
+        recent_results = cursor.fetchall()
+
+        # --- CHART: Performance Trend ---
+        cursor.execute("""
+            SELECT e.title, 
+                   COALESCE((ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100), 0) as percentage
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
                 WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
-                ORDER BY ea.end_time ASC LIMIT 5
-            """, (student_id,))
-            performance_trend = cursor.fetchall()
-            trend_labels = [p['title'] for p in performance_trend]
-            trend_scores = [round(float(p['percentage']), 1) for p in performance_trend]
+                ORDER BY ea.end_time ASC LIMIT 7
+        """, (student_id,))
+        performance_trend = cursor.fetchall()
+        trend_labels = [p['title'] for p in performance_trend]
+        trend_scores = [round(float(p['percentage']), 1) for p in performance_trend]
 
-            # --- RANKING: Class Standing (Fixed GROUP BY for ONLY_FULL_GROUP_BY mode) ---
-            cursor.execute("""
-                SELECT 
-                    rank_data.class_code,
-                    c.course_name,
-                    rank_data.student_avg,
-                    rank_data.class_rank,
-                    rank_data.total_students
+        # --- TABLE: Class Rankings ---
+        cursor.execute("""
+            SELECT rank_data.class_code, c.course_name, rank_data.student_avg, rank_data.class_rank, rank_data.total_students
+            FROM (
+                SELECT t.class_code, t.student_id, t.student_avg,
+                    RANK() OVER (PARTITION BY t.class_code ORDER BY t.student_avg DESC) as class_rank,
+                    COUNT(*) OVER (PARTITION BY t.class_code) as total_students
                 FROM (
-                    SELECT 
-                        t.class_code,
-                        t.student_id,
-                        t.student_avg,
-                        RANK() OVER (PARTITION BY t.class_code ORDER BY t.student_avg DESC) as class_rank,
-                        COUNT(*) OVER (PARTITION BY t.class_code) as total_students
-                    FROM (
-                        SELECT 
-                            en.class_code, 
-                            en.student_id, 
-                            AVG(COALESCE(ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100, 0)) as student_avg
-                        FROM enrollments en
-                        LEFT JOIN exams e ON en.class_code = e.class_code
-                        LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND en.student_id = ea.student_id
-                        WHERE (ea.status = 'finished' OR ea.status IS NULL)
-                        GROUP BY en.class_code, en.student_id
-                    ) t
-                ) rank_data
-                JOIN classes cl ON rank_data.class_code = cl.class_code
-                JOIN courses c ON cl.course_code = c.course_code
-                WHERE rank_data.student_id = %s
-                GROUP BY 
-                    rank_data.class_code, 
-                    c.course_name, 
-                    rank_data.student_avg, 
-                    rank_data.class_rank, 
-                    rank_data.total_students
-            """, (student_id,))
-            rankings = cursor.fetchall()
+                    SELECT en.class_code, en.student_id, 
+                        AVG(COALESCE(ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100, 0)) as student_avg
+                    FROM enrollments en
+                    LEFT JOIN exams e ON en.class_code = e.class_code
+                    LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND en.student_id = ea.student_id
+                    WHERE (ea.status = 'finished' OR ea.status IS NULL)
+                    GROUP BY en.class_code, en.student_id
+                ) t
+            ) rank_data
+            JOIN classes cl ON rank_data.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            WHERE rank_data.student_id = %s
+        """, (student_id,))
+        rankings = cursor.fetchall()
 
-            return render_template('student_dashboard.html', 
-                                   course_count=course_count, 
-                                   completed_count=completed_count, 
-                                   available_count=available_count,
-                                   student_firstname=student_firstname,
-                                   student_lastname=student_lastname,
-                                   trend_labels=trend_labels,
-                                   trend_scores=trend_scores,
-                                   rankings=rankings
-                                   )
-        finally:
-            cursor.close()
-            connection.close()
-    
-    flash('Please log in to access the dashboard.', 'danger')
-    return redirect(url_for('auth.login'))
+        return render_template('student_dashboard.html', 
+                               course_count=course_count, 
+                               completed_count=completed_count, 
+                               available_count=available_count,
+                               overall_avg=overall_avg,
+                               student_firstname=student_firstname,
+                               upcoming_exams=upcoming_exams,
+                               recent_results=recent_results,
+                               trend_labels=trend_labels,
+                               trend_scores=trend_scores,
+                               rankings=rankings)
+    finally:
+        cursor.close()
+        connection.close()
 
 #! PROFILE
-
 @student.route('/profile', methods=['GET', 'POST'])
 def profile():
     if not user_logged_in():
@@ -166,6 +184,7 @@ def profile():
 
     try:
         if request.method == 'POST':
+            # ... (keep your existing POST logic for updates)
             firstname = request.form.get('firstname')
             middlename = request.form.get('middlename')
             lastname = request.form.get('lastname')
@@ -173,20 +192,15 @@ def profile():
             confirm_password = request.form.get('confirm_password')
 
             cursor.execute("""
-                UPDATE students 
-                SET firstname = %s, middlename = %s, lastname = %s 
+                UPDATE students SET firstname = %s, middlename = %s, lastname = %s 
                 WHERE student_id = %s
             """, (firstname, middlename, lastname, user_id))
 
             if new_password:
                 if new_password == confirm_password:
-                    hashed_pw = generate_password_hash(new_password)
-                    cursor.execute(
-                        "UPDATE users SET password = %s WHERE user_id = %s",
-                        (hashed_pw, user_id)
-                    )
+                    cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", 
+                                   (generate_password_hash(new_password), user_id))
                 else:
-                    connection.rollback()
                     flash('Passwords do not match.', 'warning')
                     return redirect(url_for('student.profile'))
 
@@ -194,27 +208,34 @@ def profile():
             flash('Profile updated successfully.', 'success')
             return redirect(url_for('student.profile'))
 
-        # GET: Fetch Student Data
+        # --- GET: FETCH DETAILED STUDENT DATA ---
         cursor.execute("""
             SELECT u.user_id, u.email, u.role, u.created_at,
                    s.firstname, s.middlename, s.lastname,
-                   s.region, s.province, s.city, s.barangay
+                   s.region, s.province, s.city, s.barangay,
+                   b.block_name, pr.program_name, pr.description as program_desc
             FROM users u
             JOIN students s ON u.user_id = s.student_id
+            LEFT JOIN blocks b ON s.block_id = b.block_id
+            LEFT JOIN programs pr ON b.program_id = pr.program_id
             WHERE u.user_id = %s
         """, (user_id,))
         user_data = cursor.fetchone()
 
-        return render_template('student_profile.html', user=user_data)
+        # Fetch Academic Stats for the profile view
+        cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s AND status = 'active'", (user_id,))
+        course_count = cursor.fetchone()['count']
 
-    except mysql.connector.Error as err:
-        connection.rollback()
-        flash(f'Error: {err}', 'danger')
-        return redirect(url_for('student.profile'))
+        cursor.execute("SELECT COUNT(*) as count FROM exam_attempts WHERE student_id = %s AND status = 'finished'", (user_id,))
+        exam_count = cursor.fetchone()['count']
+
+        return render_template('student_profile.html', 
+                               user=user_data, 
+                               course_count=course_count, 
+                               exam_count=exam_count)
 
     finally:
-        cursor.close()
-        connection.close()
+        cursor.close(); connection.close()
 
 #! 2. AVAILABLE EXAMS
 @student.route('/student_exams')
@@ -690,6 +711,172 @@ def view_course(course_id):
                                total_exams=total_exams,
                                completed_exams=completed_exams,
                                now=now)
+    finally:
+        cursor.close()
+        connection.close()
+
+#! 5. ANALYTICS & INSIGHTS
+@student.route('/student_analytics')
+def student_analytics():
+    if not user_logged_in():
+        return redirect(url_for('auth.login'))
+
+    student_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # 1. COMPREHENSIVE STANDINGS (Leaderboard Logic)
+        # Groups all students in the same classes and ranks them by their average score
+        cursor.execute("""
+            SELECT 
+                r.class_code,
+                c.course_name,
+                r.student_id,
+                s.firstname, s.lastname,
+                r.avg_score,
+                RANK() OVER (PARTITION BY r.class_code ORDER BY r.avg_score DESC) as rank_pos,
+                COUNT(*) OVER (PARTITION BY r.class_code) as total_peers
+            FROM (
+                SELECT 
+                    en.class_code, 
+                    en.student_id, 
+                    AVG(COALESCE((ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0)) * 100, 0)) as avg_score
+                FROM enrollments en
+                LEFT JOIN exam_attempts ea ON en.student_id = ea.student_id
+                WHERE ea.status = 'finished' OR ea.status IS NULL
+                GROUP BY en.class_code, en.student_id
+            ) r
+            JOIN students s ON r.student_id = s.student_id
+            JOIN classes cl ON r.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            WHERE r.class_code IN (SELECT class_code FROM enrollments WHERE student_id = %s)
+            ORDER BY r.class_code, rank_pos ASC
+        """, (student_id,))
+        raw_standings = cursor.fetchall()
+        
+        # Group standings by course for the UI
+        standings_by_course = {}
+        for row in raw_standings:
+            course = row['course_name']
+            if course not in standings_by_course:
+                standings_by_course[course] = []
+            standings_by_course[course].append(row)
+
+        # 2. ITEM ANALYSIS (The "Class Killers")
+        # Identify questions in the student's courses that have the highest failure rate globally
+        cursor.execute("""
+            SELECT 
+                q.question_text, 
+                c.course_name,
+                COUNT(sa.answer_id) as total_attempts,
+                SUM(CASE WHEN sa.is_correct = 0 THEN 1 ELSE 0 END) as fail_count,
+                (SUM(CASE WHEN sa.is_correct = 0 THEN 1 ELSE 0 END) / COUNT(sa.answer_id) * 100) as difficulty_index
+            FROM student_answers sa
+            JOIN questions q ON sa.question_id = q.question_id
+            JOIN courses c ON q.course_code = c.course_code
+            JOIN enrollments en ON en.student_id = %s
+            JOIN classes cl ON en.class_code = cl.class_code AND cl.course_code = c.course_code
+            GROUP BY q.question_id, q.question_text, c.course_name
+            HAVING total_attempts > 2
+            ORDER BY difficulty_index DESC
+            LIMIT 5
+        """, (student_id,))
+        item_analysis = cursor.fetchall()
+
+        # 3. EXAM STATISTICS (Pass/Fail Distribution)
+        cursor.execute("""
+            SELECT 
+                SUM(CASE WHEN (ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100) >= e.pass_percentage THEN 1 ELSE 0 END) as pass_count,
+                SUM(CASE WHEN (ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100) < e.pass_percentage THEN 1 ELSE 0 END) as fail_count
+            FROM exam_attempts ea
+            JOIN exams e ON ea.exam_id = e.exam_id
+            WHERE ea.student_id = %s AND ea.status = 'finished'
+        """, (student_id,))
+        stats = cursor.fetchone()
+
+        return render_template('student_analytics.html', 
+                               standings=standings_by_course,
+                               item_analysis=item_analysis,
+                               stats=stats,
+                               student_id=student_id)
+    finally:
+        cursor.close()
+        connection.close()
+
+#! 6. CERTIFICATES & TRANSCRIPTS
+@student.route('/student_certificates')
+def student_certificates():
+    if not user_logged_in():
+        flash('Please log in to view your credentials.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    student_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # 1. FETCH TRANSCRIPTS (All finished exam attempts)
+        # These are used for the right-hand sidebar "Exam Transcripts"
+        cursor.execute("""
+            SELECT 
+                ea.attempt_id, 
+                e.title, 
+                c.course_code, 
+                c.course_name, 
+                ea.score, 
+                ea.end_time,
+                (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_q
+            FROM exam_attempts ea
+            JOIN exams e ON ea.exam_id = e.exam_id
+            JOIN classes cl ON e.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            WHERE ea.student_id = %s AND ea.status = 'finished'
+            ORDER BY ea.end_time DESC
+        """, (student_id,))
+        transcripts = cursor.fetchall()
+
+        # 2. FETCH CERTIFICATES (Calculated Achievements)
+        # Logic: If student scored >= 85% in an exam, they earn an "Excellence" certificate.
+        # If they scored between passing and 84%, they get "Completion".
+        cursor.execute("""
+            SELECT 
+                ea.attempt_id,
+                e.title as assessment_name,
+                c.course_name,
+                ea.score,
+                (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_q,
+                ea.end_time as issued_date,
+                e.pass_percentage
+            FROM exam_attempts ea
+            JOIN exams e ON ea.exam_id = e.exam_id
+            JOIN classes cl ON e.class_code = cl.class_code
+            JOIN courses c ON cl.course_code = c.course_code
+            WHERE ea.student_id = %s AND ea.status = 'finished'
+        """, (student_id,))
+        raw_certs = cursor.fetchall()
+
+        certificates = []
+        for cert in raw_certs:
+            # Calculate percentage
+            total = cert['total_q']
+            score = cert['score']
+            percent = (score / total * 100) if total > 0 else 0
+            
+            # Filter for achievements
+            if percent >= 85:
+                cert['type'] = 'Certificate of Excellence'
+                cert['grade'] = 'A+'
+                certificates.append(cert)
+            elif percent >= cert['pass_percentage']:
+                cert['type'] = 'Certificate of Completion'
+                cert['grade'] = 'Pass'
+                certificates.append(cert)
+
+        return render_template('student_certificates.html', 
+                               certificates=certificates, 
+                               transcripts=transcripts)
+
     finally:
         cursor.close()
         connection.close()

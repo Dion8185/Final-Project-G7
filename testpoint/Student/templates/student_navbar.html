@@ -1,30 +1,46 @@
-<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
+<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top border-bottom">
+
+    <!-- Sidebar Toggle (Topbar) -->
+    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+        <i class="fa fa-bars" style="color: var(--tp-student-accent);"></i>
+    </button>
+
+    <!-- Topbar Navbar -->
     <ul class="navbar-nav ml-auto">
-        <li class="nav-item dropdown no-arrow mx-1">
-            <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown">
-                <i class="fas fa-bell fa-fw text-gray-600"></i><span class="badge badge-danger badge-counter">1</span>
-            </a>
-            <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                <h6 class="dropdown-header">Academic Alerts</h6>
-                <a class="dropdown-item d-flex align-items-center" href="#"><div><div class="small text-gray-500">Just Now</div>Your "Midterm" grade was posted!</div></a>
-            </div>
-        </li>
-        <div class="topbar-divider d-none d-sm-block"></div>
+
+        <!-- User Information -->
         <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                <!-- Fixed Jinja syntax error here. Used session.get() as a fallback so the name still shows up on pages where you don't explicitly pass student_firstname from the backend -->
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ session.get('firstname', student_firstname) }} {{ session.get('lastname', student_lastname) }}</span>
-                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_1.svg">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                
+                <div class="d-flex flex-column text-right mr-3 d-none d-lg-block">
+                    <span class="text-dark font-weight-bold small mb-0" style="line-height: 1.2;">
+                        {{ session.get('firstname', student_firstname) }} {{ session.get('lastname', student_lastname) }}
+                    </span>
+                </div>
+
+                <div class="position-relative">
+                    <img class="img-profile rounded-circle shadow-sm" 
+                         src="https://ui-avatars.com/api/?name={{ session.get('firstname', student_firstname) }}+{{ session.get('lastname', student_lastname) }}&background=2d5be3&color=fff&bold=true"
+                         style="width: 38px; height: 38px; object-fit: cover; border: 2px solid var(--tp-student-accent-lt);">
+                </div>
             </a>
-            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                <a class="dropdown-item" href="{{url_for('student.profile')}}"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                <div class="dropdown-divider"></div>
-                <button type="button" class="dropdown-item border-0 bg-transparent w-100 text-left"
+
+            <div class="dropdown-menu dropdown-menu-right shadow border-0 animated--grow-in mt-2" style="border-radius: 12px; padding: 10px; min-width: 200px;">
+                <a class="dropdown-item rounded py-2" href="{{url_for('student.profile')}}">
+                    <i class="fas fa-user-circle fa-sm fa-fw mr-2 text-gray-400"></i>
+                    <span style="font-size: 13.5px;">Student Profile</span>
+                </a>
+
+                <div class="dropdown-divider" style="opacity: 0.05;"></div>
+                
+                <button type="button" class="dropdown-item rounded py-2 text-danger font-weight-bold border-0 bg-transparent w-100 text-left"
                     data-toggle="modal" data-target="#logoutModal">
-                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
+                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i>
+                    <span style="font-size: 13.5px;">Sign Out</span>
                 </button>
             </div>
         </li>
+
     </ul>
+
 </nav>

@@ -1,231 +1,132 @@
 {% extends 'student_base.html' %}
 {% block title %}{{ course.course_code }} - {{ course.course_name }}{% endblock %}
 {% set sidebar_active = 'course_view' %}
-<!-- Added current_course_id so the sidebar properly highlights this specific class block -->
 {% set current_course_id = course.class_code %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-
-    <!-- Page Header -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800 font-weight-bold">{{ course.course_name }}</h1>
-        <div>
-            <span class="badge badge-primary p-2 mr-2 shadow-sm">{{ course.course_code }}</span>
-            <!-- Highlighted Class Code Badge for easy visibility -->
-            <span class="badge badge-info p-2 shadow-sm" style="letter-spacing: 0.5px;">CLASS ID: <strong>{{
-                    course.class_code }}</strong></span>
-        </div>
+<!-- ── HEADER ── -->
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink);" class="mb-0">{{ course.course_name }}</h1>
+        <p class="text-muted mb-0">Class ID: <span class="font-weight-bold">{{ course.class_code }}</span> • Instructor: <span class="font-weight-bold">{{ course.t_fname }} {{ course.t_lname }}</span></p>
     </div>
-
-    <!-- Quick Stats Row -->
-    <div class="row">
-        <!-- Progress Card -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Course Progress</div>
-                            <div class="row no-gutters align-items-center">
-                                <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ progress_pct }}%</div>
-                                </div>
-                                <div class="col">
-                                    <div class="progress progress-sm mr-2">
-                                        <div class="progress-bar bg-primary" role="progressbar"
-                                            style="width: {{ progress_pct }}%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-tasks fa-2x text-gray-300"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Exams Completed Card -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Tests Finished</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_exams }} / {{ total_exams
-                                }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-clipboard-check fa-2x text-gray-300"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Instructor Card -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Instructor</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname
-                                }}</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-user-tie fa-2x text-gray-300"></i></div>
-                    </div>
-                </div>
+    <div class="col-md-4 text-md-right mt-3 mt-md-0">
+        <div class="d-inline-flex align-items-center bg-white p-2 rounded-pill shadow-sm border px-3">
+            <div class="text-muted small font-weight-bold mr-3 text-uppercase" style="letter-spacing: 0.5px;">Progress</div>
+            <div class="h5 font-weight-bold text-primary mb-0 mr-3">{{ progress_pct }}%</div>
+            <div class="progress" style="height: 6px; width: 60px; border-radius: 10px;">
+                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ progress_pct }}%"></div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        <!-- Left Column: Course Details & Exams -->
-        <div class="col-lg-8">
-            <!-- Course Description -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-info-circle mr-2"></i>About this
-                        Course</h6>
-                </div>
-                <div class="card-body">
-                    <p class="text-gray-700">{{ course.description or 'No description available for this course.' }}</p>
-                </div>
+<div class="row">
+    <!-- ── LEFT: ABOUT & EXAMS ── -->
+    <div class="col-lg-8">
+        <!-- Description Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Subject Description</h6>
             </div>
-
-            <!-- Course Exams Table -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-edit mr-2"></i>Exam List</h6>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table m-0 table-hover">
-                            <thead class="bg-light text-dark">
-                                <tr>
-                                    <th>Exam Title</th>
-                                    <th>Status</th>
-                                    <th class="text-center">Score</th>
-                                    <th class="text-center">Schedule</th>
-                                    <th class="text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if course_exams %}
-                                {% for exam in course_exams %}
-                                <tr {% if exam.attempt_status=='blocked' %}class="table-light" {% endif %}>
-                                    <td class="align-middle font-weight-bold text-dark">{{ exam.title }}</td>
-                                    <td class="align-middle">
-                                        {% if exam.attempt_status == 'blocked' %}
-                                        <span class="badge badge-dark">Blocked</span>
-                                        {% elif exam.attempt_status == 'finished' %}
-                                        <span class="badge badge-success">Completed</span>
-                                        {% elif exam.is_active == 0 %}
-                                        <span class="badge badge-secondary">Unavailable</span>
-                                        {% elif exam.is_upcoming %}
-                                        <span class="badge badge-warning">Upcoming</span>
-                                        {% elif exam.is_expired %}
-                                        <span class="badge badge-danger">Missed / Expired</span>
-                                        {% elif exam.attempt_status == 'in-progress' %}
-                                        <span class="badge badge-info">In Progress</span>
-                                        {% else %}
-                                        <span class="badge badge-primary">Available</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="align-middle text-center">
-                                        {% if exam.attempt_status == 'finished' %}
-                                        <span class="font-weight-bold text-dark">{{ exam.score | int }} / {{
-                                            exam.total_q }} </span>
-                                        {% else %}
-                                        <span class="text-muted">--</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center align-middle small">
-                                        <span class="text-dark d-block">{{ exam.date_time.strftime("%b %d, %Y") if
-                                            exam.date_time else 'TBA' }}</span>
-                                        <span class="text-muted">{{ exam.date_time.strftime("%I:%M %p") if
-                                            exam.date_time else '' }}</span>
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        {% if exam.attempt_status == 'blocked' %}
-                                        <button class="btn btn-sm btn-secondary rounded-pill px-3" disabled
-                                            title="Access restricted for this specific exam">
-                                            <i class="fas fa-lock"></i> Locked
-                                        </button>
-
-                                        {% elif exam.attempt_status == 'finished' %}
-                                        <a href="{{ url_for('student.review_exam', attempt_id=exam.attempt_id) }}"
-                                            class="btn btn-sm btn-outline-primary shadow-sm rounded-pill px-3">
-                                            <i class="fas fa-poll mr-1"></i> Review
-                                        </a>
-
-                                        {% elif exam.is_active == 0 %}
-                                        <span class="text-muted small">Inactive</span>
-
-                                        {% elif exam.is_upcoming %}
-                                        <span class="text-warning font-weight-bold small">
-                                            <i class="fas fa-clock mr-1"></i> Opens Soon
-                                        </span>
-
-                                        {% elif exam.is_expired %}
-                                        <span class="text-danger font-weight-bold small">
-                                            <i class="fas fa-times-circle mr-1"></i> Closed
-                                        </span>
-
-                                        {% else %}
-                                        <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}"
-                                            class="btn btn-sm btn-primary shadow-sm px-4 font-weight-bold rounded-pill">
-                                            {% if exam.attempt_status == 'in-progress' %}
-                                            Resume
-                                            {% else %}
-                                            Start
-                                            {% endif %}
-                                        </a>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="fas fa-folder-open fa-3x text-gray-200 mb-3"></i><br>
-                                        No exams have been posted for this course yet.
-                                    </td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="card-body">
+                <p class="text-gray-700 mb-0" style="line-height: 1.6;">{{ course.description or 'Course syllabus and information pending from instructor.' }}</p>
             </div>
         </div>
 
-        <!-- Right Column: Teacher Contact & Resources -->
-        <div class="col-lg-4">
-            <div class="card shadow mb-4 text-center">
-                <div class="card-body">
-                    <div class="mb-3">
-                        <img class="img-profile rounded-circle" style="width:80px;"
-                            src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
-                    </div>
-                    <h5 class="font-weight-bold text-gray-800">{{ course.t_fname }} {{ course.t_lname }}</h5>
-                    <p class="small text-muted mb-3">Course Instructor</p>
-                    <a href="mailto:{{ course.t_email }}"
-                        class="btn btn-sm btn-outline-secondary btn-block rounded-pill">
-                        <i class="fas fa-envelope mr-1"></i> Send Message
-                    </a>
+        <!-- Exam List Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Curriculum Examinations</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="bg-light text-muted small text-uppercase" style="font-size: 10px; letter-spacing: 1.5px;">
+                            <tr>
+                                <th class="px-4 py-3 border-0">Assessment Title</th>
+                                <th class="text-center py-3 border-0">Status</th>
+                                <th class="text-center py-3 border-0">Result</th>
+                                <th class="text-center py-3 border-0">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody style="font-size: 14px;">
+                            {% if course_exams %}
+                            {% for exam in course_exams %}
+                            <tr>
+                                <td class="px-4 py-3 border-0">
+                                    <div class="font-weight-bold text-dark">{{ exam.title }}</div>
+                                    <div class="small text-muted"><i class="far fa-calendar-alt mr-1"></i> {{ exam.date_time.strftime("%b %d, %Y") if exam.date_time else 'TBA' }}</div>
+                                </td>
+                                <td class="text-center py-3 border-0">
+                                    {% if exam.attempt_status == 'blocked' %}
+                                        <span class="badge badge-dark rounded-pill px-3 py-1">Blocked</span>
+                                    {% elif exam.attempt_status == 'finished' %}
+                                        <span class="badge badge-success rounded-pill px-3 py-1">Completed</span>
+                                    {% elif exam.is_active == 0 %}
+                                        <span class="badge badge-light border rounded-pill px-3 py-1">Inactive</span>
+                                    {% elif exam.is_upcoming %}
+                                        <span class="badge badge-warning rounded-pill px-3 py-1">Upcoming</span>
+                                    {% elif exam.is_expired %}
+                                        <span class="badge badge-danger rounded-pill px-3 py-1">Closed</span>
+                                    {% else %}
+                                        <span class="badge badge-primary rounded-pill px-3 py-1">Available</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center py-3 border-0">
+                                    {% if exam.attempt_status == 'finished' %}
+                                        <div class="font-weight-bold text-dark">{{ exam.score | int }} / {{ exam.total_q }}</div>
+                                    {% else %}
+                                        <span class="text-muted small">--</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center py-3 border-0">
+                                    {% if exam.attempt_status == 'finished' %}
+                                        <a href="{{ url_for('student.review_exam', attempt_id=exam.attempt_id) }}" class="btn btn-light btn-circle-sm border shadow-sm">
+                                            <i class="fas fa-eye text-primary"></i>
+                                        </a>
+                                    {% elif exam.can_take %}
+                                        <a href="{{ url_for('student.take_exam', exam_id=exam.exam_id) }}" class="btn btn-primary btn-sm rounded-pill px-4 font-weight-bold shadow-sm">
+                                            {{ 'Resume' if exam.attempt_status == 'in-progress' else 'Start' }}
+                                        </a>
+                                    {% else %}
+                                        <i class="fas fa-lock text-gray-300"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-5 text-muted small">No assessments found for this course.</td></tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-primary text-white">
-                    <h6 class="m-0 font-weight-bold">Learning Materials</h6>
-                </div>
-                <div class="card-body">
-                    <div class="text-center py-3">
-                        <i class="fas fa-folder-open fa-3x text-gray-200 mb-2"></i>
-                        <p class="small text-muted">No materials uploaded yet by instructor.</p>
-                    </div>
-                </div>
+    <!-- ── RIGHT: INSTRUCTOR & MATERIALS ── -->
+    <div class="col-lg-4">
+        <!-- Instructor Widget -->
+        <div class="card shadow-sm border-0 mb-4 text-center p-4">
+            <div class="card-body">
+                <img class="img-profile rounded-circle mb-3 border" style="width:72px;" src="https://ui-avatars.com/api/?name={{ course.t_fname }}+{{ course.t_lname }}&background=2d5be3&color=fff">
+                <h6 class="font-weight-bold text-dark mb-1">{{ course.t_fname }} {{ course.t_lname }}</h6>
+                <p class="small text-muted mb-4">Course Instructor</p>
+                <a href="mailto:{{ course.t_email }}" class="btn btn-outline-primary rounded-pill btn-block btn-sm font-weight-bold py-2">
+                    <i class="fas fa-paper-plane mr-2"></i> Contact Professor
+                </a>
+            </div>
+        </div>
+
+        <!-- Placeholder for Learning Materials -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Resources</h6>
+            </div>
+            <div class="card-body pt-0 text-center py-4">
+                <i class="fas fa-folder-open text-gray-200 fa-3x mb-2"></i>
+                <p class="text-muted small mb-0">No shared files available yet.</p>
             </div>
         </div>
     </div>

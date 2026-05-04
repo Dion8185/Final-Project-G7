@@ -4,70 +4,86 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{% block title %}Student Portal{% endblock %}</title>
+    <title>{% block title %}Student Portal — TestPoint{% endblock %}</title>
+    
+    <!-- ── CSS Stack ── -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/testpoint.svg') }}">
     
     <style>
-        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { border: none; }
+        :root {
+            --tp-student-accent: #2d5be3;
+            --tp-student-accent-lt: rgba(45, 91, 227, 0.1);
+            --tp-student-ink: #0f0e11;
+            --tp-student-gray: #1e1e24;
+            --tp-student-bg: #f8f9fa;
+            --tp-student-border: rgba(0,0,0,0.06);
+            --tp-student-radius: 12px;
+            --tp-font: 'DM Sans', sans-serif;
+            --tp-serif: 'DM Serif Display', serif;
+        }
 
-        /* --- THE FIX: Sidebar Dropdown Constraints --- */
+        body { font-family: var(--tp-font); background: var(--tp-student-bg) !important; color: var(--tp-student-ink); }
+
+        #wrapper { display: flex; min-height: 100vh; }
+
+        /* ── SIDEBAR (Mimicking Admin Logic) ── */
+        .sidebar { 
+            background: var(--tp-student-gray) !important;
+            background-image: none !important;
+            position: sticky; top: 0; height: 100vh; z-index: 1020;
+            overflow-y: auto; overflow-x: hidden;
+            transition: width 0.2s ease-in-out !important; 
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .sidebar .nav-item .nav-link { font-weight: 500; padding: 1rem; color: rgba(255,255,255,0.6) !important; }
+        .sidebar .nav-item .nav-link:hover, .sidebar .nav-item.active .nav-link { color: #fff !important; }
+        .sidebar .nav-item.active .nav-link i { color: var(--tp-student-accent) !important; opacity: 1 !important; }
+        .sidebar .nav-item .nav-link i { font-size: 0.9rem; margin-right: 0.75rem; opacity: 0.5; }
+        .sidebar .sidebar-brand { height: 4.375rem; text-transform: none; font-family: var(--tp-serif); font-size: 1.25rem; letter-spacing: -0.5px; }
+
+        /* ── CONTENT WRAPPER ── */
+        #content-wrapper { background: var(--tp-student-bg); }
+
+        .topbar { 
+            background: #fff !important; border-bottom: 1px solid var(--tp-student-border);
+            box-shadow: none !important; position: sticky; top: 0; z-index: 1030;
+        }
+
+        /* ── MODERN CARDS ── */
+        .card { 
+            border: 1px solid var(--tp-student-border) !important; 
+            border-radius: var(--tp-student-radius) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+        }
+        .card-header { background: transparent !important; border-bottom: 1px solid var(--tp-student-border) !important; padding: 1.25rem !important; }
+
+        /* ── UTILITIES ── */
+        .rounded-pill { border-radius: 50px !important; }
+        .btn-circle-sm { width: 32px; height: 32px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; }
         
-        /* 1. Force the dropdown items to wrap text instead of stretching the box */
-        .sidebar .collapse-inner .collapse-item {
-            white-space: normal !important; 
-            display: flex !important;       
-            align-items: flex-start;
-            padding: 0.75rem 1rem !important;
-            border-bottom: 1px solid #f8f9fc;
-            word-wrap: break-word; /* Ensure long words break if needed */
-        }
-
-        /* 2. Adjust the icon alignment for wrapped text */
-        .sidebar .collapse-inner .collapse-item i {
-            margin-top: 4px;
-            min-width: 15px; /* Keep icon from shrinking */
-        }
-
-        /* 3. Constrain the white dropdown container to the sidebar width */
-        #collapseCourses .collapse-inner {
-            width: auto !important;
-            max-width: calc(100% - 20px) !important; /* Keep it within sidebar padding */
-            margin: 0 auto;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-        }
-
-        /* 4. Fix for the 'mini' sidebar (when toggled/collapsed) */
-        .sidebar.toggled #collapseCourses {
-            position: absolute;
-            left: calc(6.5rem + 5px); /* Push it to the right of the small icons */
-            width: 200px !important;
-            z-index: 1000;
-        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         
-        .sidebar.toggled .collapse-inner {
-            width: 200px !important;
-            max-width: 200px !important;
-        }
-    </style>
-
-    {% if session.get('active_exam_id') %}
-    <style>
-        /* Prevent UI interaction during lockdown - Only active during exams */
+        /* ── LOCKDOWN OVERRIDES ── */
+        {% if session.get('active_exam_id') %}
         .no-nav { pointer-events: none; opacity: 0.6; }
-    </style>
-    {% endif %}
+        {% endif %}
 
+        @media (max-width: 768px) {
+            .sidebar { overflow-y: visible !important; overflow-x: visible !important; }
+            .sidebar .nav-item .collapse { position: static !important; }
+        }
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body id="page-top">
     <div id="wrapper">
         
-        <!-- SIDEBAR: Hidden during active exam -->
         {% if not session.get('active_exam_id') %}
             {% include 'student_sidebar.html' %}
         {% endif %}
@@ -75,71 +91,51 @@
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 
-                <!-- TOP NAVBAR -->
-                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                    {% if not session.get('active_exam_id') %}
-                    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3"><i class="fa fa-bars"></i></button>
-                    {% else %}
-                    <span class="navbar-brand text-danger font-weight-bold ml-3"><i class="fas fa-lock mr-2"></i> LOCKDOWN MODE ACTIVE</span>
-                    {% endif %}
-
-                    <ul class="navbar-nav ml-auto">
-                        <li class="nav-item dropdown no-arrow">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                               <span class="mr-2 text-gray-600 small">{{ session['firstname'] }} {{ session['lastname'] }}</span>
-                                <img class="img-profile rounded-circle" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg">
-                            </a>
-                            <!-- User Menu: Only Logout is allowed during exam -->
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                                {% if not session.get('active_exam_id') %}
-                                <a class="dropdown-item" href="{{ url_for('student.profile') }}"><i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i> Profile</a>
-                                <div class="dropdown-divider"></div>
-                                {% endif %}
-                                <button type="button" class="dropdown-item text-danger font-weight-bold border-0 bg-transparent w-100 text-left"
-                                    data-toggle="modal" data-target="#logoutModal">
-                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i>
-                                    {% if session.get('active_exam_id') %}Submit & Logout{% else %}Logout{% endif %}
-                                </button>
-                            </div>
-                        </li>
-                    </ul>
+                {% if not session.get('active_exam_id') %}
+                    {% include 'student_navbar.html' %}
+                {% else %}
+                <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top border-bottom">
+                    <span class="navbar-brand text-danger font-weight-bold ml-3" style="font-size: 14px; letter-spacing: 1px;">
+                        <i class="fas fa-lock mr-2 animate__animated animate__flash animate__infinite"></i> LOCKDOWN MODE ACTIVE
+                    </span>
                 </nav>
+                {% endif %}
 
-                {% block content %}{% endblock %}
-
+                <div class="container-fluid animate__animated animate__fadeIn">
+                    {% block content %}{% endblock %}
+                </div>
             </div>
-            <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
+            <footer class="sticky-footer bg-white border-top">
+                <div class="container my-auto text-center">
+                    <span class="small font-weight-bold text-muted">TestPoint Student &copy; 2026</span>
+                </div>
+            </footer>
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <!-- Logout Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-0">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold text-gray-800" id="logoutModalLabel">
-                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i>
-                        {% if session.get('active_exam_id') %}Submit &amp; Logout{% else %}Confirm Logout{% endif %}
+            <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif); font-size: 1.5rem;">
+                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i> 
+                        {% if session.get('active_exam_id') %}Submit & End Session?{% else %}Ready to Leave?{% endif %}
                     </h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <div class="modal-body text-gray-600">
+                <div class="modal-body text-gray-600 px-4 mt-2">
                     {% if session.get('active_exam_id') %}
-                        <p class="mb-0">Your exam will be <strong>submitted</strong> and you will be logged out. Are you sure you want to continue?</p>
+                        Your exam progress will be <strong class="text-dark">automatically submitted</strong> before logging out.
                     {% else %}
-                        <p class="mb-0">Are you sure you want to log out?</p>
+                        Select "Sign Out" below if you are ready to end your current session.
                     {% endif %}
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-dismiss="modal">
-                        Cancel
-                    </button>
+                <div class="modal-footer border-0 pt-3 pb-4 px-4">
+                    <button class="btn btn-light px-4 rounded-pill" type="button" data-dismiss="modal">Cancel</button>
                     <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="fas fa-sign-out-alt fa-sm mr-1"></i>
-                            {% if session.get('active_exam_id') %}Submit &amp; Logout{% else %}Logout{% endif %}
+                        <button type="submit" class="btn btn-danger px-4 rounded-pill">
+                            {% if session.get('active_exam_id') %}Submit & Logout{% else %}Sign Out{% endif %}
                         </button>
                     </form>
                 </div>
@@ -147,6 +143,7 @@
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>

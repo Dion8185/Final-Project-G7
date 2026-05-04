@@ -1,55 +1,187 @@
 {% extends 'student_base.html' %}
-{% block title %}Account Settings{% endblock %}
+{% block title %}Detailed Profile | TestPoint{% endblock %}
 {% set sidebar_active = 'profile' %}
+
 {% block head %}
 <style>
-    .profile-header-img { width: 120px; height: 120px; object-fit: cover; border: 5px solid #fff; }
+    .tp-profile-cover {
+        height: 160px;
+        background: linear-gradient(135deg, #2d5be3 0%, #1e40af 100%);
+        border-radius: 15px 15px 0 0;
+        position: relative;
+    }
+    .tp-profile-avatar-container {
+        position: absolute;
+        bottom: -50px;
+        left: 40px;
+        z-index: 5;
+    }
+    .tp-profile-avatar-img {
+        width: 120px;
+        height: 120px;
+        border: 5px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background: #fff;
+    }
+    .tp-stat-mini {
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid var(--tp-student-border);
+    }
+    .tp-info-label {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #94a3b8;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+    .tp-info-text {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 14px;
+    }
+    .tp-form-input {
+        border-radius: 10px !important;
+        border: 1.5px solid var(--tp-student-border) !important;
+        padding: 0.6rem 1rem !important;
+        font-size: 14px !important;
+    }
+    .tp-form-input:focus {
+        border-color: var(--tp-student-accent) !important;
+        box-shadow: 0 0 0 4px rgba(45,91,227,0.1) !important;
+    }
 </style>
 {% endblock %}
+
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeInUp">
-    <h1 class="h3 mb-4 text-gray-800">Account Settings</h1>
-    <div class="row">
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-body text-center">
-                    <img src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile.svg" class="rounded-circle profile-header-img shadow mb-3">
-                    <h4 class="font-weight-bold text-dark">{{ user.firstname }} {{ user.lastname }}</h4>
-                    <p class="text-muted small mb-3">ID: {{ user.user_id }} | Role: {{ user.role|upper }}</p>
-                    <div class="p-2 bg-light rounded text-left">
-                        <p class="small mb-1"><strong>Email:</strong> {{ user.email }}</p>
-                        <p class="small mb-1"><strong>Joined:</strong> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
-                        <p class="small mb-0"><strong>Location:</strong> {{ user.city }}, {{ user.province }}</p>
+<!-- ── TOP PROFILE HEADER ── -->
+<div class="card border-0 shadow-sm mb-5" style="border-radius: 15px; overflow: visible;">
+    <div class="tp-profile-cover">
+        <div class="tp-profile-avatar-container">
+            <img src="https://ui-avatars.com/api/?name={{ user.firstname }}+{{ user.lastname }}&background=fff&color=2d5be3&size=200&font-size=0.35" class="tp-profile-avatar-img">
+        </div>
+    </div>
+    <div class="card-body" style="padding: 60px 40px 30px;">
+        <div class="row align-items-end">
+            <div class="col-lg-7">
+                <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink); font-size: 2.4rem;" class="mb-1">
+                    {{ user.firstname }} {{ user.lastname }}
+                </h1>
+                <p class="text-muted mb-0">
+                    <span class="badge badge-primary rounded-pill px-3">{{ user.program_name or 'Independent Learner' }}</span>
+                    <span class="mx-2">/</span>
+                    Section: <span class="font-weight-bold text-dark">{{ user.block_name or 'N/A' }}</span>
+                </p>
+            </div>
+            <div class="col-lg-5 text-lg-right mt-3">
+                <div class="d-inline-flex gap-3">
+                    <div class="tp-stat-mini text-center mx-2">
+                        <div class="h5 mb-0 font-weight-bold text-primary">{{ course_count }}</div>
+                        <div class="small text-muted" style="font-size: 9px; font-weight: 800;">ACTIVE COURSES</div>
+                    </div>
+                    <div class="tp-stat-mini text-center mx-2">
+                        <div class="h5 mb-0 font-weight-bold text-success">{{ exam_count }}</div>
+                        <div class="small text-muted" style="font-size: 9px; font-weight: 800;">EXAMS PASSED</div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-dark">
-                    <h6 class="m-0 font-weight-bold text-white">Edit Profile Details</h6>
+    </div>
+</div>
+
+<div class="row">
+    <!-- ── LEFT COLUMN: ACADEMIC DETAILS ── -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Academic Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="tp-info-label">Degree Program</div>
+                    <div class="tp-info-text">{{ user.program_name or 'Unassigned' }}</div>
+                    <div class="small text-muted mt-1">{{ user.program_desc or '' }}</div>
                 </div>
-                <div class="card-body">
-                    <form action="{{ url_for('student.profile') }}" method="POST">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="small font-weight-bold">First Name</label>
-                                <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="small font-weight-bold">Middle Name</label>
-                                <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="small font-weight-bold">Last Name</label>
-                                <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
-                            </div>
-                        </div>
-                        <div class="mt-4 text-right">
-                            <button type="submit" class="btn btn-dark shadow-sm px-4">Update Profile</button>
-                        </div>
-                    </form>
+                <div class="mb-4">
+                    <div class="tp-info-label">Current Section</div>
+                    <div class="tp-info-text">Block {{ user.block_name or 'N/A' }}</div>
                 </div>
+                <div class="mb-4">
+                    <div class="tp-info-label">Email Verified</div>
+                    <div class="tp-info-text text-success"><i class="fas fa-check-circle mr-1"></i> {{ user.email }}</div>
+                </div>
+                <div class="mb-0">
+                    <div class="tp-info-label">Registered Address</div>
+                    <div class="tp-info-text" style="font-size: 13px; font-weight: 500; line-height: 1.5;">
+                        {{ user.barangay }}, {{ user.city }}<br>
+                        {{ user.province }}, {{ user.region }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Registration Date Meta -->
+        <div class="card border-0 shadow-sm p-4 text-center" style="background: #f1f5f9; border-radius: 12px;">
+            <div class="small text-muted font-weight-bold text-uppercase mb-2" style="letter-spacing: 1px;">Member Since</div>
+            <div class="h6 font-weight-bold text-dark mb-0">
+                <i class="far fa-calendar-alt mr-2 text-primary"></i> {{ user.created_at.strftime('%B %d, %Y') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- ── RIGHT COLUMN: SETTINGS FORM ── -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Manage Account</h6>
+            </div>
+            <div class="card-body p-4 p-lg-5">
+                <form action="{{ url_for('student.profile') }}" method="POST">
+                    
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold text-dark border-left border-primary pl-2" style="border-width: 3px !important;">Personal Details</h6>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="tp-info-label">First Name</label>
+                            <input type="text" class="form-control tp-form-input" name="firstname" value="{{ user.firstname }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="tp-info-label">Middle Name</label>
+                            <input type="text" class="form-control tp-form-input" name="middlename" value="{{ user.middlename }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="tp-info-label">Last Name</label>
+                            <input type="text" class="form-control tp-form-input" name="lastname" value="{{ user.lastname }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 mb-4">
+                        <h6 class="font-weight-bold text-dark border-left border-primary pl-2" style="border-width: 3px !important;">Security Update</h6>
+                        <p class="text-muted small">Enter a new password below only if you want to change your current one.</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="tp-info-label">New Password</label>
+                            <input type="password" class="form-control tp-form-input" name="password" placeholder="Leave blank to keep current">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="tp-info-label">Confirm New Password</label>
+                            <input type="password" class="form-control tp-form-input" name="confirm_password" placeholder="Confirm new password">
+                        </div>
+                    </div>
+
+                    <div class="mt-5 text-right">
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 font-weight-bold shadow-sm">
+                            <i class="fas fa-save mr-2"></i> Update My Profile
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

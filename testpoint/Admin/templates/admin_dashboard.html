@@ -258,7 +258,8 @@
 
     var backgroundColors = labels.map(function(label) {
         var l = label.toLowerCase();
-        if (l === 'admin') return '#1a1a1a';   
+        if (l === 'admin') return '#1a1a1a';
+        if (l === 'super_admin') return '#FFFF00';
         if (l === 'teacher') return '#e74a3b'; 
         return '#4e73df';                     
     });
