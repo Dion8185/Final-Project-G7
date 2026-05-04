@@ -1,59 +1,47 @@
-<ul class="navbar-nav sidebar sidebar-dark accordion" id="accordionSidebar">
+<ul class="navbar-nav sidebar sidebar-dark accordion" id="accordionSidebar" style="min-height: 100vh;">
 
     <!-- Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{url_for('admin.admin_dashboard')}}">
         <div class="sidebar-brand-icon" style="color: #fff;"><i class="fas fa-shield-alt"></i></div>
         <div class="sidebar-brand-text mx-2" style="font-family: var(--tp-serif); font-weight: 400;">
-            TestPoint <span style="font-size: 10px; opacity: 0.5; vertical-align: middle;">Admin</span>
+            TestPoint <span style="font-size: 10px; opacity: 0.5;">Admin</span>
         </div>
     </a>
 
     <hr class="sidebar-divider my-0" style="opacity: 0.05;">
 
-    <div class="sidebar-heading mt-4" style="font-size: 0.65rem; letter-spacing: 1.5px; color: rgba(255,255,255,0.2);">MAIN MENU</div>
-
     <!-- Dashboard -->
     <li class="nav-item">
-        <a class="nav-link d-flex align-items-center" href="{{url_for('admin.admin_dashboard')}}">
+        <a class="nav-link" href="{{url_for('admin.admin_dashboard')}}">
             <i class="fas fa-fw fa-th-large"></i>
             <span>Dashboard</span>
         </a>
     </li>
 
-    <hr class="sidebar-divider" style="opacity: 0.05;">
-
-    <div class="sidebar-heading" style="font-size: 0.65rem; letter-spacing: 1.5px; color: rgba(255,255,255,0.2);">GOVERNANCE</div>
-
-    <!-- Section 1: User Management -->
+    <!-- Section 1: Users -->
     <li class="nav-item">
-        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseUsers" aria-expanded="false">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-fw fa-users"></i>
-                <span>Users</span>
-            </div>
-            <i class="fas fa-chevron-down dropdown-chevron"></i>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUsers"
+           aria-expanded="false" aria-controls="collapseUsers">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Users</span>
         </a>
         <div id="collapseUsers" class="collapse" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">User Controls:</h6>
                 <a class="collapse-item" href="{{url_for('admin.manage_accounts')}}">Account Manager</a>
                 <a class="collapse-item" href="{{url_for('admin.view_verifications')}}">Verifications</a>
             </div>
         </div>
     </li>
 
-    <!-- Section 2: Academic Structure -->
+    <!-- Section 2: Academic -->
     <li class="nav-item">
-        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseAcademic" aria-expanded="false">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-fw fa-graduation-cap"></i>
-                <span>Academic</span>
-            </div>
-            <i class="fas fa-chevron-down dropdown-chevron"></i>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAcademic"
+           aria-expanded="false" aria-controls="collapseAcademic">
+            <i class="fas fa-fw fa-graduation-cap"></i>
+            <span>Academic</span>
         </a>
         <div id="collapseAcademic" class="collapse" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Hierarchy:</h6>
                 <a class="collapse-item" href="{{url_for('admin.manage_programs')}}">Programs</a>
                 <a class="collapse-item" href="{{url_for('admin.manage_blocks')}}">Blocks</a>
                 <a class="collapse-item" href="{{url_for('admin.manage_courses')}}">Catalog</a>
@@ -61,40 +49,30 @@
         </div>
     </li>
 
-    <!-- Section 3: Class Control -->
+    <!-- Section 3: Operations -->
     <li class="nav-item">
-        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseClasses" aria-expanded="false">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-fw fa-stream"></i>
-                <span>Operations</span>
-            </div>
-            <i class="fas fa-chevron-down dropdown-chevron"></i>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseOperations"
+           aria-expanded="false" aria-controls="collapseOperations">
+            <i class="fas fa-fw fa-stream"></i>
+            <span>Operations</span>
         </a>
-        <div id="collapseClasses" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseOperations" class="collapse" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Operations:</h6>
                 <a class="collapse-item" href="{{url_for('admin.manage_classes')}}">Active Classes</a>
                 <a class="collapse-item" href="{{url_for('admin.oversee_exams')}}">Exam Monitor</a>
             </div>
         </div>
     </li>
 
-    <hr class="sidebar-divider" style="opacity: 0.05;">
-
-    <!-- Section 4: Maintenance (RESTRICTED TO SUPER ADMIN) -->
     {% if session.get('role') == 'super_admin' %}
-    <div class="sidebar-heading" style="font-size: 0.65rem; letter-spacing: 1.5px; color: rgba(255,255,255,0.2);">SYSTEM</div>
     <li class="nav-item">
-        <a class="nav-link collapsed d-flex justify-content-between align-items-center" href="#" data-toggle="collapse" data-target="#collapseSystem" aria-expanded="false">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-fw fa-terminal"></i>
-                <span>Maintenance</span>
-            </div>
-            <i class="fas fa-chevron-down dropdown-chevron"></i>
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseMaintenance"
+           aria-expanded="false" aria-controls="collapseMaintenance">
+            <i class="fas fa-fw fa-terminal"></i>
+            <span>Maintenance</span>
         </a>
-        <div id="collapseSystem" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseMaintenance" class="collapse" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <h6 class="collapse-header">Utility:</h6>
                 <a class="collapse-item" href="{{url_for('admin.user_logs')}}">Activity Logs</a>
             </div>
         </div>
@@ -102,7 +80,7 @@
     {% endif %}
 
     <!-- Sidebar Toggler -->
-    <div class="text-center d-none d-md-inline mt-4">
+    <div class="text-center d-none d-md-inline mt-auto mb-4">
         <button class="rounded-circle border-0" id="sidebarToggle" style="background: rgba(255,255,255,0.05);"></button>
     </div>
 </ul>
