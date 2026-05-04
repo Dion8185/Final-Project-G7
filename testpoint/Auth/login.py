@@ -230,7 +230,7 @@ def send_reset_otp_email(recipient_email, otp_code):
     except Exception as e:
         print(f"Error sending email: {e}")
 
-#! 1. LOGIN ROUTE
+
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('in_reset_flow'):
@@ -263,11 +263,17 @@ def login():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
-        # A. Check Active Users Table
-        cursor.execute("SELECT * FROM users WHERE email = %s AND is_active = 1", (email_input,))
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email_input,))
         user = cursor.fetchone()
 
         if user and check_password_hash(user['password'], password_input):
+            # NEW: Check if account is deactivated
+            if not user['is_active']:
+                flash('Login not allowed. Please contact the administrators.', 'danger')
+                cursor.close(); connection.close()
+                return render_template('login.html')
+
+            # Proceed with login if active
             if user['role'] in ['admin', 'super_admin']:
                 cursor.execute("SELECT firstname FROM admins WHERE email = %s", (email_input,))
                 admin_data = cursor.fetchone()
@@ -279,15 +285,31 @@ def login():
                     'role': user['role']
                 })
                 cursor.close(); connection.close(); return redirect(url_for('admin.admin_dashboard'))
+            
             elif user['role'] == 'student':
                 cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
                 s_data = cursor.fetchone()
-                session.update({'user_logged_in': True, 'user_id': user['user_id'], 'email': user['email'], 'role': 'student', 'firstname': s_data['firstname'], 'lastname': s_data['lastname']})
+                session.update({
+                    'user_logged_in': True, 
+                    'user_id': user['user_id'], 
+                    'email': user['email'], 
+                    'role': 'student', 
+                    'firstname': s_data['firstname'], 
+                    'lastname': s_data['lastname']
+                })
                 cursor.close(); connection.close(); return redirect(url_for('student.student_dashboard'))
+            
             elif user['role'] == 'teacher':
                 cursor.execute("SELECT firstname, lastname FROM teachers WHERE email = %s", (email_input,))
                 t_data = cursor.fetchone()
-                session.update({'teacher_logged_in': True, 'user_id': user['user_id'], 'email': user['email'], 'role': 'teacher', 'firstname': t_data['firstname'], 'lastname': t_data['lastname']})
+                session.update({
+                    'teacher_logged_in': True, 
+                    'user_id': user['user_id'], 
+                    'email': user['email'], 
+                    'role': 'teacher', 
+                    'firstname': t_data['firstname'], 
+                    'lastname': t_data['lastname']
+                })
                 cursor.close(); connection.close(); return redirect(url_for('teacher.teacher_dashboard'))
 
         # B. Check Pending Users Table
@@ -314,6 +336,7 @@ def login():
                 cursor.close(); connection.close(); 
                 return render_template('waiting_approval.html', role=pending['role'])
 
+        # Fallback for incorrect password or non-existent user
         flash('Invalid email or password!', 'danger')
         cursor.close(); connection.close()
 
@@ -591,66 +614,169 @@ def logout():
 @auth.route('/admin/approve_user/<int:pending_id>', methods=['POST'])
 def approve_user(pending_id):
     if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT * FROM pending_users WHERE pending_id = %s", (pending_id,))
     p = cursor.fetchone()
+    
     if p:
         new_id = generate_id('S' if p['role'] == 'student' else 'T')
         try:
-            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, %s, 1)", (new_id, p['email'], p['password'], p['role']))
+            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, %s, 1)", 
+                           (new_id, p['email'], p['password'], p['role']))
+            
             if p['role'] == 'student':
-                cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
+                cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
+                               (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
             else:
-                cursor.execute("INSERT INTO teachers (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
+                cursor.execute("INSERT INTO teachers (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
+                               (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
+            
             cursor.execute("DELETE FROM pending_users WHERE pending_id = %s", (pending_id,))
-            msg = Message(subject='Account Approved - TestPoint', sender=("TestPoint", SENDER_EMAIL), recipients=[p['email']])
-            msg.html = f"<body><p>Hello <strong>{p['firstname']}</strong>, Your account is approved. Use ID: <strong>{new_id}</strong> to login.</p></body>"
-            mail.send(msg); connection.commit()
+            
+            # --- STRUCTURED EMAIL ---
+            msg = Message(
+                subject='Account Approved - TestPoint',
+                sender=("TestPoint", SENDER_EMAIL),
+                recipients=[p['email']]
+            )
+            msg.html = f"""
+            <body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
+                    <tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                        <tr><td style="height: 6px; background-color: #2d58d1; border-radius: 12px 12px 0 0;"></td></tr>
+                        <tr><td align="center" style="padding: 40px 40px 20px;"><h1 style="font-size: 42px; margin:0;">📑</h1><div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">TestPoint Examination System</div></td></tr>
+                        <tr><td style="text-align: justify; padding: 0 40px 40px;">
+                            <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a;">Hello <strong>{p['firstname']}</strong>,</p>
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">Your registration has been reviewed and <strong>approved</strong>. You can now access the system using the ID assigned to you below.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 8px;">
+                                <tr><td align="center" style="padding: 25px;"><p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1e40af; opacity: 0.7;">Your Login ID</p>
+                                <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 35px; font-weight: 700; color: #1e40af;">{new_id}</p></td></tr>
+                            </table>
+                            <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">Please keep your credentials secure.</p>
+                        </td></tr>
+                        <tr><td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;"><p style="margin: 0; font-size: 11px; color: #94a3b8;">© TestPoint 2026 · All rights reserved</p></td></tr>
+                    </table></td></tr>
+                </table>
+            </body>"""
+            mail.send(msg)
+            connection.commit()
             return jsonify({"message": "User approved"}), 200
-        except Exception as e: connection.rollback(); return jsonify({"error": str(e)}), 500
-        finally: cursor.close(); connection.close()
+        except Exception as e: 
+            connection.rollback()
+            return jsonify({"error": str(e)}), 500
+        finally: 
+            cursor.close()
+            connection.close()
     return jsonify({"error": "Not found"}), 404
 
-#! 10. ADMIN REJECT
+#! 7. ADMIN ACTION: REJECT USER (PERMANENT)
 @auth.route('/admin/reject_user/<int:pending_id>', methods=['POST'])
 def reject_user(pending_id):
     if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
-    reason = request.form.get('reason'); notes = request.form.get('notes')
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    reason = request.form.get('reason')
+    notes = request.form.get('notes')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT email, firstname, document_path FROM pending_users WHERE pending_id = %s", (pending_id,))
     p = cursor.fetchone()
+
     if p:
         try:
             if p['document_path']:
                 file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
                 if os.path.exists(file_path): os.remove(file_path)
-            msg = Message(subject='Registration Rejected - TestPoint', sender=("TestPoint", SENDER_EMAIL), recipients=[p['email']])
-            msg.html = f"<body><p>Hello <strong>{p['firstname']}</strong>, application rejected. Reason: {reason}. {notes}</p></body>"
-            mail.send(msg); cursor.execute("DELETE FROM pending_users WHERE pending_id = %s", (pending_id,)); connection.commit()
+
+            # --- STRUCTURED EMAIL ---
+            msg = Message(
+                subject='Registration Rejected - TestPoint',
+                sender=("TestPoint", SENDER_EMAIL),
+                recipients=[p['email']]
+            )
+            msg.html = f"""
+            <body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
+                    <tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                        <tr><td style="height: 6px; background-color: #dc2626; border-radius: 12px 12px 0 0;"></td></tr>
+                        <tr><td align="center" style="padding: 40px 40px 20px;"><h1 style="font-size: 42px; margin:0;">📑</h1><div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #dc2626; font-weight: bold; margin-top: 10px;">TestPoint Examination System</div></td></tr>
+                        <tr><td style="text-align: justify; padding: 0 40px 40px;">
+                            <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a;">Hello <strong>{p['firstname']}</strong>,</p>
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">Unfortunately, your registration application has been <strong>rejected</strong> by our administrative team.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;">
+                                <tr><td style="padding: 20px;"><p style="margin: 0 0 5px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #991b1b; opacity: 0.7;">Rejection Details</p>
+                                <p style="margin: 0; font-size: 15px; color: #991b1b;"><strong>Reason:</strong> {reason}</p>
+                                <p style="margin: 5px 0 0; font-size: 14px; color: #991b1b; opacity: 0.8;">{notes}</p></td></tr>
+                            </table>
+                            <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">If you believe this was a mistake, please register again with accurate information.</p>
+                        </td></tr>
+                        <tr><td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;"><p style="margin: 0; font-size: 11px; color: #94a3b8;">© TestPoint 2026 · All rights reserved</p></td></tr>
+                    </table></td></tr>
+                </table>
+            </body>"""
+            mail.send(msg)
+            cursor.execute("DELETE FROM pending_users WHERE pending_id = %s", (pending_id,))
+            connection.commit()
             return jsonify({"message": "Rejected"}), 200
-        except Exception as e: connection.rollback(); return jsonify({"error": str(e)}), 500
-        finally: cursor.close(); connection.close()
+        except Exception as e: 
+            connection.rollback()
+            return jsonify({"error": str(e)}), 500
+        finally: 
+            cursor.close()
+            connection.close()
     return jsonify({"error": "User not found"}), 404
 
-#! 11. ADMIN REQUEST RESUBMISSION
+#! 9. ADMIN ACTION: REQUEST RESUBMISSION
 @auth.route('/admin/resubmit_user/<int:pending_id>', methods=['POST'])
 def resubmit_user(pending_id):
     if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
-    reason = request.form.get('reason'); notes = request.form.get('notes')
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    reason = request.form.get('reason')
+    notes = request.form.get('notes')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
     cursor.execute("SELECT email, firstname, document_path FROM pending_users WHERE pending_id = %s", (pending_id,))
     p = cursor.fetchone()
+
     if p:
         try:
             if p['document_path']:
                 file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
                 if os.path.exists(file_path): os.remove(file_path)
+
             full_note = f"Reason: {reason}. {notes}"
             cursor.execute("UPDATE pending_users SET verification_status = 'pending_upload', document_path = NULL, admin_notes = %s WHERE pending_id = %s", (full_note, pending_id))
-            msg = Message(subject='Resubmit Documents - TestPoint', sender=("TestPoint", SENDER_EMAIL), recipients=[p['email']])
-            msg.html = f"<body><p>Hello <strong>{p['firstname']}</strong>, please resubmit documents. Feedback: {full_note}</p></body>"
-            mail.send(msg); connection.commit()
+
+            # --- STRUCTURED EMAIL ---
+            msg = Message(
+                subject='Resubmit Documents - TestPoint',
+                sender=("TestPoint", SENDER_EMAIL),
+                recipients=[p['email']]
+            )
+            msg.html = f"""
+            <body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
+                    <tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                        <tr><td style="height: 6px; background-color: #f59e0b; border-radius: 12px 12px 0 0;"></td></tr>
+                        <tr><td align="center" style="padding: 40px 40px 20px;"><h1 style="font-size: 42px; margin:0;">📑</h1><div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #f59e0b; font-weight: bold; margin-top: 10px;">TestPoint Examination System</div></td></tr>
+                        <tr><td style="text-align: justify; padding: 0 40px 40px;">
+                            <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a;">Hello <strong>{p['firstname']}</strong>,</p>
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">Our admins have reviewed your registration and require a <strong>new document upload</strong> to proceed.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px;">
+                                <tr><td style="padding: 20px;"><p style="margin: 0 0 5px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: #92400e; opacity: 0.7;">Admin Feedback</p>
+                                <p style="margin: 0; font-size: 15px; color: #92400e; font-style: italic;">"{full_note}"</p></td></tr>
+                            </table>
+                            <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">Please log in to your account and upload the correct PDF file.</p>
+                        </td></tr>
+                        <tr><td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;"><p style="margin: 0; font-size: 11px; color: #94a3b8;">© TestPoint 2026 · All rights reserved</p></td></tr>
+                    </table></td></tr>
+                </table>
+            </body>"""
+            mail.send(msg)
+            connection.commit()
             return jsonify({"message": "Resubmission requested"}), 200
-        except Exception as e: connection.rollback(); return jsonify({"error": str(e)}), 500
-        finally: cursor.close(); connection.close()
+        except Exception as e: 
+            connection.rollback()
+            return jsonify({"error": str(e)}), 500
+        finally: 
+            cursor.close()
+            connection.close()
     return jsonify({"error": "User not found"}), 404

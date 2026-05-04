@@ -4,32 +4,107 @@
 
 {% block head %}
 <style>
-    .card { border: none; border-radius: var(--tp-admin-radius) !important; }
-    
+    .card {
+        border: none;
+        border-radius: var(--tp-admin-radius) !important;
+    }
+
     /* ── ROLE BADGES ── */
-    .badge-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 5px 10px; border-radius: 6px; }
-    .badge-student { background: #e8edfb; color: #2d5be3; }
-    .badge-teacher { background: #fdecea; color: #d93025; }
-    .badge-admin   { background: #f1f1f1; color: #1a1a1a; }
-    .badge-super   { background: #1a1a1a; color: #fff; }
+    .badge-role {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    .badge-student {
+        background: #e8edfb;
+        color: #2d5be3;
+    }
+
+    .badge-teacher {
+        background: #fdecea;
+        color: #d93025;
+    }
+
+    .badge-admin {
+        background: #f1f1f1;
+        color: #1a1a1a;
+    }
+
+    .badge-super {
+        background: #1a1a1a;
+        color: #fff;
+    }
 
     /* ── STATUS BADGES ── */
-    .badge-status { font-size: 10px; font-weight: 700; border-radius: 4px; padding: 4px 8px; }
-    
+    .badge-status {
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 4px 8px;
+    }
+
+    .badge-active-soft {
+        background: #e6f4ea;
+        color: #1e7e34;
+    }
+
+    .badge-disabled-soft {
+        background: #feeceb;
+        color: #d93025;
+    }
+
     /* ── ACTION BUTTONS ── */
-    .btn-circle-sm { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; border: none; }
-    .btn-circle-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .btn-circle-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        transition: all 0.2s;
+        border: none;
+    }
 
-    /* ── SECTION LABEL ── */
-    .tp-section-label { font-size: 11px; font-weight: 700; color: var(--tp-ink-3); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-    .tp-section-label::after { content: ''; flex: 1; height: 1px; background: var(--tp-admin-border); }
+    .btn-circle-sm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
 
-    .form-control { height: 42px !important; border-radius: 8px !important; border: 1.5px solid var(--tp-admin-border) !important; font-size: 14px !important; }
-    .form-control:focus { border-color: var(--tp-admin-ink) !important; box-shadow: 0 0 0 4px rgba(15,14,17,0.05) !important; }
+    .tp-section-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--tp-ink-3);
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-    .field-feedback { font-size: 11px; margin-top: 3px; display: block; min-height: 1rem; }
-    .valid-msg { color: #1a7a5e; }
-    .invalid-msg { color: #c0392b; }
+    .tp-section-label::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--tp-admin-border);
+    }
+
+    .form-control {
+        height: 42px !important;
+        border-radius: 8px !important;
+        border: 1.5px solid var(--tp-admin-border) !important;
+        font-size: 14px !important;
+    }
+
+    .form-control:focus {
+        border-color: var(--tp-admin-ink) !important;
+        box-shadow: 0 0 0 4px rgba(15, 14, 17, 0.05) !important;
+    }
 </style>
 {% endblock %}
 
@@ -40,10 +115,12 @@
         <p class="text-muted small mb-0">Oversee and manage institutional user profiles.</p>
     </div>
     <div class="d-flex" style="gap: 12px;">
-        <button class="btn btn-dark shadow-sm px-4 rounded-pill font-weight-bold small" data-toggle="modal" data-target="#addUserModal">
+        <button class="btn btn-dark shadow-sm px-4 rounded-pill font-weight-bold small" data-toggle="modal"
+            data-target="#addUserModal">
             <i class="fas fa-user-plus mr-2"></i> Add New User
         </button>
-        <a href="{{ url_for('admin.trashed_accounts') }}" class="btn btn-white border shadow-sm px-4 rounded-pill font-weight-bold small text-danger">
+        <a href="{{ url_for('admin.trashed_accounts') }}"
+            class="btn btn-white border shadow-sm px-4 rounded-pill font-weight-bold small text-danger">
             <i class="fas fa-trash-alt mr-2"></i> View Trash
         </a>
     </div>
@@ -64,18 +141,21 @@
             <div class="col-md-3">
                 <select class="form-control" id="statusFilter">
                     <option value="">All Status</option>
-                    <option value="verified">Verified</option>
-                    <option value="pending">Pending</option>
+                    <option value="1">Active</option>
+                    <option value="0">Deactivated</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <div class="input-group">
-                    <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-gray-400"></i></span></div>
-                    <input type="text" class="form-control border-left-0" id="searchInput" placeholder="Search accounts...">
+                    <div class="input-group-prepend"><span class="input-group-text bg-white border-right-0"><i
+                                class="fas fa-search text-gray-400"></i></span></div>
+                    <input type="text" class="form-control border-left-0" id="searchInput"
+                        placeholder="Search accounts...">
                 </div>
             </div>
             <div class="col-md-2">
-                <button type="button" id="resetFilters" class="btn btn-light btn-block font-weight-bold small">Reset</button>
+                <button type="button" id="resetFilters"
+                    class="btn btn-light btn-block font-weight-bold small">Reset</button>
             </div>
         </form>
     </div>
@@ -92,22 +172,22 @@
                         <th class="border-0">User ID</th>
                         <th class="border-0">Full Name</th>
                         <th class="border-0">Email</th>
-                        <th class="border-0">Status</th>
+                        <th class="border-0">Account Status</th>
                         <th class="border-0 text-center px-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for user in users %}
-                    <tr class="user-row" data-role="{{ user.role }}" data-status="{% if user.is_verified == 1 %}verified{% else %}pending{% endif %}">
+                    <tr class="user-row" data-role="{{ user.role }}" data-status="{{ user.is_active }}">
                         <td class="px-4">
                             {% if user.role == 'super_admin' %}
-                                <span class="badge-role badge-super"><i class="fas fa-crown mr-1"></i>Super Admin</span>
+                            <span class="badge-role badge-super"><i class="fas fa-crown mr-1"></i>Super Admin</span>
                             {% elif user.role == 'admin' %}
-                                <span class="badge-role badge-admin">Admin</span>
+                            <span class="badge-role badge-admin">Admin</span>
                             {% elif user.role == 'teacher' %}
-                                <span class="badge-role badge-teacher">Teacher</span>
+                            <span class="badge-role badge-teacher">Teacher</span>
                             {% else %}
-                                <span class="badge-role badge-student">Student</span>
+                            <span class="badge-role badge-student">Student</span>
                             {% endif %}
                         </td>
                         <td><span class="font-weight-bold text-gray-800 search-data">{{ user.user_id }}</span></td>
@@ -116,35 +196,44 @@
                         </td>
                         <td class="search-data small text-muted">{{ user.email }}</td>
                         <td>
-                            {% if user.is_verified == 1 %} 
-                                <span class="badge-status badge-success-soft text-success"><i class="fas fa-check-circle mr-1"></i> Verified</span>
-                            {% else %} 
-                                <span class="badge-status badge-warning-soft text-warning"><i class="fas fa-clock mr-1"></i> Pending</span> 
+                            {% if user.is_active == 1 %}
+                            <span class="badge-status badge-active-soft"><i class="fas fa-check-circle mr-1"></i>
+                                Active</span>
+                            {% else %}
+                            <span class="badge-status badge-disabled-soft"><i class="fas fa-ban mr-1"></i>
+                                Deactivated</span>
                             {% endif %}
                         </td>
                         <td class="text-center px-4">
-                            <button class="btn btn-white border btn-circle-sm view-details-btn mr-1" data-id="{{ user.user_id }}" data-name="{{ user.firstname }} {{ user.lastname }}">
+                            <button class="btn btn-white border btn-circle-sm view-details-btn mr-1"
+                                data-id="{{ user.user_id }}" data-name="{{ user.firstname }} {{ user.lastname }}">
                                 <i class="fas fa-university text-primary"></i>
                             </button>
 
                             {% if user.role != 'admin' and user.role != 'super_admin' %}
-                                <button class="btn btn-white border btn-circle-sm mr-1" data-toggle="modal" data-target="#editUserModal{{ user.user_id }}">
-                                    <i class="fas fa-edit text-info"></i>
-                                </button>
-                                <button type="button" class="btn btn-white border btn-circle-sm" data-toggle="modal" data-target="#deleteUserModal" data-id="{{ user.user_id }}" data-name="{{ user.firstname }} {{ user.lastname }}">
-                                    <i class="fas fa-trash text-danger"></i>
-                                </button>
+                            <button class="btn btn-white border btn-circle-sm mr-1" data-toggle="modal"
+                                data-target="#editUserModal{{ user.user_id }}">
+                                <i class="fas fa-edit text-info"></i>
+                            </button>
+                            <button type="button" class="btn btn-white border btn-circle-sm" data-toggle="modal"
+                                data-target="#deleteUserModal" data-id="{{ user.user_id }}"
+                                data-name="{{ user.firstname }} {{ user.lastname }}">
+                                <i class="fas fa-trash text-danger"></i>
+                            </button>
                             {% elif session.get('role') == 'super_admin' %}
-                                <button class="btn btn-white border btn-circle-sm mr-1" data-toggle="modal" data-target="#editUserModal{{ user.user_id }}">
-                                    <i class="fas fa-user-edit text-info"></i>
-                                </button>
-                                {% if user.user_id != session.get('user_id') %}
-                                <button type="button" class="btn btn-white border btn-circle-sm" data-toggle="modal" data-target="#deleteUserModal" data-id="{{ user.user_id }}" data-name="{{ user.firstname }} {{ user.lastname }}">
-                                    <i class="fas fa-trash text-danger"></i>
-                                </button>
-                                {% endif %}
+                            <button class="btn btn-white border btn-circle-sm mr-1" data-toggle="modal"
+                                data-target="#editUserModal{{ user.user_id }}">
+                                <i class="fas fa-user-edit text-info"></i>
+                            </button>
+                            {% if user.user_id != session.get('user_id') %}
+                            <button type="button" class="btn btn-white border btn-circle-sm" data-toggle="modal"
+                                data-target="#deleteUserModal" data-id="{{ user.user_id }}"
+                                data-name="{{ user.firstname }} {{ user.lastname }}">
+                                <i class="fas fa-trash text-danger"></i>
+                            </button>
+                            {% endif %}
                             {% else %}
-                                <span class="small text-muted font-italic"><i class="fas fa-lock fa-xs"></i> Locked</span>
+                            <span class="small text-muted font-italic"><i class="fas fa-lock fa-xs"></i> Locked</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -162,31 +251,34 @@
 {% endblock %}
 
 {% block modals %}
-<!-- ── DETAILS MODAL ── -->
+<!-- DETAILS MODAL -->
 <div class="modal fade" id="userDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-info-circle mr-2 text-primary"></i> <span id="modalLabel">Assignment Details</span></h5>
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i
+                        class="fas fa-info-circle mr-2 text-primary"></i> <span id="modalLabel">Assignment
+                        Details</span></h5>
                 <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <div class="modal-body px-4 pb-4">
-                <p class="small text-muted mb-3">Viewing records for <span id="detailUserName" class="font-weight-bold text-dark"></span></p>
-                <ul id="detailList" class="list-group list-group-flush border rounded-lg overflow-hidden">
-                    <!-- Dynamic Content -->
-                </ul>
+                <p class="small text-muted mb-3">Viewing records for <span id="detailUserName"
+                        class="font-weight-bold text-dark"></span></p>
+                <ul id="detailList" class="list-group list-group-flush border rounded-lg overflow-hidden"></ul>
             </div>
         </div>
     </div>
 </div>
 
 {% for user in users %}
-<!-- ── EDIT USER MODAL ── -->
-<div class="modal fade validate-modal" id="editUserModal{{ user.user_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+<!-- EDIT USER MODAL -->
+<div class="modal fade validate-modal" id="editUserModal{{ user.user_id }}" tabindex="-1" role="dialog"
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
-                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-user-edit mr-2 text-info"></i>Modify Account</h5>
+                <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i
+                        class="fas fa-user-edit mr-2 text-info"></i>Modify Account</h5>
                 <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.update_account', user_id=user.user_id) }}" method="POST" novalidate>
@@ -195,11 +287,13 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="small font-weight-bold">First Name</label>
-                            <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
+                            <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}"
+                                required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="small font-weight-bold">Last Name</label>
-                            <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
+                            <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}"
+                                required>
                         </div>
                     </div>
                     <div class="form-group mb-4">
@@ -214,7 +308,8 @@
                         <select class="form-control" name="block_id">
                             <option value="">-- No Block Assigned --</option>
                             {% for b in blocks %}
-                            <option value="{{ b.block_id }}" {% if b.block_name==user.block_name %}selected{% endif %}>{{ b.program_name }} - {{ b.block_name }}</option>
+                            <option value="{{ b.block_id }}" {% if b.block_name==user.block_name %}selected{% endif %}>
+                                {{ b.program_name }} - {{ b.block_name }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -224,13 +319,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <label class="small font-weight-bold">New Password</label>
-                            <input type="password" class="form-control" name="password" id="edit_pwd_{{user.user_id}}" placeholder="Keep current">
+                            <input type="password" class="form-control" name="password" placeholder="Keep current">
                         </div>
                         <div class="col-md-6">
-                            <label class="small font-weight-bold">Status</label>
-                            <select class="form-control" name="status">
-                                <option value="1" {% if user.is_verified==1 %}selected{% endif %}>Verified</option>
-                                <option value="0" {% if user.is_verified==0 %}selected{% endif %}>Pending</option>
+                            <label class="small font-weight-bold">Account Status</label>
+                            <select class="form-control" name="is_active">
+                                <option value="1" {% if user.is_active==1 %}selected{% endif %}>Active</option>
+                                <option value="0" {% if user.is_active==0 %}selected{% endif %}>Deactivated</option>
                             </select>
                         </div>
                     </div>
@@ -246,30 +341,40 @@
 </div>
 {% endfor %}
 
-<!-- ── ADD NEW USER MODAL ── -->
+<!-- ADD NEW USER MODAL -->
 <div class="modal fade validate-modal" id="addUserModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
-                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif); font-size: 1.5rem;"><i class="fas fa-user-plus mr-2 text-primary"></i>Create New Account</h5>
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif); font-size: 1.5rem;">
+                    <i class="fas fa-user-plus mr-2 text-primary"></i>Create New Account</h5>
                 <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
             </div>
             <form action="{{ url_for('admin.add_user') }}" method="POST" novalidate id="addUserForm">
                 <div class="modal-body p-4">
                     <div class="tp-section-label">Personal Information</div>
                     <div class="row mb-3">
-                        <div class="col-md-4"><label class="small font-weight-bold">First Name</label><input type="text" class="form-control" name="firstname" required><span class="field-feedback"></span></div>
-                        <div class="col-md-4"><label class="small font-weight-bold">Middle Name</label><input type="text" class="form-control" name="middlename"></div>
-                        <div class="col-md-4"><label class="small font-weight-bold">Last Name</label><input type="text" class="form-control" name="lastname" required><span class="field-feedback"></span></div>
+                        <div class="col-md-4"><label class="small font-weight-bold">First Name</label><input type="text"
+                                class="form-control" name="firstname" required></div>
+                        <div class="col-md-4"><label class="small font-weight-bold">Middle Name</label><input
+                                type="text" class="form-control" name="middlename"></div>
+                        <div class="col-md-4"><label class="small font-weight-bold">Last Name</label><input type="text"
+                                class="form-control" name="lastname" required></div>
                     </div>
-
                     <div class="row mb-4">
-                        <div class="col-md-8"><label class="small font-weight-bold">Email Address</label><input type="email" class="form-control" name="email" required><span class="field-feedback"></span></div>
-                        <div class="col-md-4"><label class="small font-weight-bold">User Role</label><select class="form-control" name="role" id="addUserRole"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
+                        <div class="col-md-8"><label class="small font-weight-bold">Email Address</label><input
+                                type="email" class="form-control" name="email" required></div>
+                        <div class="col-md-4"><label class="small font-weight-bold">User Role</label>
+                            <select class="form-control" name="role" id="addUserRole">
+                                <option value="student">Student</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
                     </div>
-
                     <div class="form-group mb-4" id="blockSelectionArea">
-                        <label class="small font-weight-bold text-primary"><i class="fas fa-link mr-1"></i> Block Assignment (Students Only)</label>
+                        <label class="small font-weight-bold text-primary"><i class="fas fa-link mr-1"></i> Block
+                            Assignment</label>
                         <select class="form-control" name="block_id">
                             <option value="">-- Select Block --</option>
                             {% for b in blocks %}
@@ -277,19 +382,12 @@
                             {% endfor %}
                         </select>
                     </div>
-
                     <div class="tp-section-label">Security Settings</div>
                     <div class="row mb-4">
-                        <div class="col-md-6"><label class="small font-weight-bold">Initial Password</label><input type="password" class="form-control" name="password" id="add_pwd" required><span class="field-feedback"></span></div>
-                        <div class="col-md-6"><label class="small font-weight-bold">Confirm Password</label><input type="password" class="form-control" name="confirm_password" data-match="add_pwd" required></div>
-                    </div>
-
-                    <div class="tp-section-label">Geographic Data</div>
-                    <div class="row no-gutters" style="gap: 10px;">
-                        <div class="col"><select name="region" class="form-control form-control-sm" id="region" required><option value="">— Region —</option></select><input type="hidden" name="region_text" id="region-text"></div>
-                        <div class="col"><select name="province" class="form-control form-control-sm" id="province" required><option value="">— Province —</option></select><input type="hidden" name="province_text" id="province-text"></div>
-                        <div class="col"><select name="city" class="form-control form-control-sm" id="city" required><option value="">— City —</option></select><input type="hidden" name="city_text" id="city-text"></div>
-                        <div class="col"><select name="barangay" class="form-control form-control-sm" id="barangay" required><option value="">— Barangay —</option></select><input type="hidden" name="barangay_text" id="barangay-text"></div>
+                        <div class="col-md-6"><label class="small font-weight-bold">Initial Password</label><input
+                                type="password" class="form-control" name="password" required></div>
+                        <div class="col-md-6"><label class="small font-weight-bold">Confirm Password</label><input
+                                type="password" class="form-control" name="confirm_password" required></div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
@@ -301,16 +399,18 @@
     </div>
 </div>
 
-<!-- ── DELETE MODAL ── -->
+<!-- DELETE MODAL -->
 <div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
             <div class="modal-header border-0 pb-0 pt-4 px-4 text-center">
-                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-trash-alt mr-2 text-danger"></i>Move to Trash</h5>
+                <h5 class="modal-title w-100 font-weight-bold" style="font-family: var(--tp-serif);"><i
+                        class="fas fa-trash-alt mr-2 text-danger"></i>Move to Trash</h5>
             </div>
             <form id="deleteUserForm" method="POST">
                 <div class="modal-body text-center p-4">
-                    <p class="text-gray-600 mb-0">Are you sure you want to move <span id="deleteUserName" class="font-weight-bold text-dark"></span> to the trash bin? Access will be revoked immediately.</p>
+                    <p class="text-gray-600 mb-0">Are you sure you want to move <span id="deleteUserName"
+                            class="font-weight-bold text-dark"></span> to the trash bin?</p>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0 justify-content-center">
                     <button class="btn btn-light px-4" type="button" data-dismiss="modal">Keep Account</button>
@@ -323,14 +423,12 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('auth.static', filename='js/ph-address-selector.js') }}"></script>
 <script src="{{ url_for('admin.static', filename='js/paginator.js') }}"></script>
-
 <script>
     (function ($) {
         "use strict";
 
-        // 1. FILTERING & SEARCH
+        // 1. FILTERING
         const userTableBody = document.querySelector('#userTable tbody');
         const allRows = Array.from(userTableBody.querySelectorAll('tr.user-row'));
         let filteredRows = [...allRows];
@@ -344,7 +442,7 @@
                 var rowText = $(row).find('.search-data').text().toLowerCase();
                 var matchesSearch = rowText.indexOf(searchVal) > -1;
                 var matchesRole = roleVal === "" || $(row).attr('data-role').toLowerCase() === roleVal;
-                var matchesStatus = statusVal === "" || $(row).attr('data-status').toLowerCase() === statusVal;
+                var matchesStatus = statusVal === "" || $(row).attr('data-status') === statusVal;
                 return matchesSearch && matchesRole && matchesStatus;
             });
             paginator.reset();
@@ -352,24 +450,9 @@
 
         $('#searchInput').on('keyup', performFilter);
         $('#roleFilter, #statusFilter').on('change', performFilter);
-        $('#resetFilters').on('click', function () {
-            $('#searchInput, #roleFilter, #statusFilter').val('');
-            performFilter();
-        });
+        $('#resetFilters').on('click', () => { $('#searchInput, #roleFilter, #statusFilter').val(''); performFilter(); });
 
-        // 2. MODAL DYNAMICS
-        $('#addUserRole').on('change', function () {
-            if ($(this).val() === 'student') { $('#blockSelectionArea').slideDown(); } 
-            else { $('#blockSelectionArea').slideUp(); }
-        });
-
-        $('#deleteUserModal').on('show.bs.modal', function (event) {
-            var btn = $(event.relatedTarget);
-            $('#deleteUserName').text(btn.data('name'));
-            $('#deleteUserForm').attr('action', "{{ url_for('admin.delete_account', user_id='0') }}".replace('0', btn.data('id')));
-        });
-
-        // 3. PAGINATOR
+        // 2. PAGINATOR
         const paginator = createPaginator({
             tableBodySelector: 'tbody',
             paginationSelector: '#accounts-pagination',
@@ -378,44 +461,39 @@
         });
         paginator.render();
 
-        // 4. DYNAMIC DETAILS LOADER
+        // 3. DELETE MODAL
+        $('#deleteUserModal').on('show.bs.modal', function (event) {
+            var btn = $(event.relatedTarget);
+            $('#deleteUserName').text(btn.data('name'));
+            $('#deleteUserForm').attr('action', "{{ url_for('admin.delete_account', user_id='0') }}".replace('0', btn.data('id')));
+        });
+
+        // 4. ROLE DROPDOWN
+        $('#addUserRole').on('change', function () {
+            if ($(this).val() === 'student') { $('#blockSelectionArea').slideDown(); }
+            else { $('#blockSelectionArea').slideUp(); }
+        });
+
+        // 5. DETAILS LOADER
         $('.view-details-btn').on('click', function () {
             var userId = $(this).data('id');
             $('#detailUserName').text($(this).data('name'));
-            $('#detailList').html('<li class="list-group-item text-center small text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Loading details...</li>');
+            $('#detailList').html('<li class="list-group-item text-center small text-muted py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Loading...</li>');
             $('#userDetailsModal').modal('show');
             $.getJSON('/admin/get_user_courses/' + userId, function (data) {
                 $('#modalLabel').text(data.label);
                 $('#detailList').empty();
                 if (data.items.length === 0) {
-                    $('#detailList').append('<li class="list-group-item small text-muted text-center py-4">No assignments found for this user.</li>');
+                    $('#detailList').append('<li class="list-group-item small text-muted text-center py-4">No assignments found.</li>');
                 } else {
-                    data.items.forEach(function (item) {
-                        $('#detailList').append('<li class="list-group-item d-flex justify-content-between align-items-center small font-weight-bold">' + 
+                    data.items.forEach(item => {
+                        $('#detailList').append('<li class="list-group-item d-flex justify-content-between align-items-center small font-weight-bold">' +
                             '<span><i class="fas fa-book-open mr-2 text-gray-400"></i>' + (item.class_code || item.course_code) + '</span>' +
                             '<span class="text-primary">' + item.course_name + '</span></li>');
                     });
                 }
             });
         });
-
-        // 5. VALIDATION SCRIPTS
-        function setValid(el) { $(el).removeClass('is-invalid').addClass('is-valid'); $(el).siblings('.field-feedback').text('✓ OK').addClass('valid-msg').removeClass('invalid-msg'); }
-        function setInvalid(el, msg) { $(el).removeClass('is-valid').addClass('is-invalid'); $(el).siblings('.field-feedback').text(msg).addClass('invalid-msg').removeClass('valid-msg'); }
-
-        $(document).on('input blur', '.validate-modal input', function () {
-            const i = $(this), n = i.attr('name'), v = i.val().trim();
-            if (n === 'email') /^[^@]+@[^@]+\.[^@]+$/.test(v) ? setValid(i) : setInvalid(i, 'Invalid email format');
-            else if (n === 'password' && v.length < 8 && !i.closest('form').attr('action').includes('update')) setInvalid(i, 'Min. 8 characters');
-            else if (i.attr('required') && !v) setInvalid(i, 'This field is required');
-            else if (v) setValid(i);
-        });
-
-        $(document).on('submit', '.validate-modal form', function (e) {
-            $(this).find('input[required]').trigger('blur');
-            if ($(this).find('.is-invalid').length > 0) { e.preventDefault(); }
-        });
-
     })(jQuery);
 </script>
 {% endblock %}

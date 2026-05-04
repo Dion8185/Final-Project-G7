@@ -91,14 +91,16 @@ def admin_dashboard():
 
 
 #! 1. MANAGE ACCOUNTS (Modified to handle Blocks)
-@admin.route('/manage_accounts' )
+@admin.route('/manage_accounts')
 def manage_accounts():
     if admin_logged_in():    
         firstname = session.get('firstname')  
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
+    
         cursor.execute(""" SELECT 
                             u.user_id,
+                            u.is_active,
                             COALESCE(s.firstname, t.firstname, a.firstname) AS firstname,
                             COALESCE(s.middlename, t.middlename, a.middlename) AS middlename,
                             COALESCE(s.lastname, t.lastname, a.lastname) AS lastname,
@@ -110,11 +112,10 @@ def manage_accounts():
                             LEFT JOIN programs p ON b.program_id = p.program_id
                             LEFT JOIN teachers t ON u.user_id = t.teacher_id
                             LEFT JOIN admins a ON u.user_id = a.admin_id
-                            WHERE u.is_active = 1;
+                            WHERE u.is_active IN (0, 1);
         """)
         users = cursor.fetchall()
         
-        # Fetch all blocks for the dropdown in modals
         cursor.execute("SELECT b.block_id, b.block_name, p.program_name FROM blocks b JOIN programs p ON b.program_id = p.program_id")
         blocks = cursor.fetchall()
         
@@ -180,65 +181,146 @@ def trashed_accounts():
 @admin.route('/update_account/<string:user_id>', methods=['POST'])
 def update_account(user_id):
     if admin_logged_in():
-        firstname = request.form.get('firstname'); middlename = request.form.get('middlename'); lastname = request.form.get('lastname')
-        email = request.form.get('email'); is_verified = request.form.get('status'); role = request.form.get('role')
+        firstname = request.form.get('firstname')
+        lastname = request.form.get('lastname')
+        middlename = request.form.get('middlename')
+        email = request.form.get('email')
+        is_active = request.form.get('is_active') 
+        role = request.form.get('role')
         block_id = request.form.get('block_id')
-        new_password = request.form.get('password'); confirm_password = request.form.get('confirm_password')
+        new_password = request.form.get('password')
 
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        if role in ['admin', 'super_admin']:
+            is_active = 1
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
         try:
+            # Update the core users table
             if new_password:
-                if new_password != confirm_password:
-                    flash('Passwords do not match.', 'danger'); return redirect(url_for('admin.manage_accounts'))
                 hashed_pw = generate_password_hash(new_password)
-                cursor.execute("UPDATE users SET email = %s, is_verified = %s, password = %s WHERE user_id = %s", (email, is_verified, hashed_pw, user_id))
+                cursor.execute("""
+                    UPDATE users 
+                    SET email = %s, is_active = %s, password = %s 
+                    WHERE user_id = %s
+                """, (email, is_active, hashed_pw, user_id))
             else:
-                cursor.execute("UPDATE users SET email = %s, is_verified = %s WHERE user_id = %s", (email, is_verified, user_id))
+                cursor.execute("""
+                    UPDATE users 
+                    SET email = %s, is_active = %s 
+                    WHERE user_id = %s
+                """, (email, is_active, user_id))
 
+            # Update specific profile info based on role
             if role == 'teacher':
-                cursor.execute("UPDATE teachers SET firstname = %s, middlename = %s, lastname = %s WHERE teacher_id = %s", (firstname, middlename, lastname, user_id))
+                cursor.execute("""
+                    UPDATE teachers 
+                    SET firstname = %s, middlename = %s, lastname = %s 
+                    WHERE teacher_id = %s
+                """, (firstname, middlename, lastname, user_id))
+                
             elif role == 'student':
-                b_id = block_id if block_id != "" else None
-                cursor.execute("UPDATE students SET firstname = %s, middlename = %s, lastname = %s, block_id = %s WHERE student_id = %s", (firstname, middlename, lastname, b_id, user_id))
-            elif role == 'admin':
-                cursor.execute("UPDATE admins SET firstname = %s, middlename = %s, lastname = %s WHERE admin_id = %s", (firstname, middlename, lastname, user_id))
-            connection.commit(); flash('Account updated successfully.', 'success')
+                b_id = block_id if block_id and block_id.strip() != "" else None
+                cursor.execute("""
+                    UPDATE students 
+                    SET firstname = %s, middlename = %s, lastname = %s, block_id = %s 
+                    WHERE student_id = %s
+                """, (firstname, middlename, lastname, b_id, user_id))
+                
+            elif role == 'admin' or role == 'super_admin':
+                cursor.execute("""
+                    UPDATE admins 
+                    SET firstname = %s, middlename = %s, lastname = %s 
+                    WHERE admin_id = %s
+                """, (firstname, middlename, lastname, user_id))
+            
+            connection.commit()
+            
+            # Specific flash message if an attempt to deactivate an admin was blocked
+            if request.form.get('is_active') == '0' and role in ['admin', 'super_admin']:
+                flash('Account info updated, but Administrative accounts cannot be deactivated.', 'warning')
+            else:
+                flash('Account updated successfully.', 'success')
+
         except mysql.connector.Error as err:
-            connection.rollback(); flash(f'Database Error: {err}', 'danger')
+            connection.rollback()
+            flash(f'Database Error: {err}', 'danger')
         finally:
-            cursor.close(); connection.close()
+            cursor.close()
+            connection.close()
+            
         return redirect(url_for('admin.manage_accounts'))
+    
     return redirect(url_for('auth.login'))
 
 @admin.route('/add_user', methods=['GET', 'POST'])
 def add_user():
-    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    if not admin_logged_in(): 
+        return redirect(url_for('auth.login'))
+
     if request.method == 'POST':
-        fname = request.form.get('firstname'); mname = request.form.get('middlename'); lname = request.form.get('lastname')
-        email = request.form.get('email'); password = request.form.get('password'); role = request.form.get('role', 'student').lower()
-        is_verified = request.form.get('status', 1); block_id = request.form.get('block_id')
-        
+        fname = request.form.get('firstname')
+        mname = request.form.get('middlename')
+        lname = request.form.get('lastname')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        role = request.form.get('role', 'student').lower()
+        block_id = request.form.get('block_id')
+
+        region = request.form.get('region_text')
+        province = request.form.get('province_text')
+        city = request.form.get('city_text')
+        barangay = request.form.get('barangay_text')
+
         prefix = {'admin': 'A', 'teacher': 'T', 'student': 'S'}.get(role, 'U')
-        custom_user_id = generate_id(prefix); hashed_password = generate_password_hash(password)
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
+        custom_user_id = generate_id(prefix)
+        hashed_password = generate_password_hash(password)
+
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+
         try:
             cursor.execute("SELECT user_id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
-                flash('User with this email already exists.', 'danger'); return redirect(url_for('admin.manage_accounts'))
+                flash('User with this email already exists.', 'danger')
+                return redirect(url_for('admin.manage_accounts'))
 
-            cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, %s, %s)", (custom_user_id, email, hashed_password, role, is_verified))
+            cursor.execute("""
+                INSERT INTO users (user_id, email, password, role, is_verified, is_active) 
+                VALUES (%s, %s, %s, %s, 1, 1)
+            """, (custom_user_id, email, hashed_password, role))
 
             if role == 'teacher':
-                cursor.execute("INSERT INTO teachers (teacher_id, firstname, middlename, lastname, email) VALUES (%s, %s, %s, %s, %s)", (custom_user_id, fname, mname, lname, email))
+                cursor.execute("""
+                    INSERT INTO teachers (teacher_id, email, firstname, middlename, lastname, region, province, city, barangay) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (custom_user_id, email, fname, mname, lname, region, province, city, barangay))
+
             elif role == 'student':
-                b_id = block_id if block_id != "" else None
-                cursor.execute("INSERT INTO students (student_id, firstname, middlename, lastname, email, block_id) VALUES (%s, %s, %s, %s, %s, %s)", (custom_user_id, fname, mname, lname, email, b_id))
-            elif role == 'admin':
-                cursor.execute("INSERT INTO admins (admin_id, firstname, middlename, lastname, email) VALUES (%s, %s, %s, %s, %s)", (custom_user_id, fname, mname, lname, email))
-            connection.commit(); flash(f'Account created successfully! ID: {custom_user_id}', 'success')
+                b_id = block_id if block_id and block_id.strip() != "" else None
+                cursor.execute("""
+                    INSERT INTO students (student_id, email, firstname, middlename, lastname, block_id, region, province, city, barangay) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (custom_user_id, email, fname, mname, lname, b_id, region, province, city, barangay))
+
+            elif role == 'admin' or role == 'super_admin':
+                cursor.execute("""
+                    INSERT INTO admins (admin_id, email, firstname, middlename, lastname, region, province, city, barangay) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (custom_user_id, email, fname, mname, lname, region, province, city, barangay))
+
+            connection.commit()
+            flash(f'Account created successfully! User ID is {custom_user_id}', 'success')
+
+        except mysql.connector.Error as err:
+            connection.rollback()
+            flash(f'Database Error: {err}', 'danger')
         finally:
-            cursor.close(); connection.close()
+            cursor.close()
+            connection.close()
+
         return redirect(url_for('admin.manage_accounts'))
+
     return render_template('admin_accounts.html')
 
 def generate_id(role_prefix):
@@ -274,7 +356,6 @@ def restore_account(user_id):
 @admin.route('/delete_account_permanently/<string:user_id>', methods=['POST'])
 def delete_account_permanently(user_id):
     if admin_logged_in():
-        # Protection
         if session.get('role') != 'super_admin':
             flash('Unauthorized action.', 'danger')
             return redirect(url_for('admin.admin_dashboard'))
@@ -317,7 +398,6 @@ def view_program_blocks(program_id):
     if not admin_logged_in(): return redirect(url_for('auth.login'))
     connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
     
-    # 1. Fetch Program Details
     cursor.execute("SELECT * FROM programs WHERE program_id = %s", (program_id,))
     program = cursor.fetchone()
     
@@ -325,7 +405,6 @@ def view_program_blocks(program_id):
         flash("Program not found.", "danger")
         return redirect(url_for('admin.manage_programs'))
 
-    # 2. Fetch Active Blocks for this program
     cursor.execute("""
         SELECT b.*, 
         (SELECT COUNT(*) FROM students WHERE block_id = b.block_id) as current_count
