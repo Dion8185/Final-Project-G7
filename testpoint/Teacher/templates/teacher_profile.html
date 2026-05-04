@@ -1,81 +1,197 @@
 {% extends 'teacher_base.html' %}
-{% block title %}Teacher Profile - TestPoint{% endblock %}
+{% block title %}Instructor Profile | TestPoint{% endblock %}
 {% set sidebar_active = 'profile' %}
 
-{% block head %}
+{% block extra_head %}
 <style>
-    .profile-header-img { width: 120px; height: 120px; object-fit: cover; border: 5px solid #fff; }
-    .border-left-danger-thick { border-left: 0.25rem solid #e74a3b !important; }
+    /* ── PROFILE UI COMPONENTS ── */
+    .tp-profile-cover {
+        height: 160px;
+        background: linear-gradient(135deg, var(--tp-teacher-gray) 0%, #d93025 100%);
+        border-radius: 15px 15px 0 0;
+        position: relative;
+    }
+    .tp-profile-avatar-container {
+        position: absolute;
+        bottom: -50px;
+        left: 40px;
+        z-index: 5;
+    }
+    .tp-profile-avatar-img {
+        width: 120px;
+        height: 120px;
+        border: 5px solid #fff;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background: #fff;
+    }
+    .tp-stat-mini {
+        padding: 0.8rem 1.25rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 1px solid var(--tp-teacher-border);
+        min-width: 110px;
+    }
+    .tp-info-label {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #94a3b8;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+    }
+    .tp-info-text {
+        font-weight: 700;
+        color: var(--tp-teacher-ink);
+        font-size: 14px;
+    }
+    .tp-form-input {
+        border-radius: 10px !important;
+        border: 1.5px solid var(--tp-teacher-border) !important;
+        padding: 0.6rem 1rem !important;
+        font-size: 14px !important;
+        transition: all 0.2s;
+    }
+    .tp-form-input:focus {
+        border-color: var(--tp-teacher-accent) !important;
+        box-shadow: 0 0 0 4px var(--tp-teacher-accent-lt) !important;
+    }
+    .role-badge {
+        background: var(--tp-teacher-accent-lt);
+        color: var(--tp-teacher-accent);
+        font-weight: 800;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">My Profile</h1>
-    
-    <div class="row">
-        <!-- Profile Card -->
-        <div class="col-xl-4 col-lg-5">
-            <div class="card shadow mb-4">
-                <div class="card-body text-center">
-                    <img src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_3.svg" class="rounded-circle profile-header-img shadow mb-3">
-                    <h4 class="font-weight-bold text-dark">{{ user.firstname }} {{ user.lastname }}</h4>
-                    <p class="text-danger font-weight-bold small mb-3"><i class="fas fa-chalkboard-teacher mr-1"></i> FACULTY MEMBER</p>
-                    
-                    <div class="p-3 bg-light rounded text-left border-left-danger-thick">
-                        <p class="small mb-2"><strong>Teacher ID:</strong> <span class="text-dark ml-1">{{ user.user_id }}</span></p>
-                        <p class="small mb-2"><strong>Email:</strong> <span class="text-dark ml-1">{{ user.email }}</span></p>
-                        <p class="small mb-2"><strong>Member Since:</strong> <span class="text-dark ml-1">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</span></p>
-                        <p class="small mb-0"><strong>Station:</strong> <span class="text-dark ml-1">{{ user.city }}, {{ user.province }}</span></p>
+<!-- ── TOP PROFILE HEADER (Vibrant Style) ── -->
+<div class="card border-0 shadow-sm mb-5" style="border-radius: 15px; overflow: visible;">
+    <div class="tp-profile-cover">
+        <div class="tp-profile-avatar-container">
+            <img src="https://ui-avatars.com/api/?name={{ user.firstname }}+{{ user.lastname }}&background=fff&color=d93025&size=200&font-size=0.35&bold=true" class="tp-profile-avatar-img">
+        </div>
+    </div>
+    <div class="card-body" style="padding: 60px 40px 30px;">
+        <div class="row align-items-end">
+            <div class="col-lg-6">
+                <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.4rem;" class="mb-1">
+                    Prof. {{ user.firstname }} {{ user.lastname }}
+                </h1>
+                <p class="text-muted mb-0">
+                    <span class="badge role-badge rounded-pill px-3 py-2 text-uppercase">Faculty Member</span>
+                    <span class="mx-2 text-gray-300">/</span>
+                    ID: <span class="font-weight-bold text-dark" style="font-family: monospace;">{{ user.teacher_id }}</span>
+                </p>
+            </div>
+            <div class="col-lg-6 text-lg-right mt-4">
+                <div class="d-inline-flex flex-wrap justify-content-lg-end" style="gap: 12px;">
+                    <div class="tp-stat-mini text-center">
+                        <div class="h5 mb-0 font-weight-bold text-danger">{{ class_count }}</div>
+                        <div class="tp-info-label">Active Classes</div>
+                    </div>
+                    <div class="tp-stat-mini text-center">
+                        <div class="h5 mb-0 font-weight-bold text-dark">{{ pool_size }}</div>
+                        <div class="tp-info-label">Bank Items</div>
+                    </div>
+                    <div class="tp-stat-mini text-center">
+                        <div class="h5 mb-0 font-weight-bold text-primary">{{ student_reach }}</div>
+                        <div class="tp-info-label">Total Students</div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Edit Form -->
-        <div class="col-xl-8 col-lg-7">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 bg-danger">
-                    <h6 class="m-0 font-weight-bold text-white">Edit Profile Details</h6>
+<div class="row">
+    <!-- ── LEFT COLUMN: STATION DETAILS ── -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Instructor Metadata</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="tp-info-label">Verified Email</div>
+                    <div class="tp-info-text text-danger"><i class="fas fa-envelope-open-text mr-2"></i> {{ user.email }}</div>
                 </div>
-                <div class="card-body">
-                    <form action="{{ url_for('teacher.profile') }}" method="POST">
-                        <h6 class="text-xs font-weight-bold text-primary text-uppercase mb-3">Personal Information</h6>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="small font-weight-bold">First Name</label>
-                                <input type="text" class="form-control" name="firstname" value="{{ user.firstname }}" required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="small font-weight-bold">Middle Name</label>
-                                <input type="text" class="form-control" name="middlename" value="{{ user.middlename }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="small font-weight-bold">Last Name</label>
-                                <input type="text" class="form-control" name="lastname" value="{{ user.lastname }}" required>
-                            </div>
-                        </div>
+                <div class="mb-4">
+                    <div class="tp-info-label">Academic Station</div>
+                    <div class="tp-info-text">{{ user.city }}, {{ user.province }}</div>
+                    <div class="small text-muted mt-1">{{ user.region }}</div>
+                </div>
+                <div class="mb-0">
+                    <div class="tp-info-label">Residential Record</div>
+                    <div class="tp-info-text" style="font-size: 13px; font-weight: 500; line-height: 1.5; opacity: 0.8;">
+                        Brgy. {{ user.barangay }}<br>
+                        Philippines
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Registration Date Meta -->
+        <div class="card border-0 shadow-sm p-4 text-center" style="background: #f1f5f9; border-radius: 12px;">
+            <div class="small text-muted font-weight-bold text-uppercase mb-2" style="letter-spacing: 1px;">Teaching Since</div>
+            <div class="h6 font-weight-bold text-dark mb-0">
+                <i class="far fa-calendar-check mr-2 text-danger"></i> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}
+            </div>
+        </div>
+    </div>
 
-                        <hr class="my-4">
-                        <h6 class="text-xs font-weight-bold text-danger text-uppercase mb-3">Security & Password</h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="small font-weight-bold">New Password</label>
-                                <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="small font-weight-bold">Confirm New Password</label>
-                                <input type="password" class="form-control" name="confirm_password" placeholder="Confirm new password">
-                            </div>
+    <!-- ── RIGHT COLUMN: MANAGEMENT FORM ── -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px;">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Profile Configuration</h6>
+            </div>
+            <div class="card-body p-4 p-lg-5">
+                <form action="{{ url_for('teacher.profile') }}" method="POST">
+                    
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold text-dark border-left border-danger pl-3" style="border-width: 4px !important;">Personal Credentials</h6>
+                    </div>
+                    
+                    <div class="row mb-5">
+                        <div class="col-md-4 mb-3">
+                            <label class="tp-info-label">Given Name</label>
+                            <input type="text" class="form-control tp-form-input" name="firstname" value="{{ user.firstname }}" required>
                         </div>
-                        
-                        <div class="mt-4 text-right">
-                            <button type="submit" class="btn btn-danger shadow-sm px-4">
-                                <i class="fas fa-save mr-1"></i> Save Profile Changes
-                            </button>
+                        <div class="col-md-4 mb-3">
+                            <label class="tp-info-label">Middle Name</label>
+                            <input type="text" class="form-control tp-form-input" name="middlename" value="{{ user.middlename }}">
                         </div>
-                    </form>
-                </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="tp-info-label">Family Name</label>
+                            <input type="text" class="form-control tp-form-input" name="lastname" value="{{ user.lastname }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold text-dark border-left border-danger pl-3" style="border-width: 4px !important;">Security & Access</h6>
+                        <p class="text-muted small">Update your system password here. Leave fields empty to retain your current credentials.</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="tp-info-label">New Security Password</label>
+                            <input type="password" class="form-control tp-form-input" name="password" placeholder="••••••••">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="tp-info-label">Confirm New Password</label>
+                            <input type="password" class="form-control tp-form-input" name="confirm_password" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="mt-5 pt-4 border-top text-right">
+                        <button type="submit" class="btn btn-danger rounded-pill px-5 font-weight-bold shadow-sm py-2">
+                            <i class="fas fa-check-circle mr-2"></i> Save Profile Changes
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

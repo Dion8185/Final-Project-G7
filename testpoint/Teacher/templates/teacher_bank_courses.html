@@ -1,27 +1,149 @@
 {% extends "teacher_base.html" %}
-{% block title %}Question Bank - TestPoint{% endblock %}
+{% block title %}Master Question Bank | TestPoint Instructor{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* ── BANK DIRECTORY STYLING ── */
+    .bank-card {
+        border: 1px solid var(--tp-teacher-border) !important;
+        border-radius: var(--tp-teacher-radius) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .bank-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(217, 48, 37, 0.08) !important;
+        border-color: var(--tp-teacher-accent-lt) !important;
+    }
+
+    .folder-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        background: var(--tp-teacher-accent-lt);
+        color: var(--tp-teacher-accent);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .course-code-pill {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: inline-block;
+    }
+
+    .course-name-link {
+        font-family: var(--tp-serif);
+        font-size: 1.25rem;
+        color: var(--tp-teacher-ink);
+        line-height: 1.2;
+        margin-bottom: 8px;
+        display: block;
+        text-decoration: none !important;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-enter-bank {
+        background: var(--tp-teacher-accent);
+        color: #fff;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 8px 20px;
+        transition: 0.2s;
+    }
+    .btn-enter-bank:hover {
+        background: #be2617;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(217, 48, 37, 0.2);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
-    <h1 class="h3 mb-4 text-gray-800">Master Question Bank</h1>
+    
+    <!-- ── HEADER SECTION ── -->
+    <div class="row mb-5 align-items-end">
+        <div class="col-md-8">
+            <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.5rem;" class="mb-1">
+                Master <span style="color: var(--tp-teacher-accent);">Question Bank</span>
+            </h1>
+            <p class="text-muted mb-0">Central repository for all subject-specific assessment items and metadata.</p>
+        </div>
+        <div class="col-md-4 text-md-right mt-3 mt-md-0">
+            <span class="badge px-3 py-2 rounded-pill shadow-sm bg-white border text-dark font-weight-bold" style="font-size: 12px;">
+                <i class="fas fa-database text-danger mr-2"></i> {{ courses|length }} Total Repositories
+            </span>
+        </div>
+    </div>
+
+    <!-- ── BANK GRID ── -->
     <div class="row">
         {% for course in courses %}
         <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">{{ course.course_code }}</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ course.course_name }}</div>
-                            <div class="mt-2 small text-muted font-italic">{{ course.question_count }} Questions</div>
+            <div class="card bank-card h-100 shadow-sm border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div class="folder-icon-wrapper shadow-sm">
+                            <i class="fas fa-folder"></i>
                         </div>
-                        <div class="col-auto">
-                            <a href="{{ url_for('teacher.course_question_bank', course_code=course.course_code) }}" class="btn btn-danger btn-circle btn-lg">
-                                <i class="fas fa-folder-open"></i>
-                            </a>
+                        <i class="fas fa-ellipsis-h text-gray-200"></i>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <span class="course-code-pill">{{ course.course_code }}</span>
+                        <a href="{{ url_for('teacher.course_question_bank', course_code=course.course_code) }}" class="course-name-link">
+                            {{ course.course_name }}
+                        </a>
+                        
+                        <div class="stat-label mt-3">
+                            <i class="fas fa-layer-group mr-2 opacity-50"></i>
+                            {{ course.question_count }} Validated Items
                         </div>
                     </div>
+
+                    <div class="mt-4 pt-4 border-top">
+                        <a href="{{ url_for('teacher.course_question_bank', course_code=course.course_code) }}" class="btn btn-enter-bank btn-block shadow-sm">
+                            Open Repository <i class="fas fa-chevron-right ml-2" style="font-size: 9px;"></i>
+                        </a>
+                    </div>
+
                 </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- ── EMPTY STATE ── -->
+        <div class="col-12 text-center py-5">
+            <div class="py-5">
+                <i class="fas fa-archive fa-4x text-gray-100 mb-3"></i>
+                <h4 class="text-dark font-weight-bold">No Course Banks Found</h4>
+                <p class="text-muted small">You must be assigned to an active class to access its question bank.</p>
+                <a href="{{ url_for('teacher.my_courses') }}" class="btn btn-danger px-4 rounded-pill font-weight-bold shadow-sm">
+                    View My Assigned Courses
+                </a>
             </div>
         </div>
         {% endfor %}

@@ -4,111 +4,151 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{% block title %}TestPoint{% endblock %}</title>
+    <title>{% block title %}Instructor Portal — TestPoint{% endblock %}</title>
+    
+    <!-- ── CSS Stack ── -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/testpoint.svg') }}">
     
     <style>
-        .bg-gradient-danger { background-image: linear-gradient(180deg, #e74a3b 10%, #be2617 100%); }
-        .sidebar { transition: width 0.3s ease-in-out, margin 0.3s ease-in-out !important; }
-        .card { transition: all 0.3s cubic-bezier(.25,.8,.25,1); border: none; }
-        .badge-pulse { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(231, 74, 59, 0); } 100% { box-shadow: 0 0 0 0 rgba(231, 74, 59, 0); } }
+        :root {
+            --tp-teacher-accent: #d93025;
+            --tp-teacher-accent-lt: rgba(217, 48, 37, 0.1);
+            --tp-teacher-ink: #0f0e11;
+            --tp-teacher-gray: #1e1e24;
+            --tp-teacher-bg: #f8f9fa;
+            --tp-teacher-border: rgba(0,0,0,0.06);
+            --tp-teacher-radius: 12px;
+            --tp-font: 'DM Sans', sans-serif;
+            --tp-serif: 'DM Serif Display', serif;
+        }
+
+        body { font-family: var(--tp-font); background: var(--tp-teacher-bg) !important; color: var(--tp-teacher-ink); }
+
+        #wrapper { display: flex; min-height: 100vh; }
+
+        /* ── SIDEBAR ── */
+        .sidebar { 
+            background: var(--tp-teacher-gray) !important;
+            background-image: none !important;
+            position: sticky; top: 0; height: 100vh; z-index: 1020;
+            overflow-y: auto; overflow-x: hidden;
+            transition: width 0.2s ease-in-out !important; 
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .sidebar .nav-item .nav-link { font-weight: 500; padding: 1rem; color: rgba(255,255,255,0.6) !important; }
+        .sidebar .nav-item .nav-link:hover, .sidebar .nav-item.active .nav-link { color: #fff !important; }
+        .sidebar .nav-item.active .nav-link i { color: var(--tp-teacher-accent) !important; opacity: 1 !important; }
+        .sidebar .nav-item .nav-link i { font-size: 0.9rem; margin-right: 0.75rem; opacity: 0.5; }
+        .sidebar .sidebar-brand { height: 4.375rem; text-transform: none; font-family: var(--tp-serif); font-size: 1.25rem; letter-spacing: -0.5px; }
+
+        /* ── CONTENT WRAPPER ── */
+        #content-wrapper { background: var(--tp-teacher-bg); }
+
+        .topbar { 
+            background: #fff !important; border-bottom: 1px solid var(--tp-teacher-border);
+            box-shadow: none !important; position: sticky; top: 0; z-index: 1030;
+        }
+
+        /* ── CARDS ── */
+        .card { 
+            border: 1px solid var(--tp-teacher-border) !important; 
+            border-radius: var(--tp-teacher-radius) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+        }
+        .card-header { background: transparent !important; border-bottom: 1px solid var(--tp-teacher-border) !important; padding: 1.25rem !important; }
+
+        .btn-circle-sm { width: 32px; height: 32px; padding: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; }
+        
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        @media (max-width: 768px) {
+            .sidebar { overflow-y: visible !important; overflow-x: visible !important; }
+        }
         {% block extra_css %}{% endblock %}
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body id="page-top">
     <div id="wrapper">
-        <ul class="navbar-nav bg-gradient-danger sidebar sidebar-dark accordion" id="accordionSidebar">
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ url_for('teacher.teacher_dashboard') }}">
-                <div class="sidebar-brand-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-                <div class="sidebar-brand-text mx-3">Teacher Panel</div>
-            </a>
-            <hr class="sidebar-divider my-0">
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Classroom</div>
-            <li class="nav-item {{ 'active' if 'course' in request.endpoint or 'enrollee' in request.endpoint }}">
-                <a class="nav-link" href="{{ url_for('teacher.my_courses') }}"><i class="fas fa-fw fa-users"></i><span>My Courses</span></a>
-            </li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Exam Control</div>
-            <li class="nav-item {{ 'active' if 'exam' in request.endpoint and 'analysis' not in request.endpoint }}">
-                <a class="nav-link" href="{{ url_for('teacher.manage_exams') }}"><i class="fas fa-fw fa-plus-circle"></i><span>Manage Exams</span></a>
-            </li>
-            <li class="nav-item {{ 'active' if 'bank' in request.endpoint }}">
-                <a class="nav-link" href="{{ url_for('teacher.question_bank') }}"><i class="fas fa-fw fa-database"></i><span>Question Bank</span></a>
-            </li>
-            <hr class="sidebar-divider">
-            <div class="sidebar-heading">Results</div>
-            <li class="nav-item {{ 'active' if request.endpoint == 'teacher.student_monitor' }}">
-                <a class="nav-link" href="{{ url_for('teacher.student_monitor') }}"><i class="fas fa-fw fa-desktop"></i><span>Student Monitor</span></a>
-            </li>
-            <hr class="sidebar-divider d-none d-md-block">
-            <div class="text-center d-none d-md-inline"><button class="rounded-circle border-0" id="sidebarToggle"></button></div>
-        </ul>
+        
+        {% include 'teacher_sidebar.html' %}
 
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
+                
                 {% include 'teacher_navbar.html' %}
 
-                <div class="container-fluid">
+                <div class="container-fluid animate__animated animate__fadeIn">
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                             {% for category, message in messages %}
-                                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">{{ message }}<button class="close" data-dismiss="alert">&times;</button></div>
+                                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show shadow-sm border-0 mb-4" style="border-radius: 10px;">
+                                    <i class="fas fa-info-circle mr-2"></i> {{ message }}
+                                    <button class="close" data-dismiss="alert">&times;</button>
+                                </div>
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
+                    
                     {% block content %}{% endblock %}
                 </div>
             </div>
-            <footer class="sticky-footer bg-white"><div class="container my-auto text-center"><span>TestPoint &copy; 2026</span></div></footer>
+            <footer class="sticky-footer bg-white border-top">
+                <div class="container my-auto text-center">
+                    <span class="small font-weight-bold text-muted">TestPoint Instructor &copy; 2026</span>
+                </div>
+            </footer>
         </div>
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <!-- Logout Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-0">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold text-gray-800" id="logoutModalLabel">
-                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i>
-                        {% if session.get('active_exam_id') %}Submit &amp; Logout{% else %}Confirm Logout{% endif %}
+            <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif); font-size: 1.5rem;">
+                        <i class="fas fa-sign-out-alt mr-2 text-danger"></i> Ready to Leave?
                     </h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
                 </div>
-                <div class="modal-body text-gray-600">
-                    {% if session.get('active_exam_id') %}
-                        <p class="mb-0">Are you sure you want to continue?</p>
-                    {% else %}
-                        <p class="mb-0">Are you sure you want to log out?</p>
-                    {% endif %}
+                <div class="modal-body text-gray-600 px-4 mt-2">
+                    Select "Sign Out" below if you are ready to end your current session.
                 </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-dismiss="modal">
-                        Cancel
-                    </button>
+                <div class="modal-footer border-0 pt-3 pb-4 px-4">
+                    <button class="btn btn-light px-4 rounded-pill" type="button" data-dismiss="modal">Cancel</button>
                     <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="fas fa-sign-out-alt fa-sm mr-1"></i>
-                            {% if session.get('active_exam_id') %}Submit &amp; Logout{% else %}Logout{% endif %}
-                        </button>
+                        <button type="submit" class="btn btn-danger px-4 rounded-pill">Sign Out</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
-    <script> (function($) { "use strict"; $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) { $("body").toggleClass("sidebar-toggled"); $(".sidebar").toggleClass("toggled"); }); })(jQuery); </script>
+    <script>
+        (function($) {
+            "use strict";
+            $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) {
+                $("body").toggleClass("sidebar-toggled");
+                $(".sidebar").toggleClass("toggled");
+                localStorage.setItem('tp_sidebar_state', $(".sidebar").hasClass("toggled") ? 'toggled' : 'expanded');
+            });
+            // Preserve sidebar state
+            if (localStorage.getItem('tp_sidebar_state') === 'toggled') {
+                $("body").addClass("sidebar-toggled");
+                $(".sidebar").addClass("toggled");
+            }
+        })(jQuery);
+    </script>
+    {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

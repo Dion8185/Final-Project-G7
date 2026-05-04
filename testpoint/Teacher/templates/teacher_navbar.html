@@ -1,45 +1,49 @@
-<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
+<nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top border-bottom">
+
     <!-- Sidebar Toggle (Mobile) -->
-    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3 text-danger">
-        <i class="fa fa-bars"></i>
+    <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+        <i class="fa fa-bars" style="color: var(--tp-teacher-accent);"></i>
     </button>
 
     <ul class="navbar-nav ml-auto">
-        <!-- ROLE BADGE -->
-        <li class="nav-item d-none d-sm-flex align-items-center mr-3">
-            <span class="badge badge-danger p-2 px-3 shadow-sm font-weight-bold">
-                <i class="fas fa-chalkboard-teacher mr-1"></i> INSTRUCTOR
-            </span>
-        </li>
 
-        <div class="topbar-divider d-none d-sm-block"></div>
-
-        <!-- USER INFORMATION DROP DOWN -->
+        <!-- User Information -->
         <li class="nav-item dropdown no-arrow">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <!-- Dynamic name from refactored session storage -->
-                <span class="mr-2 d-none d-lg-inline text-gray-600 small font-weight-bold">
-                    {{ session.get('firstname', 'Professor') }} {{ session.get('lastname', '') }}
-                </span>
-                <img class="img-profile rounded-circle border shadow-sm" src="https://startbootstrap.github.io/startbootstrap-sb-admin-2/img/undraw_profile_2.svg">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-toggle="dropdown">
+                
+                <div class="d-flex flex-column text-right mr-3 d-none d-lg-block">
+                    <span class="text-dark font-weight-bold small mb-0" style="line-height: 1.2;">
+                        Prof. {{ session.get('firstname', 'Instructor') }} {{ session.get('lastname', '') }}
+                    </span>
+                </div>
+
+                <div class="position-relative">
+                    <img class="img-profile rounded-circle shadow-sm" 
+                         src="https://ui-avatars.com/api/?name={{ session.get('firstname', 'I') }}+{{ session.get('lastname', 'P') }}&background=d93025&color=fff&bold=true"
+                         style="width: 38px; height: 38px; object-fit: cover; border: 2px solid var(--tp-teacher-accent-lt);">
+                </div>
             </a>
-            
-            <!-- Dropdown Menu -->
-            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in">
-                <a class="dropdown-item" href="{{ url_for('teacher.profile') }}">
-                    <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                    Profile Settings
+
+            <div class="dropdown-menu dropdown-menu-right shadow border-0 animated--grow-in mt-2" style="border-radius: 12px; padding: 10px; min-width: 210px;">
+                <div class="px-3 py-2 mb-2 d-lg-none">
+                    <p class="font-weight-bold mb-0 small">{{ session.get('firstname') }} {{ session.get('lastname') }}</p>
+                </div>
+                
+                <a class="dropdown-item rounded py-2" href="{{ url_for('teacher.profile') }}">
+                    <i class="fas fa-user-cog fa-sm fa-fw mr-2 text-gray-400"></i>
+                    <span style="font-size: 13.5px;">Account Settings</span>
                 </a>
+
+                <div class="dropdown-divider" style="opacity: 0.05;"></div>
                 
-                <div class="dropdown-divider"></div>
-                
-                <!-- This triggers the logoutModal defined in the global block/base -->
-                <button type="button" class="dropdown-item border-0 bg-transparent w-100 text-left text-danger"
+                <button type="button" class="dropdown-item rounded py-2 text-danger font-weight-bold border-0 bg-transparent w-100 text-left"
                     data-toggle="modal" data-target="#logoutModal">
-                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-danger"></i>
-                    Logout
+                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2"></i>
+                    <span style="font-size: 13.5px;">Secure Logout</span>
                 </button>
             </div>
         </li>
+
     </ul>
+
 </nav>
