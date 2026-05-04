@@ -13,143 +13,76 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
     
-<style>
-    :root {
-        --tp-admin-ink: #0f0e11;
-        --tp-admin-gray: #1e1e24;
-        --tp-admin-bg: #f8f9fa;
-        --tp-admin-border: rgba(0,0,0,0.06);
-        --tp-admin-radius: 12px;
-        --tp-font: 'DM Sans', sans-serif;
-        --tp-serif: 'DM Serif Display', serif;
-    }
+    <style>
+        :root {
+            --tp-admin-ink: #0f0e11;
+            --tp-admin-gray: #1e1e24;
+            --tp-admin-bg: #f8f9fa;
+            --tp-admin-border: rgba(0,0,0,0.06);
+            --tp-admin-radius: 12px;
+            --tp-font: 'DM Sans', sans-serif;
+            --tp-serif: 'DM Serif Display', serif;
+        }
 
-    body { font-family: var(--tp-font); background: var(--tp-admin-bg) !important; color: var(--tp-admin-ink); overflow-x: hidden; }
+        body { font-family: var(--tp-font); background: var(--tp-admin-bg) !important; color: var(--tp-admin-ink); }
 
-    #wrapper { display: flex; min-height: 100vh; }
+        #wrapper { display: flex; min-height: 100vh; }
 
-    /* ── SIDEBAR CORE ── */
-    .sidebar { 
-        background: var(--tp-admin-gray) !important;
-        background-image: none !important;
-        position: sticky; top: 0; height: 100vh; z-index: 1060 !important; /* Ensure it stays above content */
-        transition: width 0.2s ease-in-out !important; 
-        border-right: 1px solid rgba(255,255,255,0.05);
-        overflow-y: auto; 
-        overflow-x: visible !important; /* REQUIRED to see the pop-up choices */
-    }
+        /* ── SIDEBAR OVERRIDE ── */
+        .sidebar { 
+            background: var(--tp-admin-gray) !important;
+            background-image: none !important;
+            position: sticky; top: 0; height: 100vh; z-index: 1020;
+            overflow-y: auto; overflow-x: hidden;
+            transition: width 0.2s ease-in-out !important; 
+            border-right: 1px solid rgba(255,255,255,0.05);
+        }
 
-    /* 1. Kill the SB Admin default chevron (Fixes the "Double Chevron" issue) */
-    .sidebar .nav-item .nav-link[data-toggle="collapse"]::after {
-        display: none !important;
-    }
+        .sidebar .nav-item .nav-link { font-weight: 500; padding: 1rem; color: rgba(255,255,255,0.6) !important; }
+        .sidebar .nav-item .nav-link:hover { color: #fff !important; }
+        .sidebar .nav-item .nav-link i { font-size: 0.9rem; margin-right: 0.75rem; opacity: 0.5; }
+        .sidebar .sidebar-brand { height: 4.375rem; text-transform: none; font-family: var(--tp-serif); font-size: 1.25rem; letter-spacing: -0.5px; }
 
-    .sidebar .nav-item .nav-link { 
-        font-weight: 500; padding: 1rem; 
-        color: rgba(255,255,255,0.6) !important; 
-        display: flex; align-items: center; 
-    }
-    
-    .sidebar .nav-item .nav-link:hover { color: #fff !important; }
-    .sidebar .nav-item .nav-link i { font-size: 0.9rem; margin-right: 0.75rem; opacity: 0.5; width: 1.25rem; text-align: center; }
-    .sidebar .sidebar-brand { height: 4.375rem; text-transform: none; font-family: var(--tp-serif); font-size: 1.25rem; letter-spacing: -0.5px; }
+        /* ── CONTENT WRAPPER ── */
+        #content-wrapper { background: var(--tp-admin-bg); }
 
-    /* ── TOGGLED (NARROW) STATE ALIGNMENT ── */
-    
-    .sidebar.toggled { width: 6.5rem !important; overflow: visible !important; }
+        .topbar { 
+            background: #fff !important; border-bottom: 1px solid var(--tp-admin-border);
+            box-shadow: none !important; position: sticky; top: 0; z-index: 1030;
+        }
 
-    /* Center brand and hide text/chevrons in narrow mode */
-    .sidebar.toggled .sidebar-brand .sidebar-brand-icon { margin: 0 auto !important; }
-    .sidebar.toggled .sidebar-brand-text, 
-    .sidebar.toggled .sidebar-heading, 
-    .sidebar.toggled .nav-link span,
-    .sidebar.toggled .nav-link .dropdown-chevron { display: none !important; }
+        /* ── MODERN CARDS ── */
+        .card { 
+            border: 1px solid var(--tp-admin-border) !important; 
+            border-radius: var(--tp-admin-radius) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-header { background: transparent !important; border-bottom: 1px solid var(--tp-admin-border) !important; padding: 1.25rem !important; }
 
-    /* Force link to center its content */
-    .sidebar.toggled .nav-item .nav-link { 
-        justify-content: center !important; 
-        width: 100% !important; 
-        padding: 1.25rem 0 !important; 
-    }
-    
-    .sidebar.toggled .nav-item .nav-link i { margin-right: 0 !important; font-size: 1.15rem; opacity: 0.9; }
-
-    /* ── POP-OUT MENU FIX (The "Missing Choices" on Mobile/Narrow) ── */
-    
-    @media (max-width: 768px), (min-width: 769px) {
-        /* When sidebar is narrow, choices MUST pop out to the right */
-        .sidebar.toggled .nav-item { position: relative; }
+        /* ── UTILITIES ── */
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         
-        .sidebar.toggled .nav-item .collapse {
-            position: absolute !important;
-            left: 100% !important;
-            top: 0 !important;
-            width: 13rem !important;
-            z-index: 9999 !important;
-            display: none; 
-        }
-
-        /* Show the choices on hover when narrowed */
-        .sidebar.toggled .nav-item:hover .collapse {
-            display: block !important;
-            margin-left: 0.5rem;
-        }
-
-        /* Style the actual list inside the pop-out */
-        .sidebar.toggled .collapse-inner {
-            background: #fff !important;
-            border-radius: 12px !important;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
-            border: 1px solid rgba(0,0,0,0.1) !important;
-            padding: 0.5rem !important;
-        }
-
-        .sidebar.toggled .collapse-item {
-            color: var(--tp-admin-ink) !important;
-            padding: 0.75rem 1rem !important;
-            border-radius: 8px;
-            font-size: 0.85rem;
-        }
+        .sticky-footer { padding: 1.5rem 0; background: #fff !important; border-top: 1px solid var(--tp-admin-border); }
         
-        .sidebar.toggled .collapse-item:hover {
-            background-color: #f1f1f1 !important;
+        .dropdown-chevron { transition: transform 0.3s ease; opacity: 0.5; }
+        .nav-link:not(.collapsed) .dropdown-chevron { transform: rotate(180deg); opacity: 1; }
+
+        /* ── MOBILE SIDEBAR ACCORDION FIX ── */
+        /* SB Admin 2 clips the sidebar on mobile, hiding collapse dropdowns */
+        @media (max-width: 768px) {
+            .sidebar {
+                overflow-y: visible !important;
+                overflow-x: visible !important;
+            }
+            .sidebar .nav-item .collapse,
+            .sidebar .nav-item .collapsing {
+                position: static !important;
+                z-index: auto;
+            }
         }
-    }
-
-    /* Sidebar Toggle Button alignment (Bottom Button) */
-    #sidebarToggle { 
-        width: 2.5rem; height: 2.5rem; 
-        margin: 1.5rem auto; 
-        cursor: pointer; 
-        display: flex; align-items: center; justify-content: center; 
-        background: rgba(255,255,255,0.05);
-    }
-
-    /* ── CONTENT WRAPPER ── */
-    #content-wrapper { background: var(--tp-admin-bg); min-width: 0; flex: 1; }
-
-    .topbar { 
-        background: #fff !important; border-bottom: 1px solid var(--tp-admin-border);
-        box-shadow: none !important; position: sticky; top: 0; z-index: 1030;
-    }
-
-    /* ── MODERN CARDS ── */
-    .card { 
-        border: 1px solid var(--tp-admin-border) !important; 
-        border-radius: var(--tp-admin-radius) !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .card-header { background: transparent !important; border-bottom: 1px solid var(--tp-admin-border) !important; padding: 1.25rem !important; }
-
-    .sidebar::-webkit-scrollbar { width: 0px; } 
-    .sticky-footer { padding: 1.5rem 0; background: #fff !important; border-top: 1px solid var(--tp-admin-border); }
-    
-    /* Chevron logic for WIDE sidebar */
-    .dropdown-chevron { transition: transform 0.3s ease; opacity: 0.5; font-size: 10px !important; }
-    .nav-link:not(.collapsed) .dropdown-chevron { transform: rotate(180deg); opacity: 1; }
-</style>
-
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body id="page-top">
@@ -165,7 +98,7 @@
             </div>
             <footer class="sticky-footer">
                 <div class="container my-auto text-center">
-                    <span class="text-muted small font-weight-bold">TestPoint &copy; 2026</span>
+                    <span class="text-muted small font-weight-bold">TestPoint Command Center &copy; 2026</span>
                 </div>
             </footer>
         </div>
@@ -192,6 +125,7 @@
         {% block modals %}{% endblock %}
     </div>
 
+    <!-- ── SCRIPTS (Preserved) ── -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
