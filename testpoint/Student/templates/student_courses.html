@@ -75,7 +75,7 @@
                                 </td>
                                 <td class="text-center py-3 border-0">
                                     {% if exam.attempt_status == 'finished' %}
-                                        <div class="font-weight-bold text-dark">{{ exam.score | int }} / {{ exam.total_q }}</div>
+                                        <div class="font-weight-bold text-dark">{{ exam.score | int }} / {{ exam.question_limit }}</div>
                                     {% else %}
                                         <span class="text-muted small">--</span>
                                     {% endif %}

@@ -608,13 +608,31 @@ def import_ai_questions(exam_id):
         Extract exactly {num_q} academic questions from the provided text based on these specific instructions: "{teacher_notes}".
         
         Rules:
-        - Question types allowed: multiple_choice, true_false, identification.
-        - Difficulty: Decide based on notes or text context (easy, medium, or hard).
-        - Multiple choice must have exactly 4 options.
-        - Identification answers must be concise.
-        - Return ONLY a valid JSON array of objects. No markdown formatting, no backticks.
-        
-        Structure:
+        Allowed question types: multiple_choice, true_false, identification only.
+        Assign difficulty (easy, medium, hard) based on conceptual complexity, not sentence length or wording.
+        Questions must test understanding and meaning, not memorization of exact text.
+        For multiple_choice:
+        Must contain exactly 4 options.
+        Only one correct answer.
+        All options must be plausible and relevant to the question.
+        Avoid obviously incorrect or joke answers.
+        For true_false:
+        Statements must be clear, factual, and unambiguous.
+        Avoid trick questions or partially true statements.
+        For identification:
+        Answers must be concise (single word or short phrase only).
+        Do not require full sentences.
+        Do NOT generate questions that:
+        Refer to page numbers, sections, or document structure.
+        Depend on exact wording or copying text verbatim.
+        Ask where something is “located” in the text.
+        Rely on formatting (e.g., “in the paragraph above”).
+        Always paraphrase; do not copy sentences directly from the source.
+        Ensure all questions are clear, grammatically correct, and unambiguous.
+        Avoid duplicate or overly similar questions.
+        Output must strictly follow the provided JSON format with no extra text, explanations, markdown, or backticks.
+                        
+                Structure:
         [
           {{
             "text": "question",

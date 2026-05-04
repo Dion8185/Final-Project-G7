@@ -3,233 +3,273 @@
 {% set sidebar_active = 'certificates' %}
 
 {% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <style>
-    /* ── CERTIFICATE UI TOKENS ── */
-    .tp-cert-card {
-        border: 1.5px solid var(--tp-student-border) !important;
-        border-radius: 15px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    :root {
+        --cert-gold: #b8860b;
+        --cert-silver: #718096;
+        --cert-bronze: #8c5d03;
+        --academic-blue: #1a365d;
+    }
+
+    .credential-header {
+        background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%);
+        border-radius: 15px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+
+    .course-group-card {
+        border: none;
+        border-radius: 15px;
         background: #fff;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .course-group-header {
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1.25rem 1.5rem;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .achievement-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        background: white;
+        position: relative;
         overflow: hidden;
     }
-    .tp-cert-card:hover {
+
+    .achievement-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 35px rgba(45, 91, 227, 0.1) !important;
-        border-color: var(--tp-student-accent) !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    .tp-cert-preview {
-        height: 120px;
-        background: #f8fafc;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        border-bottom: 1px solid var(--tp-student-border);
-    }
-    .tp-cert-preview::before {
-        content: '';
+    .rank-indicator {
         position: absolute;
-        inset: 0;
-        background-image: radial-gradient(var(--tp-student-accent) 0.5px, transparent 0.5px);
-        background-size: 10px 10px;
-        opacity: 0.1;
+        top: 0;
+        right: 0;
+        padding: 5px 15px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: white;
+        text-transform: uppercase;
+        border-bottom-left-radius: 12px;
     }
 
-    .tp-award-icon {
-        width: 56px;
-        height: 56px;
-        background: #fff;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--tp-student-accent);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        z-index: 1;
+    .rank-1 {
+        background: var(--cert-gold);
     }
 
-    /* ── TRANSCRIPT LIST STYLING ── */
-    .tp-transcript-row {
-        background: #fff;
-        border: 1px solid var(--tp-student-border);
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 0.75rem;
-        transition: background 0.2s;
+    .rank-2 {
+        background: var(--cert-silver);
+    }
+
+    .rank-3 {
+        background: var(--cert-bronze);
+    }
+
+    .rank-honor {
+        background: var(--academic-blue);
+    }
+
+    .transcript-row {
+        border-left: 3px solid #e2e8f0;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        background: #f8fafc;
+        border-radius: 0 8px 8px 0;
         display: flex;
-        align-items: center;
         justify-content: space-between;
-    }
-    .tp-transcript-row:hover {
-        background: #fcfcfc;
-        border-color: #cbd5e1;
+        align-items: center;
     }
 
-    .tp-doc-icon {
-        width: 40px;
-        height: 40px;
-        background: #f1f5f9;
-        color: #64748b;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
+    .text-xxs {
+        font-size: 0.65rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- ── HEADER ── -->
-<div class="row mb-4 align-items-end">
-    <div class="col-md-7">
-        <h1 style="font-family: var(--tp-serif); color: var(--tp-student-ink); font-size: 2.2rem;" class="mb-1">Credentials & Reports</h1>
-        <p class="text-muted mb-0">Official certificates and downloadable exam transcripts.</p>
+<div class="container-fluid animate__animated animate__fadeIn">
+
+    <div class="credential-header shadow-lg d-sm-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="font-weight-bold mb-1" style="font-family: 'Georgia', serif;">Academic Excellence Portal</h1>
+            <p class="mb-0 opacity-75">Verified certificates and performance transcripts for {{ session.get('firstname')
+                }}.</p>
+        </div>
+        <div class="mt-3 mt-sm-0">
+            <button onclick="generateFullReport()" class="btn btn-light rounded-pill px-4 font-weight-bold shadow-sm">
+                <i class="fas fa-file-pdf mr-2 text-primary"></i> Academic Transcript
+            </button>
+        </div>
     </div>
-    <div class="col-md-5 text-md-right mt-3 mt-md-0">
-        <button class="btn btn-primary rounded-pill px-4 shadow-sm font-weight-bold" onclick="window.print()">
-            <i class="fas fa-print mr-2"></i> Print Dashboard
-        </button>
+
+    <div class="row">
+        <div class="col-xl-8">
+            {% if course_certs %}
+            <div class="mb-4">
+                <h5 class="font-weight-bold text-dark mb-3"><i class="fas fa-award text-warning mr-2"></i>Course Honors
+                    (Top 20)</h5>
+                <div class="row">
+                    {% for cert in course_certs %}
+                    <div class="col-md-6 mb-3">
+                        <div class="achievement-card p-3 border-left-primary">
+                            <div class="rank-indicator rank-honor">Honor Roll</div>
+                            <h6 class="font-weight-bold text-dark mb-1">{{ cert.course_name }}</h6>
+                            <p class="small text-muted mb-3">Final Standing: <strong>Rank #{{ cert.course_rank
+                                    }}</strong></p>
+                            <button
+                                onclick="generateCertificate('{{ cert.course_name }}', 'Course Honor Roll', '{{ cert.course_rank }}', 'Top 20 Graduate')"
+                                class="btn btn-primary btn-sm btn-block rounded-pill">
+                                <i class="fas fa-certificate mr-1"></i> View Honor Certificate
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <h5 class="font-weight-bold text-dark mb-3"><i class="fas fa-medal text-primary mr-2"></i>Exam Achievements
+                (Top 3)</h5>
+            {% if exam_certs %}
+            {% for course_name, items in exam_certs|groupby('course_name') %}
+            <div class="course-group-card shadow-sm">
+                <div class="course-group-header">
+                    <span class="text-xxs font-weight-bold text-uppercase text-primary">Departmental Course</span>
+                    <h5 class="font-weight-bold text-gray-800 m-0">{{ course_name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in items %}
+                        <div class="col-md-6 mb-3">
+                            <div class="achievement-card p-3">
+                                <div class="rank-indicator rank-{{ item.exam_rank }}">Rank #{{ item.exam_rank }}</div>
+                                <h6 class="font-weight-bold text-dark mb-1 pr-5">{{ item.assessment_name }}</h6>
+                                <p class="text-xxs text-muted mb-3">Score: {{ item.score }}/{{ item.total_q }} • Issued
+                                    {{ item.issued_date.strftime('%b %d, %Y') }}</p>
+                                <button
+                                    onclick="generateCertificate('{{ item.assessment_name }}', 'Outstanding Performance', '{{ item.exam_rank }}', '{{ course_name }}')"
+                                    class="btn btn-outline-primary btn-sm btn-block rounded-pill font-weight-bold">
+                                    <i class="fas fa-file-download mr-1"></i> Download Achievement
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="card border-0 shadow-sm py-5 text-center rounded-lg">
+                <i class="fas fa-star-half-alt fa-3x text-gray-200 mb-3"></i>
+                <h6 class="text-gray-500 font-weight-bold">No Top 3 Placements Yet</h6>
+                <p class="small text-muted">Certificates are awarded to the Top 3 students per exam.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-xl-4">
+            <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-dark text-uppercase small">Recent Exam History</h6>
+                </div>
+                <div class="card-body">
+                    {% if transcripts %}
+                    {% for t in transcripts[:8] %}
+                    <div class="transcript-row">
+                        <div>
+                            <div class="font-weight-bold text-dark small">{{ t.title }}</div>
+                            <span class="text-xxs text-muted">{{ t.course_code }}</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-weight-bold text-primary small">{{ t.score }}/{{ t.total_q }}</div>
+                            {% if t.total_q > 0 %}
+                            {% set score_pct = (t.score / t.total_q * 100) %}
+                            <span
+                                class="badge {% if score_pct >= t.pass_percentage %}badge-success{% else %}badge-danger{% endif %}"
+                                style="font-size: 8px;">
+                                {{ 'PASSED' if score_pct >= t.pass_percentage else 'FAILED' }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-center text-muted small py-4">No exam records found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <!-- ── LEFT: CERTIFICATES GRID ── -->
-    <div class="col-xl-8">
-        <div class="mb-3 d-flex align-items-center">
-            <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1.5px;">Earned Certificates</h6>
-            <div class="flex-grow-1 ml-3" style="height: 1px; background: var(--tp-student-border);"></div>
-        </div>
+<script>
+    const { jsPDF } = window.jspdf;
+    const studentName = "{{ session.get('firstname') }} {{ session.get('lastname') }}".toUpperCase();
 
-        <div class="row">
-            <!-- Mock Certificate 1 -->
-            <div class="col-md-6 mb-4">
-                <div class="card tp-cert-card shadow-sm h-100">
-                    <div class="tp-cert-preview">
-                        <div class="tp-award-icon">
-                            <i class="fas fa-certificate fa-2x"></i>
-                        </div>
-                    </div>
-                    <div class="card-body text-center p-4">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="letter-spacing: 1px;">Academic Excellence</div>
-                        <h5 class="font-weight-bold text-dark mb-2" style="font-family: var(--tp-serif);">Programming Fundamentals</h5>
-                        <p class="small text-muted mb-4">Issued: Oct 10, 2023 • Grade: A+</p>
-                        
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 mr-2">
-                                <i class="fas fa-eye mr-1"></i> Preview
-                            </button>
-                            <button class="btn btn-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 shadow-sm">
-                                <i class="fas fa-download mr-1"></i> PDF
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    function generateCertificate(subject, awardType, rank, courseContext) {
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        doc.setDrawColor(26, 54, 93); doc.setLineWidth(1.5); doc.rect(10, 10, 277, 190);
+        doc.setLineWidth(0.5); doc.rect(13, 13, 271, 184);
+        doc.setDrawColor(184, 134, 11); doc.line(10, 30, 25, 30); doc.line(30, 10, 30, 25);
+        doc.setTextColor(26, 54, 93); doc.setFont("times", "bolditalic"); doc.setFontSize(32);
+        doc.text("TestPoint Examination System", 148.5, 45, { align: "center" });
+        doc.setDrawColor(184, 134, 11); doc.setLineWidth(1); doc.line(80, 50, 217, 50);
+        doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold"); doc.setFontSize(22);
+        doc.text("CERTIFICATE OF " + awardType.toUpperCase(), 148.5, 75, { align: "center" });
+        doc.setFont("times", "normal"); doc.setFontSize(16);
+        doc.text("This official credential is proudly presented to", 148.5, 90, { align: "center" });
+        doc.setTextColor(26, 54, 93); doc.setFont("times", "bold"); doc.setFontSize(42);
+        doc.text(studentName, 148.5, 110, { align: "center" });
+        doc.setTextColor(0, 0, 0); doc.setFont("times", "normal"); doc.setFontSize(16);
+        doc.text(`For achieving exceptional academic standing of Rank #${rank}`, 148.5, 125, { align: "center" });
+        doc.text(`in the assessment of`, 148.5, 135, { align: "center" });
+        doc.setFont("times", "bold"); doc.setFontSize(24); doc.text(subject, 148.5, 150, { align: "center" });
+        doc.setFont("times", "italic"); doc.setFontSize(14); doc.text(`Department of ${courseContext}`, 148.5, 160, { align: "center" });
+        doc.setDrawColor(184, 134, 11); doc.setLineWidth(0.8); doc.circle(245, 160, 18, 'D');
+        doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("VERIFIED", 245, 158, { align: "center" });
+        doc.text("RESULT", 245, 163, { align: "center" });
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 100, 100);
+        doc.text("Issued on: " + new Date().toLocaleDateString(), 15, 185);
+        window.open(doc.output('bloburl'), '_blank');
+    }
 
-            <!-- Mock Certificate 2 -->
-            <div class="col-md-6 mb-4">
-                <div class="card tp-cert-card shadow-sm h-100">
-                    <div class="tp-cert-preview">
-                        <div class="tp-award-icon">
-                            <i class="fas fa-award fa-2x"></i>
-                        </div>
-                    </div>
-                    <div class="card-body text-center p-4">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1" style="letter-spacing: 1px;">Course Completion</div>
-                        <h5 class="font-weight-bold text-dark mb-2" style="font-family: var(--tp-serif);">Database Systems</h5>
-                        <p class="small text-muted mb-4">Issued: Nov 22, 2023 • Grade: B</p>
-                        
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 mr-2">
-                                <i class="fas fa-eye mr-1"></i> Preview
-                            </button>
-                            <button class="btn btn-primary rounded-pill btn-sm flex-fill font-weight-bold py-2 shadow-sm">
-                                <i class="fas fa-download mr-1"></i> PDF
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    function generateFullReport() {
+        const doc = new jsPDF();
+        doc.setFontSize(18); doc.setFont("helvetica", "bold");
+        doc.text("OFFICIAL ACADEMIC PERFORMANCE REPORT", 14, 22);
+        doc.setFontSize(10); doc.setFont("helvetica", "normal");
+        doc.text(`Student: ${studentName}`, 14, 32);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 42);
 
-    <!-- ── RIGHT: PDF RESULT REPORTS ── -->
-    <div class="col-xl-4">
-        <div class="mb-3 d-flex align-items-center">
-            <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1.5px;">Exam Transcripts</h6>
-            <div class="flex-grow-1 ml-3" style="height: 1px; background: var(--tp-student-border);"></div>
-        </div>
+        const tableData = [
+            {% for t in transcripts %}
+    [
+        "{{ t.course_code }}",
+        "{{ t.title }}",
+        "{{ t.score }}/{{ t.total_q }}",
+        "{% if t.total_q > 0 %}{{ (t.score/t.total_q*100)|round(1) }}%{% else %}0%{% endif %}",
+        "{% if t.total_q > 0 %}{{ 'PASSED' if (t.score/t.total_q*100) >= t.pass_percentage else 'FAILED' }}{% else %}N/A{% endif %}"
+    ],
+        {% endfor %}
+        ];
 
-        <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
-            <div class="card-body">
-                <p class="small text-muted mb-4">Download detailed PDF results for your completed exam sessions.</p>
-                
-                <!-- Mock Transcript Row 1 -->
-                <div class="tp-transcript-row">
-                    <div class="d-flex align-items-center">
-                        <div class="tp-doc-icon mr-3">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div>
-                            <div class="font-weight-bold text-dark" style="font-size: 13px;">Midterm Exam (CS101)</div>
-                            <div class="text-muted small">Score: 48/50 • Nov 15</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-light btn-circle-sm border shadow-sm">
-                        <i class="fas fa-download fa-xs text-primary"></i>
-                    </button>
-                </div>
-
-                <!-- Mock Transcript Row 2 -->
-                <div class="tp-transcript-row">
-                    <div class="d-flex align-items-center">
-                        <div class="tp-doc-icon mr-3">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div>
-                            <div class="font-weight-bold text-dark" style="font-size: 13px;">Quiz #3 (MATH2)</div>
-                            <div class="text-muted small">Score: 18/20 • Nov 02</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-light btn-circle-sm border shadow-sm">
-                        <i class="fas fa-download fa-xs text-primary"></i>
-                    </button>
-                </div>
-
-                <!-- Mock Transcript Row 3 -->
-                <div class="tp-transcript-row">
-                    <div class="d-flex align-items-center">
-                        <div class="tp-doc-icon mr-3">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div>
-                            <div class="font-weight-bold text-dark" style="font-size: 13px;">Quiz #2 (IT-SOFT)</div>
-                            <div class="text-muted small">Score: 20/20 • Oct 28</div>
-                        </div>
-                    </div>
-                    <button class="btn btn-light btn-circle-sm border shadow-sm">
-                        <i class="fas fa-download fa-xs text-primary"></i>
-                    </button>
-                </div>
-
-                <button class="btn btn-light btn-block btn-sm mt-3 font-weight-bold text-muted py-2" style="border-radius: 10px;">
-                    Request Full Transcript
-                </button>
-            </div>
-        </div>
-
-        <!-- Print Instructions -->
-        <div class="card border-0 shadow-sm p-4" style="background: var(--tp-student-gray); border-radius: 15px;">
-            <div class="d-flex align-items-center text-white mb-2">
-                <i class="fas fa-print mr-2 text-warning"></i>
-                <h6 class="m-0 font-weight-bold">Print Information</h6>
-            </div>
-            <p class="small text-white-50 mb-0" style="line-height: 1.6;">
-                Official certificates are best printed on A4 heavy-weight paper (180-220 GSM) for a professional finish.
-            </p>
-        </div>
-    </div>
-</div>
+    doc.autoTable({
+        startY: 50,
+        head: [['Code', 'Examination Title', 'Raw Score', 'Percentage', 'Result']],
+        body: tableData,
+        headStyles: { fillColor: [26, 54, 93] },
+        theme: 'striped'
+    });
+    window.open(doc.output('bloburl'), '_blank');
+    }
+</script>
 {% endblock %}

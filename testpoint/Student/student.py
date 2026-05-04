@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, make_response
 import mysql.connector
 from testpoint import db_config
 from testpoint.Auth.login import user_logged_in
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 import random
+from fpdf import FPDF
 
 student = Blueprint('student', __name__, template_folder='templates', static_folder='static',
                     static_url_path='/student/static')
@@ -31,7 +32,6 @@ def inject_enrolled_courses():
         try:
             connection = mysql.connector.connect(**db_config)
             cursor = connection.cursor(dictionary=True)
-            # Fetch all classes where the student is enrolled (removed the status filter)
             cursor.execute("""
                 SELECT cl.class_code as course_id, cl.class_code, c.course_name, c.course_code 
                 FROM classes cl
@@ -47,6 +47,7 @@ def inject_enrolled_courses():
             return dict(enrolled_courses=[])
     return dict(enrolled_courses=[])
 
+
 #! 1. DASHBOARD
 @student.route('/student_dashboard')
 def student_dashboard():
@@ -56,16 +57,13 @@ def student_dashboard():
 
     student_id = session.get('user_id')
     student_firstname = session.get('firstname')
-    student_lastname = session.get('lastname')
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
 
     try:
-        # Stats 1: Enrolled Courses
         cursor.execute("SELECT COUNT(*) as count FROM enrollments WHERE student_id = %s AND status = 'active'", (student_id,))
         course_count = cursor.fetchone()['count']
 
-        # Stats 2: Completed Exams
         cursor.execute("""
             SELECT COUNT(*) as count FROM exam_attempts ea 
             JOIN exams e ON ea.exam_id = e.exam_id 
@@ -73,7 +71,6 @@ def student_dashboard():
         """, (student_id,))
         completed_count = cursor.fetchone()['count']
         
-        # Stats 3: Available Exams Count
         cursor.execute("""
             SELECT COUNT(*) as count FROM exams e
             JOIN enrollments en ON e.class_code = en.class_code
@@ -83,19 +80,18 @@ def student_dashboard():
         """, (student_id, student_id))
         available_count = cursor.fetchone()['count']
 
-        # Stats 4: Overall Average Score
+        # Protection against division by zero using NULLIF
         cursor.execute("""
             SELECT AVG(percentage) as overall_avg FROM (
-                SELECT (ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100) as percentage
+                SELECT (ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0) * 100) as percentage
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
                 WHERE ea.student_id = %s AND ea.status = 'finished'
             ) as sub
         """, (student_id,))
         avg_res = cursor.fetchone()
-        overall_avg = round(float(avg_res['overall_avg']), 1) if avg_res['overall_avg'] else 0
+        overall_avg = round(float(avg_res['overall_avg']), 1) if avg_res and avg_res['overall_avg'] else 0
 
-        # --- DATA: Upcoming Exams List (Detailed) ---
         cursor.execute("""
             SELECT e.title, e.date_time, c.course_name, e.duration_minutes
             FROM exams e
@@ -109,21 +105,19 @@ def student_dashboard():
         """, (student_id, student_id))
         upcoming_exams = cursor.fetchall()
 
-        # --- DATA: Recent Results (Last 3) ---
         cursor.execute("""
             SELECT e.title, ea.score, ea.end_time,
                    (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total
             FROM exam_attempts ea
             JOIN exams e ON ea.exam_id = e.exam_id
-            WHERE ea.student_id = %s AND ea.status = 'finished'
+            WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
             ORDER BY ea.end_time DESC LIMIT 3
         """, (student_id,))
         recent_results = cursor.fetchall()
 
-        # --- CHART: Performance Trend ---
         cursor.execute("""
             SELECT e.title, 
-                   COALESCE((ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100), 0) as percentage
+                   COALESCE((ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0) * 100), 0) as percentage
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
                 WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
@@ -133,7 +127,6 @@ def student_dashboard():
         trend_labels = [p['title'] for p in performance_trend]
         trend_scores = [round(float(p['percentage']), 1) for p in performance_trend]
 
-        # --- TABLE: Class Rankings ---
         cursor.execute("""
             SELECT rank_data.class_code, c.course_name, rank_data.student_avg, rank_data.class_rank, rank_data.total_students
             FROM (
@@ -142,7 +135,7 @@ def student_dashboard():
                     COUNT(*) OVER (PARTITION BY t.class_code) as total_students
                 FROM (
                     SELECT en.class_code, en.student_id, 
-                        AVG(COALESCE(ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100, 0)) as student_avg
+                        AVG(COALESCE(ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0) * 100, 0)) as student_avg
                     FROM enrollments en
                     LEFT JOIN exams e ON en.class_code = e.class_code
                     LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND en.student_id = ea.student_id
@@ -168,8 +161,7 @@ def student_dashboard():
                                trend_scores=trend_scores,
                                rankings=rankings)
     finally:
-        cursor.close()
-        connection.close()
+        cursor.close(); connection.close()
 
 #! PROFILE
 @student.route('/profile', methods=['GET', 'POST'])
@@ -816,67 +808,63 @@ def student_certificates():
     cursor = connection.cursor(dictionary=True)
 
     try:
-        # 1. FETCH TRANSCRIPTS (All finished exam attempts)
-        # These are used for the right-hand sidebar "Exam Transcripts"
+        # EXAM ACHIEVEMENTS (Top 1-3) - Protected against 0 questions
         cursor.execute("""
-            SELECT 
-                ea.attempt_id, 
-                e.title, 
-                c.course_code, 
-                c.course_name, 
-                ea.score, 
-                ea.end_time,
-                (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_q
+            SELECT * FROM (
+                SELECT 
+                    ea.attempt_id, e.title as assessment_name, c.course_name, c.course_code,
+                    ea.score, (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_q,
+                    ea.end_time as issued_date,
+                    RANK() OVER (PARTITION BY ea.exam_id ORDER BY (ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0)) DESC) as exam_rank
+                FROM exam_attempts ea
+                JOIN exams e ON ea.exam_id = e.exam_id
+                JOIN classes cl ON e.class_code = cl.class_code
+                JOIN courses c ON cl.course_code = c.course_code
+                WHERE ea.status = 'finished' AND e.archived = 0
+            ) AS ranked_exams
+            WHERE ranked_exams.attempt_id IN (SELECT attempt_id FROM exam_attempts WHERE student_id = %s)
+            AND exam_rank <= 3 AND total_q > 0
+            ORDER BY course_name ASC, exam_rank ASC
+        """, (student_id,))
+        exam_certs = cursor.fetchall()
+
+        # COURSE HONORS (Top 20) - Protected against 0 questions
+        cursor.execute("""
+            SELECT * FROM (
+                SELECT 
+                    en.student_id, c.course_name, c.course_code, cl.class_code,
+                    AVG(ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0) * 100) as avg_pct,
+                    RANK() OVER (PARTITION BY cl.class_code ORDER BY AVG(ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0)) DESC) as course_rank
+                FROM enrollments en
+                JOIN classes cl ON en.class_code = cl.class_code
+                JOIN courses c ON cl.course_code = c.course_code
+                LEFT JOIN exams e ON cl.class_code = e.class_code
+                LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND en.student_id = ea.student_id
+                WHERE ea.status = 'finished' OR ea.status IS NULL
+                GROUP BY en.student_id, cl.class_code
+            ) AS ranked_courses
+            WHERE ranked_courses.student_id = %s AND course_rank <= 20 AND avg_pct IS NOT NULL
+            ORDER BY avg_pct DESC
+        """, (student_id,))
+        course_certs = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT e.title, c.course_name, c.course_code, ea.score, ea.end_time,
+                   (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_q,
+                   e.pass_percentage
             FROM exam_attempts ea
             JOIN exams e ON ea.exam_id = e.exam_id
             JOIN classes cl ON e.class_code = cl.class_code
             JOIN courses c ON cl.course_code = c.course_code
-            WHERE ea.student_id = %s AND ea.status = 'finished'
+            WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
             ORDER BY ea.end_time DESC
         """, (student_id,))
         transcripts = cursor.fetchall()
 
-        # 2. FETCH CERTIFICATES (Calculated Achievements)
-        # Logic: If student scored >= 85% in an exam, they earn an "Excellence" certificate.
-        # If they scored between passing and 84%, they get "Completion".
-        cursor.execute("""
-            SELECT 
-                ea.attempt_id,
-                e.title as assessment_name,
-                c.course_name,
-                ea.score,
-                (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) as total_q,
-                ea.end_time as issued_date,
-                e.pass_percentage
-            FROM exam_attempts ea
-            JOIN exams e ON ea.exam_id = e.exam_id
-            JOIN classes cl ON e.class_code = cl.class_code
-            JOIN courses c ON cl.course_code = c.course_code
-            WHERE ea.student_id = %s AND ea.status = 'finished'
-        """, (student_id,))
-        raw_certs = cursor.fetchall()
-
-        certificates = []
-        for cert in raw_certs:
-            # Calculate percentage
-            total = cert['total_q']
-            score = cert['score']
-            percent = (score / total * 100) if total > 0 else 0
-            
-            # Filter for achievements
-            if percent >= 85:
-                cert['type'] = 'Certificate of Excellence'
-                cert['grade'] = 'A+'
-                certificates.append(cert)
-            elif percent >= cert['pass_percentage']:
-                cert['type'] = 'Certificate of Completion'
-                cert['grade'] = 'Pass'
-                certificates.append(cert)
-
         return render_template('student_certificates.html', 
-                               certificates=certificates, 
+                               exam_certs=exam_certs, 
+                               course_certs=course_certs,
                                transcripts=transcripts)
 
     finally:
-        cursor.close()
-        connection.close()
+        cursor.close(); connection.close()
