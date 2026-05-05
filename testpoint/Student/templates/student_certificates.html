@@ -214,6 +214,7 @@
 <script>
     const { jsPDF } = window.jspdf;
     const studentName = "{{ session.get('firstname') }} {{ session.get('lastname') }}".toUpperCase();
+    const studentID = "{{ session.get('user_id') }}".toUpperCase();
  
 function generateCertificate(subject, awardType, rank, courseContext) {
 
@@ -329,7 +330,8 @@ function generateCertificate(subject, awardType, rank, courseContext) {
         doc.text("OFFICIAL ACADEMIC PERFORMANCE REPORT", 14, 22);
         doc.setFontSize(10); doc.setFont("helvetica", "normal");
         doc.text(`Student: ${studentName}`, 14, 32);
-        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 42);
+        doc.text(`Student ID: ${studentID}`, 14, 42)
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 52);
 
         const tableData = [
             {% for t in transcripts %}
@@ -344,7 +346,7 @@ function generateCertificate(subject, awardType, rank, courseContext) {
         ];
 
     doc.autoTable({
-        startY: 50,
+        startY: 60,
         head: [['Code', 'Examination Title', 'Raw Score', 'Percentage', 'Result']],
         body: tableData,
         headStyles: { fillColor: [26, 54, 93] },

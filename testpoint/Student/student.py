@@ -941,7 +941,8 @@ def student_certificates():
         return render_template('student_certificates.html', 
                                exam_certs=exam_certs, 
                                course_certs=course_certs,
-                               transcripts=transcripts)
+                               transcripts=transcripts,
+                               student_id = student_id)
 
     finally:
         cursor.close(); connection.close()
