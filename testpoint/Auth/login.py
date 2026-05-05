@@ -271,13 +271,11 @@ def login():
         user = cursor.fetchone()
 
         if user and check_password_hash(user['password'], password_input):
-            # Check if account is deactivated
             if not user['is_active']:
                 flash('Login not allowed. Please contact the administrators.', 'danger')
                 cursor.close(); connection.close()
-                return redirect(url_for('auth.login')) # Redirect to refresh stats on next GET
+                return redirect(url_for('auth.login'))
 
-            # Admin / Super Admin
             if user['role'] in ['admin', 'super_admin']:
                 cursor.execute("SELECT firstname FROM admins WHERE email = %s", (email_input,))
                 admin_data = cursor.fetchone()
@@ -290,9 +288,8 @@ def login():
                 })
                 cursor.close(); connection.close(); return redirect(url_for('admin.admin_dashboard'))
             
-            # Student
             elif user['role'] == 'student':
-                cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
+                cursor.execute("SELECT firstname, lastname, block_id FROM students WHERE email = %s", (email_input,))
                 s_data = cursor.fetchone()
                 session.update({
                     'user_logged_in': True, 
@@ -302,9 +299,13 @@ def login():
                     'firstname': s_data['firstname'], 
                     'lastname': s_data['lastname']
                 })
+                
+                # Check for "Rekta" Setup Requirement
+                if s_data['block_id'] is None:
+                    cursor.close(); connection.close(); return redirect(url_for('student.setup_account'))
+                
                 cursor.close(); connection.close(); return redirect(url_for('student.student_dashboard'))
             
-            # Teacher
             elif user['role'] == 'teacher':
                 cursor.execute("SELECT firstname, lastname FROM teachers WHERE email = %s", (email_input,))
                 t_data = cursor.fetchone()
@@ -318,7 +319,6 @@ def login():
                 })
                 cursor.close(); connection.close(); return redirect(url_for('teacher.teacher_dashboard'))
 
-        # B. Check Pending Users Table if not found in primary users
         cursor.execute("SELECT * FROM pending_users WHERE email = %s", (email_input,))
         pending = cursor.fetchone()
 
@@ -342,36 +342,25 @@ def login():
                 cursor.close(); connection.close(); 
                 return render_template('waiting_approval.html', role=pending['role'])
 
-        # Fallback for failed credentials
         flash('Invalid email or password!', 'danger')
         cursor.close(); connection.close()
         return redirect(url_for('auth.login'))
 
-    # ── 5. NEW: FETCH LIVE STATS FOR DESIGN (GET REQUEST) ──
-    # This runs when the page is loaded normally
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
-    
-    # Count Students
     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'student'")
     students_count = cursor.fetchone()[0]
-    
-    # Count Exams
     cursor.execute("SELECT COUNT(*) FROM exams")
     exams_count = cursor.fetchone()[0]
-    
-    # Count Questions (Replacing Satisfaction)
-    # Using 'exam_questions' based on your logout logic
     cursor.execute("SELECT COUNT(*) FROM exam_questions")
     questions_count = cursor.fetchone()[0]
-    
     cursor.close(); connection.close()
 
     return render_template('login.html', 
                            students_count=students_count, 
                            exams_count=exams_count, 
                            questions_count=questions_count)
-
+    
 #! 2. REGISTER STUDENT
 @auth.route('/register/student', methods=['GET', 'POST'])
 def register_student():

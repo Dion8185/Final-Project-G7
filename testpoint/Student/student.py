@@ -12,6 +12,7 @@ student = Blueprint('student', __name__, template_folder='templates', static_fol
 
 @student.before_app_request
 def enforce_lockdown():
+    # 1. Existing Exam Lockdown Logic
     active_exam_id = session.get('active_exam_id')
     if active_exam_id:
         allowed_endpoints = [
@@ -24,6 +25,69 @@ def enforce_lockdown():
         ]
         if request.endpoint and request.endpoint not in allowed_endpoints:
             return redirect(url_for('student.take_exam', exam_id=active_exam_id))
+
+    # 2. Post-Approval Account Setup Guard
+    if session.get('role') == 'student' and 'user_id' in session:
+        # Exclude setup page and logout from redirect loop
+        if request.endpoint in ['student.setup_account', 'auth.logout', 'static']:
+            return
+            
+        student_id = session.get('user_id')
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT block_id FROM students WHERE student_id = %s", (student_id,))
+        res = cursor.fetchone()
+        cursor.close(); connection.close()
+        
+        if res and res['block_id'] is None:
+            return redirect(url_for('student.setup_account'))
+
+@student.route('/setup-account', methods=['GET', 'POST'])
+def setup_account():
+    if not user_logged_in(): return redirect(url_for('auth.login'))
+    
+    student_id = session.get('user_id')
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+
+    if request.method == 'POST':
+        block_id = request.form.get('block_id')
+        
+        # Security: Final Capacity Check
+        cursor.execute("""
+            SELECT b.capacity, (SELECT COUNT(*) FROM students WHERE block_id = b.block_id) as current_count
+            FROM blocks b WHERE b.block_id = %s
+        """, (block_id,))
+        stats = cursor.fetchone()
+        
+        if stats and stats['current_count'] >= stats['capacity']:
+            flash("Sorry, this block just reached its capacity. Please select another block.", "warning")
+            return redirect(url_for('student.setup_account'))
+
+        # Update Student Record
+        cursor.execute("UPDATE students SET block_id = %s WHERE student_id = %s", (block_id, student_id))
+        connection.commit()
+        cursor.close(); connection.close()
+        
+        flash("Your account setup is complete! You can now access your dashboard.", "success")
+        return redirect(url_for('student.student_dashboard'))
+
+    # GET: Fetch Data for UI
+    cursor.execute("SELECT * FROM programs WHERE is_active = 1")
+    programs = cursor.fetchall()
+    
+    cursor.execute("""
+        SELECT b.*, p.program_name,
+        (b.capacity - (SELECT COUNT(*) FROM students WHERE block_id = b.block_id)) as slots_left
+        FROM blocks b
+        JOIN programs p ON b.program_id = p.program_id
+        WHERE b.is_active = 1
+        HAVING slots_left > 0
+    """)
+    blocks = cursor.fetchall()
+    
+    cursor.close(); connection.close()
+    return render_template('student_setup.html', programs=programs, blocks=blocks)
 
 @student.app_context_processor
 def inject_enrolled_courses():

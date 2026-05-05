@@ -1176,8 +1176,11 @@ def approve_user(pending_id):
                            (new_id, p['email'], p['password'], p['role']))
             
             if p['role'] == 'student':
-                cursor.execute("INSERT INTO students (student_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
-                               (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
+                # Explicitly setting block_id to NULL to trigger post-approval setup
+                cursor.execute("""
+                    INSERT INTO students (student_id, email, firstname, lastname, middlename, block_id, region, province, city, barangay) 
+                    VALUES (%s, %s, %s, %s, %s, NULL, %s, %s, %s, %s)
+                """, (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
             else:
                 cursor.execute("INSERT INTO teachers (teacher_id, email, firstname, lastname, middlename, region, province, city, barangay) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)", 
                                (new_id, p['email'], p['firstname'], p['lastname'], p['middlename'], p['region'], p['province'], p['city'], p['barangay']))
