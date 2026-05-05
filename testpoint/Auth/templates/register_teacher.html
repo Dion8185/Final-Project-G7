@@ -39,6 +39,18 @@
             position: sticky; top: 0; height: 100vh; overflow: hidden;
         }
 
+        .tp-left::after {
+            content: '';
+            position: absolute; 
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         .tp-left::before {
             content: ''; position: absolute; inset: 0;
             background: radial-gradient(ellipse 70% 60% at 20% 80%, rgba(217,48,37,.25) 0%, transparent 60%);
