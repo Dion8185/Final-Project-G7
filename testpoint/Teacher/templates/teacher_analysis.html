@@ -1,124 +1,72 @@
 {% extends "teacher_base.html" %}
-{% block title %}Performance Analytics | TestPoint Instructor{% endblock %}
+{% block title %}Performance Analytics | TestPoint{% endblock %}
 
 {% block extra_head %}
 <style>
-    /* ── ANALYTICS UI ── */
-    .analysis-card {
-        border: 1px solid var(--tp-teacher-border) !important;
-        border-radius: var(--tp-teacher-radius) !important;
-        background: #fff;
-    }
-
-    /* Table Typography */
-    .table thead th {
-        background: #f8f9fa;
-        color: #64748b;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        font-weight: 800;
-        border-top: none;
-        padding: 1rem 1.25rem;
-    }
-
-    /* Rank Medals */
     .rank-badge {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 11px;
+        width: 35px; height: 35px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: bold; font-size: 14px; margin: auto;
     }
-    .rank-1 { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
-    .rank-2 { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-    .rank-3 { background: #fff7ed; color: #9a3412; border: 1px solid #fdba74; }
-    .rank-gen { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
+    .rank-1 { background: #fff3cd; color: #856404; border: 2px solid #ffeeba; }
+    .rank-2 { background: #e2e3e5; color: #383d41; border: 2px solid #d6d8db; }
+    .rank-3 { background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
+    .rank-gen { background: #f1f3f5; color: #495057; border: 1px solid #dee2e6; }
 
-    /* Item Analysis Bars */
-    .killer-q-item {
-        padding: 1rem;
-        border-radius: 10px;
-        background: #f8fafc;
-        margin-bottom: 12px;
-        border: 1px solid #f1f5f9;
-    }
+    .killer-q-item { margin-bottom: 20px; }
+    .killer-label { font-size: 13px; font-weight: 600; color: #2d3436; margin-bottom: 5px; display: block; }
     
-    .killer-label {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--tp-teacher-ink);
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .progress-analytics {
-        height: 6px;
-        border-radius: 10px;
-        background: #e2e8f0;
-    }
-
-    /* Summary Components */
-    .stat-box {
-        text-align: center;
-        padding: 1.5rem;
-        border-right: 1px solid var(--tp-teacher-border);
-    }
-    .stat-box:last-child { border-right: none; }
+    /* Custom Stacked Progress Bar */
+    .analysis-progress { height: 12px; border-radius: 6px; overflow: hidden; background: #eee; display: flex; }
+    .prog-correct { background-color: #2ecc71; height: 100%; transition: width 0.6s ease; }
+    .prog-wrong { background-color: #ff7675; height: 100%; transition: width 0.6s ease; }
     
-    .stat-val { font-family: var(--tp-serif); font-size: 2rem; color: var(--tp-teacher-accent); line-height: 1; }
-    .stat-desc { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+    .legend-box { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 5px; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- ── HEADER SECTION ── -->
 <div class="row mb-4 align-items-end">
     <div class="col-md-7">
         <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.25rem;" class="mb-1">
             Performance <span style="color: var(--tp-teacher-accent);">Analytics</span>
         </h1>
-        <p class="text-muted mb-0">Deep-dive insights into student rankings and assessment difficulty.</p>
+        <p class="text-muted mb-0">Visual breakdown of exam results and question difficulty.</p>
     </div>
     <div class="col-md-5 text-md-right mt-3 mt-md-0">
-        <div class="d-inline-block text-left mr-2">
-            <select class="form-control form-control-sm rounded-pill border shadow-sm font-weight-bold" style="min-width: 200px;">
-                <option>Select Assessment...</option>
-                <option selected>Midterm Exam - CC1100</option>
-                <option>Quiz 1 - Logic Formulation</option>
-            </select>
-        </div>
-        <button class="btn btn-dark px-3 rounded-pill font-weight-bold shadow-sm" style="font-size: 12px;">
-            <i class="fas fa-download mr-2"></i> Export Report
-        </button>
+        <select class="form-control form-control-sm rounded-pill border shadow-sm font-weight-bold d-inline-block w-auto" 
+                onchange="location.href='?exam_id=' + this.value;">
+            <option value="">Choose Exam...</option>
+            {% for ex in all_exams %}
+            <option value="{{ ex.exam_id }}" {% if selected_exam and selected_exam.exam_id == ex.exam_id %}selected{% endif %}>
+                {{ ex.course_name }} - {{ ex.title }}
+            </option>
+            {% endfor %}
+        </select>
     </div>
 </div>
 
-<!-- ── TOP SUMMARY ROW ── -->
+{% if stats %}
+<!-- ── STATS CARDS ── -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card analysis-card shadow-sm border-0">
-            <div class="card-body p-0">
-                <div class="d-flex flex-wrap flex-md-nowrap">
-                    <div class="stat-box flex-fill">
-                        <div class="stat-val">42</div>
-                        <div class="stat-desc">Total Takers</div>
-                    </div>
-                    <div class="stat-box flex-fill">
-                        <div class="stat-val">78.4%</div>
-                        <div class="stat-desc">Class Average</div>
-                    </div>
-                    <div class="stat-box flex-fill">
-                        <div class="stat-val">92%</div>
-                        <div class="stat-desc">Passing Rate</div>
-                    </div>
-                    <div class="stat-box flex-fill">
-                        <div class="stat-val text-warning">14</div>
-                        <div class="stat-desc">Integrity Flags</div>
-                    </div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0 d-flex flex-wrap text-center">
+                <div class="flex-fill p-4 border-right">
+                    <h2 class="mb-0 font-weight-bold">{{ stats.total_takers }}</h2>
+                    <small class="text-muted text-uppercase font-weight-bold">Total Takers</small>
+                </div>
+                <div class="flex-fill p-4 border-right">
+                    <h2 class="mb-0 font-weight-bold text-primary">{{ stats.avg_percent }}%</h2>
+                    <small class="text-muted text-uppercase font-weight-bold">Class Average</small>
+                </div>
+                <div class="flex-fill p-4 border-right">
+                    <h2 class="mb-0 font-weight-bold text-success">{{ stats.pass_rate }}%</h2>
+                    <small class="text-muted text-uppercase font-weight-bold">Passing Rate</small>
+                </div>
+                <div class="flex-fill p-4">
+                    <h2 class="mb-0 font-weight-bold text-warning">{{ stats.violations }}</h2>
+                    <small class="text-muted text-uppercase font-weight-bold">Integrity Flags</small>
                 </div>
             </div>
         </div>
@@ -126,131 +74,131 @@
 </div>
 
 <div class="row">
-    <!-- ── LEFT: STUDENT RANKINGS ── -->
+    <!-- ── LEADERBOARD ── -->
     <div class="col-xl-7">
-        <div class="card analysis-card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between" style="border-bottom: 1.5px solid var(--tp-teacher-border) !important;">
-                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Top Performers (Leaderboard)</h6>
-                <span class="badge badge-light border text-muted px-2 py-1" style="font-size: 10px;">Top 10 Percentile</span>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-uppercase small">Top Performers</h6>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th class="pl-4">Rank</th>
-                                <th>Student</th>
-                                <th class="text-center">Score</th>
-                                <th class="text-center">Percentile</th>
-                                <th class="text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-dark" style="font-size: 14px;">
-                            <!-- Placeholder Rank 1 -->
-                            <tr>
-                                <td class="pl-4 py-3">
-                                    <div class="rank-badge rank-1 shadow-sm">1</div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Justin+Salaveria&background=fef3c7&color=92400e&bold=true" class="rounded-circle mr-3" style="width: 32px; height: 32px;">
-                                        <div class="font-weight-bold">Salaveria, Justin</div>
-                                    </div>
-                                </td>
-                                <td class="text-center font-weight-bold">48/50</td>
-                                <td class="text-center"><span class="text-success font-weight-bold">96%</span></td>
-                                <td class="text-center">
-                                    <button class="btn btn-light btn-circle-sm border"><i class="fas fa-search fa-xs"></i></button>
-                                </td>
-                            </tr>
-                            <!-- Placeholder Rank 2 -->
-                            <tr>
-                                <td class="pl-4 py-3">
-                                    <div class="rank-badge rank-2 shadow-sm">2</div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Aldous+Garcia&background=f1f5f9&color=475569&bold=true" class="rounded-circle mr-3" style="width: 32px; height: 32px;">
-                                        <div class="font-weight-bold">Garcia, Aldous</div>
-                                    </div>
-                                </td>
-                                <td class="text-center font-weight-bold">45/50</td>
-                                <td class="text-center"><span class="text-primary font-weight-bold">90%</span></td>
-                                <td class="text-center">
-                                    <button class="btn btn-light btn-circle-sm border"><i class="fas fa-search fa-xs"></i></button>
-                                </td>
-                            </tr>
-                            <!-- Placeholder Rank 3 -->
-                            <tr>
-                                <td class="pl-4 py-3">
-                                    <div class="rank-badge rank-3 shadow-sm">3</div>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name=Tyrael+Gonzalvo&background=fff7ed&color=9a3412&bold=true" class="rounded-circle mr-3" style="width: 32px; height: 32px;">
-                                        <div class="font-weight-bold">Gonzalvo, Tyrael</div>
-                                    </div>
-                                </td>
-                                <td class="text-center font-weight-bold">44/50</td>
-                                <td class="text-center"><span class="text-primary font-weight-bold">88%</span></td>
-                                <td class="text-center">
-                                    <button class="btn btn-light btn-circle-sm border"><i class="fas fa-search fa-xs"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer bg-white border-top-0 text-center py-3">
-                <a href="#" class="text-danger font-weight-bold small text-uppercase" style="letter-spacing: 0.5px; text-decoration: none;">View Full Class Standing <i class="fas fa-chevron-right ml-1"></i></a>
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="text-center">Rank</th>
+                            <th>Student</th>
+                            <th class="text-center">Score</th>
+                            <th class="text-center">Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in rankings %}
+                        <tr>
+                            <td class="text-center">
+                                <div class="rank-badge {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% else %}rank-gen{% endif %}">
+                                    {{ loop.index }}
+                                </div>
+                            </td>
+                            <td class="align-middle">
+                                <strong>{{ student.lastname }}, {{ student.firstname }}</strong>
+                            </td>
+                            <td class="text-center align-middle">{{ student.score }}/{{ selected_exam.question_limit }}</td>
+                            <td class="text-center align-middle">
+                                <span class="badge badge-pill {% if student.percentage >= selected_exam.pass_percentage %}badge-success{% else %}badge-danger{% endif %} px-3 py-2">
+                                    {{ student.percentage }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- ── RIGHT: ITEM ANALYSIS (CLASS KILLERS) ── -->
+    <!-- ── ITEM ANALYSIS ── -->
     <div class="col-xl-5">
-        <div class="card analysis-card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white py-3 border-bottom" style="border-bottom: 1.5px solid var(--tp-teacher-border) !important;">
-                <h6 class="m-0 font-weight-bold text-dark text-uppercase small" style="letter-spacing: 1px;">Item Analysis (Class Killers)</h6>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-uppercase small">Item Analysis (Class Killers)</h6>
+                <div class="small">
+                    <span class="mr-2"><span class="legend-box bg-success"></span>Correct</span>
+                    <span><span class="legend-box bg-danger"></span>Wrong</span>
+                </div>
             </div>
             <div class="card-body">
-                <p class="text-muted small mb-4">The following questions had the highest failure rates across all attempts.</p>
+                <p class="text-muted small">Top 5 questions with the highest failure rate.</p>
                 
-                <!-- Q1 Placeholder -->
+                {% for item in item_analysis[:5] %}
                 <div class="killer-q-item">
-                    <span class="killer-label">Question #12: Recursive Algorithms <span class="float-right text-danger">82% Fail Rate</span></span>
-                    <div class="progress progress-analytics">
-                        <div class="progress-bar bg-danger" style="width: 82%"></div>
+                    <span class="killer-label">
+                        {{ item.text | truncate(60) }}
+                        <span class="float-right text-danger">{{ item.incorrect_p }}% Fail</span>
+                    </span>
+                    <div class="analysis-progress shadow-sm">
+                        <div class="prog-correct" style="width: {{ item.correct_p }}%" title="Correct: {{ item.correct_p }}%"></div>
+                        <div class="prog-wrong" style="width: {{ item.incorrect_p }}%" title="Wrong: {{ item.incorrect_p }}%"></div>
                     </div>
                 </div>
+                {% endfor %}
 
-                <!-- Q2 Placeholder -->
-                <div class="killer-q-item">
-                    <span class="killer-label">Question #05: Memory Management <span class="float-right text-warning">45% Fail Rate</span></span>
-                    <div class="progress progress-analytics">
-                        <div class="progress-bar bg-warning" style="width: 45%"></div>
-                    </div>
-                </div>
-
-                <!-- Q3 Placeholder -->
-                <div class="killer-q-item">
-                    <span class="killer-label">Question #22: Big O Notation <span class="float-right text-warning">38% Fail Rate</span></span>
-                    <div class="progress progress-analytics">
-                        <div class="progress-bar bg-warning" style="width: 38%"></div>
-                    </div>
-                </div>
-
-                <div class="mt-4 p-3 rounded bg-light border">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-lightbulb text-warning mr-3 fa-lg"></i>
-                        <div>
-                            <h6 class="font-weight-bold text-dark mb-1 small">Instructor Tip</h6>
-                            <p class="mb-0 text-muted" style="font-size: 11px;">High fail rates in Section #12 suggest a need for a review session on Recursion concepts before the Final exam.</p>
-                        </div>
-                    </div>
-                </div>
+                <button class="btn btn-outline-dark btn-block btn-sm mt-3 font-weight-bold" data-toggle="modal" data-target="#fullReportModal">
+                    <i class="fas fa-list-ul mr-2"></i> View Full Exam Report
+                </button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ── FULL REPORT MODAL ── -->
+<div class="modal fade" id="fullReportModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title font-weight-bold">Full Item Analysis: {{ selected_exam.title }}</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive" style="max-height: 70vh;">
+                    <table class="table table-striped mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th width="50%">Question</th>
+                                <th>Success / Failure Distribution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in item_analysis %}
+                            <tr>
+                                <td class="small font-weight-bold">{{ item.text }}</td>
+                                <td class="align-middle">
+                                    <div class="d-flex justify-content-between mb-1 small">
+                                        <span class="text-success">{{ item.correct_p }}%</span>
+                                        <span class="text-danger">{{ item.incorrect_p }}%</span>
+                                    </div>
+                                    <div class="analysis-progress" style="height: 8px;">
+                                        <div class="prog-correct" style="width: {{ item.correct_p }}%"></div>
+                                        <div class="prog-wrong" style="width: {{ item.incorrect_p }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="card border-0 shadow-sm text-center py-5">
+    <div class="card-body">
+        <i class="fas fa-chart-pie fa-4x text-light mb-3"></i>
+        <h4 class="text-muted">Select an exam to see Analytics</h4>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
