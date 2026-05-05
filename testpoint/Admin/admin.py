@@ -1160,8 +1160,8 @@ def view_verifications():
     return render_template('admin_verifications.html', pending_list=pending_list, firstname=session.get('firstname'))
 
 
-#! 9. ADMIN APPROVAL
-@admin.route('/admin/approve_user/<int:pending_id>', methods=['POST'])
+#!  ADMIN APPROVAL
+@admin.route('/approve_user/<int:pending_id>', methods=['POST'])
 def approve_user(pending_id):
     if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
     connection = mysql.connector.connect(**db_config)
@@ -1220,8 +1220,8 @@ def approve_user(pending_id):
             connection.close()
     return jsonify({"error": "Not found"}), 404
 
-#! 7. ADMIN ACTION: REJECT USER (PERMANENT)
-@admin.route('/admin/reject_user/<int:pending_id>', methods=['POST'])
+#!  ADMIN ACTION: REJECT USER (PERMANENT)
+@admin.route('/reject_user/<int:pending_id>', methods=['POST'])
 def reject_user(pending_id):
     if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
     reason = request.form.get('reason')
@@ -1275,8 +1275,8 @@ def reject_user(pending_id):
             connection.close()
     return jsonify({"error": "User not found"}), 404
 
-#! 9. ADMIN ACTION: REQUEST RESUBMISSION
-@admin.route('/admin/resubmit_user/<int:pending_id>', methods=['POST'])
+#! ADMIN ACTION: REQUEST RESUBMISSION
+@admin.route('/resubmit_user/<int:pending_id>', methods=['POST'])
 def resubmit_user(pending_id):
     if not admin_logged_in(): return jsonify({"error": "Unauthorized"}), 403
     reason = request.form.get('reason')

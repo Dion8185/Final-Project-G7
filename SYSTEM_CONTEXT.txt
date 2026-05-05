@@ -2,6 +2,7 @@ Final Project G7 - System Context Overview
 ============================================
 
 Project Root: Final-Project-G7
+Last Updated: May 5, 2026
 
 This project is a Flask-based online examination and academic user management system branded as TestPoint. It is implemented in Python with MySQL as the database backend and is organized using Flask Blueprints for separate Authentication, Student, Teacher, and Admin functionality.
 
@@ -276,6 +277,9 @@ Admin functionality includes:
 - Admin profile management.
 - Verification queue:
   - view pending registration verifications and admin notes.
+  - approve pending users to activate their accounts.
+  - request resubmission of documents with reasons and notes for user correction.
+  - reject registrations permanently with rejection categories and explanations.
 
 The admin module is protected by `admin_logged_in()` and role-based controls.
 
