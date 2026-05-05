@@ -1064,9 +1064,30 @@ def manage_enrollees(class_code):
 @teacher.route('/student_monitor')
 def student_monitor():
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT ea.*, s.firstname, s.lastname, ex.title FROM exam_attempts ea JOIN students s ON ea.student_id = s.student_id JOIN exams ex ON ea.exam_id = ex.exam_id JOIN classes cl ON ex.class_code = cl.class_code WHERE cl.teacher_id = %s AND ea.status = 'in-progress'", (session.get('user_id'),))
-    attempts = cursor.fetchall(); cursor.close(); connection.close()
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    # Updated query to get the LATEST latitude and longitude for each attempt
+    query = """
+        SELECT 
+            ea.*, s.firstname, s.lastname, ex.title,
+            vl.latitude, vl.longitude
+        FROM exam_attempts ea 
+        JOIN students s ON ea.student_id = s.student_id 
+        JOIN exams ex ON ea.exam_id = ex.exam_id 
+        JOIN classes cl ON ex.class_code = cl.class_code 
+        LEFT JOIN (
+            SELECT attempt_id, latitude, longitude
+            FROM violation_logs
+            WHERE log_id IN (SELECT MAX(log_id) FROM violation_logs GROUP BY attempt_id)
+        ) vl ON ea.attempt_id = vl.attempt_id
+        WHERE cl.teacher_id = %s AND ea.status = 'in-progress'
+    """
+    
+    cursor.execute(query, (session.get('user_id'),))
+    attempts = cursor.fetchall()
+    cursor.close()
+    connection.close()
     return render_template('teacher_monitor.html', attempts=attempts)
 
 @teacher.route('/exam_results/<int:exam_id>')

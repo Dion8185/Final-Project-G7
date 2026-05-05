@@ -2,7 +2,9 @@
 {% block title %}Live Monitor | TestPoint Instructor{% endblock %}
 
 {% block extra_head %}
-<meta http-equiv="refresh" content="10">
+<meta http-equiv="refresh" content="15">
+<!-- Leaflet CSS for Maps -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
     /* ── MONITOR NODE STYLING ── */
     .monitor-card {
@@ -16,13 +18,26 @@
 
     .monitor-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 24px rgba(0,0,0,0.05) !important;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.05) !important;
     }
 
     /* Vertical Status Bar */
-    .risk-bar { width: 5px; position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; }
-    .bg-safe { background-color: #10b981 !important; }
-    .bg-risk { background-color: #ef4444 !important; }
+    .risk-bar {
+        width: 5px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 2;
+    }
+
+    .bg-safe {
+        background-color: #10b981 !important;
+    }
+
+    .bg-risk {
+        background-color: #ef4444 !important;
+    }
 
     /* Pulse for Live Status */
     .badge-pulse-red {
@@ -30,10 +45,19 @@
         background: #ef4444;
         color: white;
     }
+
     @keyframes pulse-red {
-        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        0% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        }
+
+        70% {
+            box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        }
     }
 
     .id-tag {
@@ -54,8 +78,18 @@
         border: 1px solid #f1f5f9;
     }
 
-    .monitor-label { font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-    .monitor-val { font-size: 12px; font-weight: 700; color: var(--tp-teacher-ink); }
+    .monitor-label {
+        font-size: 9px;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+    }
+
+    .monitor-val {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--tp-teacher-ink);
+    }
 
     .risk-banner {
         font-size: 10px;
@@ -63,25 +97,67 @@
         letter-spacing: 1px;
         text-transform: uppercase;
     }
+
+    /* Map Box Fix */
+    #map {
+        height: 450px;
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #f1f5f9;
+    }
+
+    .view-loc-btn {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        transition: all 0.2s;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+    .view-loc-btn:hover {
+        background: var(--tp-teacher-accent);
+        color: white;
+        border-color: var(--tp-teacher-accent);
+    }
+
+    /* ── CRITICAL Z-INDEX FIX ── */
+    /* Ensure the modal is significantly higher than any dashboard elements */
+    .modal {
+        z-index: 1060 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1050 !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
-    
+
     <!-- ── HEADER SECTION ── -->
     <div class="row mb-4 align-items-end">
         <div class="col-md-7">
             <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.25rem;" class="mb-1">
                 Live <span style="color: var(--tp-teacher-accent);">Monitoring</span>
             </h1>
-            <p class="text-muted mb-0">Active examination sessions currently being proctored by the system.</p>
+            <p class="text-muted mb-0">Active examination sessions currently being proctored.</p>
         </div>
         <div class="col-md-5 text-md-right mt-3 mt-md-0">
-            <span class="badge badge-light border text-muted px-3 py-2 rounded-pill font-weight-bold mr-2" style="font-size: 11px;">
-                <i class="fas fa-sync fa-spin mr-2"></i> Refreshing in 10s
+            <span class="badge badge-light border text-muted px-3 py-2 rounded-pill font-weight-bold mr-2"
+                style="font-size: 11px;">
+                <i class="fas fa-sync fa-spin mr-2"></i> Auto-refreshing
             </span>
-            <span class="badge badge-pulse-red px-3 py-2 rounded-pill font-weight-bold shadow-sm" style="font-size: 11px;">
+            <span class="badge badge-pulse-red px-3 py-2 rounded-pill font-weight-bold shadow-sm"
+                style="font-size: 11px;">
                 <i class="fas fa-circle mr-1" style="font-size: 8px;"></i> PROCTORING ONLINE
             </span>
         </div>
@@ -93,30 +169,34 @@
         {% set is_high_risk = a.tab_switches > 2 %}
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card monitor-card shadow-sm pl-2">
-                <!-- Color-Coded Risk Bar -->
                 <div class="risk-bar {{ 'bg-risk' if is_high_risk else 'bg-safe' }}"></div>
-                
+
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <span class="badge badge-light border id-tag px-2 py-1 text-danger">
                             {{ a.title }}
                         </span>
-                        <div class="text-muted"><i class="fas fa-video fa-sm opacity-25"></i></div>
+                        <button class="btn btn-sm view-loc-btn rounded-circle shadow-sm"
+                            onclick="openMapModal('{{ a.firstname }} {{ a.lastname }}', {{ a.latitude or 'null' }}, {{ a.longitude or 'null' }})"
+                            title="View Location">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
 
                     <div class="d-flex align-items-center mb-4">
-                        <img src="https://ui-avatars.com/api/?name={{ a.firstname }}+{{ a.lastname }}&background={{ 'fee2e2' if is_high_risk else 'f1f5f9' }}&color={{ 'b91c1c' if is_high_risk else '64748b' }}&bold=true" 
-                             class="rounded-circle mr-3 border shadow-sm" style="width: 42px; height: 42px;">
+                        <img src="https://ui-avatars.com/api/?name={{ a.firstname }}+{{ a.lastname }}&background={{ 'fee2e2' if is_high_risk else 'f1f5f9' }}&color={{ 'b91c1c' if is_high_risk else '64748b' }}&bold=true"
+                            class="rounded-circle mr-3 border shadow-sm" style="width: 42px; height: 42px;">
                         <div>
                             <h6 class="font-weight-bold text-dark mb-0">{{ a.firstname }} {{ a.lastname }}</h6>
-                            <span class="text-muted small">Current Examinee</span>
+                            <span class="text-muted small">Student ID: {{ a.student_id }}</span>
                         </div>
                     </div>
 
                     <div class="monitor-info-grid">
                         <div>
                             <div class="monitor-label">Session Start</div>
-                            <div class="monitor-val"><i class="far fa-clock mr-1 text-primary"></i> {{ a.start_time.strftime('%H:%M:%S') }}</div>
+                            <div class="monitor-val"><i class="far fa-clock mr-1 text-primary"></i> {{
+                                a.start_time.strftime('%H:%M:%S') }}</div>
                         </div>
                         <div>
                             <div class="monitor-label">Violations</div>
@@ -128,26 +208,128 @@
                 </div>
 
                 {% if is_high_risk %}
-                <div class="card-footer bg-danger text-white py-2 text-center risk-banner animate__animated animate__flash animate__infinite">
+                <div
+                    class="card-footer bg-danger text-white py-2 text-center risk-banner animate__animated animate__flash animate__infinite">
                     <i class="fas fa-skull-crossbones mr-2"></i> High Cheating Risk Detected
                 </div>
                 {% else %}
-                <div class="card-footer bg-light text-muted py-2 text-center risk-banner" style="font-size: 9px; opacity: 0.7;">
+                <div class="card-footer bg-light text-muted py-2 text-center risk-banner"
+                    style="font-size: 9px; opacity: 0.7;">
                     <i class="fas fa-shield-alt mr-2"></i> integrity maintained
                 </div>
                 {% endif %}
             </div>
         </div>
         {% else %}
-        <!-- ── EMPTY STATE ── -->
         <div class="col-12 text-center py-5">
             <div class="py-5 bg-white rounded-lg border shadow-sm">
                 <i class="fas fa-desktop fa-4x text-gray-100 mb-3"></i>
                 <h4 class="text-dark font-weight-bold">No Active Sessions</h4>
-                <p class="text-muted small">The system is currently idle. Active attempts will appear here automatically.</p>
+                <p class="text-muted small">Nodes will appear once students begin an exam.</p>
             </div>
         </div>
         {% endfor %}
     </div>
 </div>
+
+<!-- ── LOCATION MODAL (Logic bypasses nested TTH by moving to body via JS) ── -->
+<div class="modal fade" id="mapModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+            <div class="modal-header border-0 bg-white px-4 pt-4">
+                <h5 class="modal-title font-weight-bold">
+                    <i class="fas fa-map-marker-alt text-danger mr-2"></i>
+                    Student Entrance: <span id="modalStudentName" class="text-primary"></span>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="map"></div>
+                <div id="mapError" class="alert alert-warning mt-2 mb-0" style="display: none;">
+                    <i class="fas fa-exclamation-circle mr-2"></i> Location coordinates not found for this attempt.
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light py-2">
+                <span class="small text-muted font-italic">Geolocation capture point recorded at Exam
+                    Initialization.</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let currentMap = null;
+    let currentMarker = null;
+    let mapData = { lat: null, lng: null, name: "" };
+
+    $(document).ready(function () {
+        // BYPASS TTH: Move the modal to the body root immediately on load
+        // This prevents parents with transformations/animations from breaking the backdrop.
+        $('#mapModal').appendTo('body');
+    });
+
+    // Function called by Eye button
+    function openMapModal(name, lat, lng) {
+        mapData = { lat, lng, name };
+        $('#modalStudentName').text(name);
+        $('#mapModal').modal('show');
+    }
+
+    // Initialize Map AFTER modal is visible
+    $('#mapModal').on('shown.bs.modal', function () {
+        const { lat, lng, name } = mapData;
+        const $mapDiv = $('#map');
+        const $errDiv = $('#mapError');
+
+        // Check if coordinates are valid
+        if (!lat || !lng || lat === "null" || lat === null) {
+            $mapDiv.hide();
+            $errDiv.show();
+            return;
+        }
+
+        $mapDiv.show();
+        $errDiv.hide();
+
+        // Destroy previous instance to avoid "container already initialized"
+        if (currentMap) {
+            currentMap.remove();
+            currentMap = null;
+        }
+
+        // Init Map
+        currentMap = L.map('map').setView([lat, lng], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 20,
+            maxNativeZoom: 19,
+            minZoom: 16
+        }).addTo(currentMap);
+
+        currentMarker = L.marker([lat, lng]).addTo(currentMap)
+            .bindPopup(`<b>${name}</b><br>Initial Entrance Location`).openPopup();
+
+        // Solve Leaflet container/grey area issue
+        setTimeout(() => {
+            currentMap.invalidateSize();
+        }, 250);
+    });
+
+    // Cleanup when modal is hidden to free memory
+    $('#mapModal').on('hidden.bs.modal', function () {
+        if (currentMap) {
+            currentMap.remove();
+            currentMap = null;
+            currentMarker = null;
+        }
+        mapData = { lat: null, lng: null, name: "" };
+    });
+</script>
 {% endblock %}

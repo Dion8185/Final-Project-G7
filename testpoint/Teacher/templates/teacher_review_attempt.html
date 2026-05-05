@@ -104,7 +104,7 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: #e74a3b;
+  
         border: 2px solid #fff;
     }
 
@@ -277,9 +277,9 @@
                         <div class="timeline-container">
                             {% for log in violation_logs %}
                             <div class="timeline-item">
-                                <div class="timeline-dot"></div>
+                                <div style="background:{% if log.violation_type == 'Exam Started' or log.violation_type == 'Exam Ended (Submitted)' %} #16a34a; {% else %} #e74a3b {% endif %};" class="timeline-dot"></div>
                                 <span class="timeline-time">{{ log.violation_time.strftime('%I:%M:%S %p') }}</span>
-                                <span class="timeline-reason text-danger">{{ log.violation_type }}</span>
+                                <span class="timeline-reason {% if log.violation_type == 'Exam Started' or log.violation_type == 'Exam Ended (Submitted)' %} text-success {% else %} text-danger {% endif %}">{{ log.violation_type }}</span>
                             </div>
                             {% endfor %}
                         </div>
