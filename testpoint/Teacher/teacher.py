@@ -649,47 +649,39 @@ def import_ai_questions(exam_id):
         
         # 5. Prompt Gemini with strict JSON requirement
         prompt = f"""
-        Extract exactly {num_q} academic questions from the provided text based on these specific instructions: "{teacher_notes}".
-        
-        Rules:
-        Allowed question types: multiple_choice, true_false, identification only.
-        Assign difficulty (easy, medium, hard) based on conceptual complexity, not sentence length or wording.
-        Questions must test understanding and meaning, not memorization of exact text.
-        For multiple_choice:
-        Must contain exactly 4 options.
-        Only one correct answer.
-        All options must be plausible and relevant to the question.
-        Avoid obviously incorrect or joke answers.
-        For true_false:
-        Statements must be clear, factual, and unambiguous.
-        Avoid trick questions or partially true statements.
-        For identification:
-        Answers must be concise (single word or short phrase only).
-        Do not require full sentences.
-        Do NOT generate questions that:
-        Refer to page numbers, sections, or document structure.
-        Depend on exact wording or copying text verbatim.
-        Ask where something is “located” in the text.
-        Rely on formatting (e.g., “in the paragraph above”).
-        Always paraphrase; do not copy sentences directly from the source.
-        Ensure all questions are clear, grammatically correct, and unambiguous.
-        Avoid duplicate or overly similar questions.
-        Output must strictly follow the provided JSON format with no extra text, explanations, markdown, or backticks.
-                        
-                Structure:
-        [
-          {{
-            "text": "question",
-            "type": "multiple_choice",
-            "diff": "medium",
-            "answer": "correct_option_text",
-            "options": ["A", "B", "C", "D"]
-          }}
-        ]
-        
-        Text content: {raw_text[:10000]}
-        """
+        ### ROLE
+        Act as an expert academic assessment specialist. Generate exactly {num_q} high-quality questions based on the provided text and these specific requirements: "{teacher_notes}".
 
+        ### CORE RULES
+        1. **Allowed Types**: `multiple_choice`, `true_false`, `identification`.
+        2. **Difficulty**: Assign 'easy', 'medium', or 'hard' based on conceptual depth (Bloom’s Taxonomy), not length or vocabulary.
+        3. **Paraphrase**: Never copy verbatim. Rephrase concepts to test understanding rather than rote memorization.
+        4. **No Meta-References**: Do not mention the text structure, page numbers, "the author," or "the passage." Questions must stand alone.
+
+        ### QUESTION-SPECIFIC LOGIC
+        - **multiple_choice**: Exactly 4 plausible options. No "all of the above" or joke answers. Only 1 correct answer.
+        - **true_false**: Must be a definitive factual claim. Avoid "trick" phrasing or nuance that makes it subjective.
+        - **identification**: Answer must be a single word or a short academic phrase.
+
+        ### OUTPUT REQUIREMENTS
+        - Return ONLY a raw JSON array. 
+        - No markdown formatting, no ```json blocks, no introductory text. 
+        - If the pdf's content is empty, return an empty array `[]`.
+
+        ### JSON SCHEMA
+        [
+        {{
+            "text": "The question content",
+            "type": "multiple_choice | true_false | identification",
+            "diff": "easy | medium | hard",
+            "answer": "The correct answer string",
+            "options": ["Option A", "Option B", "Option C", "Option D"] // null for other types
+        }}
+        ]
+
+        ### SOURCE TEXT
+    {raw_text[:10000]}
+    """
         response = ai_model.generate_content(prompt)
         # Clean potential markdown backticks from AI response
         clean_json = response.text.replace('```json', '').replace('```', '').strip()

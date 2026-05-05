@@ -159,10 +159,10 @@
             <div class="d-flex align-items-center" style="gap: 10px;">
                 <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none font-weight-bold" id="btnDeselectAll">Clear</button>
                 <button type="submit" form="bulkActionForm" name="action" value="unlink" id="btnBulkUnlink" class="btn btn-primary btn-sm rounded-pill px-3 font-weight-bold">
-                    Unlink Bank (<span id="linkCount">0</span>)
+                    Unlink from Bank (<span id="linkCount">0</span>)
                 </button>
                 <button type="submit" form="bulkActionForm" name="action" value="delete" id="btnBulkDelete" class="btn btn-danger btn-sm rounded-pill px-3 font-weight-bold">
-                    Delete Isolated (<span id="deleteCount">0</span>)
+                    Delete Unique (<span id="deleteCount">0</span>)
                 </button>
             </div>
         </div>
@@ -439,7 +439,7 @@
                         <input type="file" name="excel_file" class="form-control rounded-pill" accept=".xlsx" required>
                     </div>
                     <div class="custom-control custom-switch mt-3">
-                        <input type="checkbox" class="custom-control-input" id="saveBankCheck" name="save_to_bank" checked>
+                        <input type="checkbox" class="custom-control-input" id="saveBankCheck" name="save_to_bank">
                         <label class="custom-control-label id-tag text-muted text-uppercase" for="saveBankCheck">Store globally in Master Bank</label>
                     </div>
                 </div>
@@ -482,7 +482,7 @@
                         </div>
                     </div>
                     <div class="custom-control custom-switch mb-4">
-                        <input type="checkbox" class="custom-control-input" id="saveBankManual" name="save_to_bank" checked>
+                        <input type="checkbox" class="custom-control-input" id="saveBankManual" name="save_to_bank">
                         <label class="custom-control-label id-tag text-muted text-uppercase" for="saveBankManual">Sync item to Master Course Bank</label>
                     </div>
                     
