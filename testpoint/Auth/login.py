@@ -233,12 +233,13 @@ def send_reset_otp_email(recipient_email, otp_code):
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    # ── 1. EXISTING RESET FLOW CHECK ──
     if session.get('in_reset_flow'):
         if not session.get('otp_verified'):
             return redirect(url_for('auth.verify_reset_otp'))
         return redirect(url_for('auth.reset_password'))
     
-    # State-based redirection for pending users
+    # ── 2. EXISTING STATE-BASED REDIRECTION FOR PENDING USERS ──
     if pending_user_logged_in():
         email = session.get('pending_email')
         if email:
@@ -252,10 +253,12 @@ def login():
                 if p['verification_status'] in ['pending_upload', 'rejected']: return redirect(url_for('auth.upload_verification'))
                 return render_template('waiting_approval.html', role=session.get('pending_role'))
 
+    # ── 3. EXISTING LOGGED-IN REDIRECTIONS ──
     if user_logged_in(): return redirect(url_for('student.student_dashboard'))
     if admin_logged_in(): return redirect(url_for('admin.admin_dashboard'))
     if teacher_logged_in(): return redirect(url_for('teacher.teacher_dashboard'))
     
+    # ── 4. HANDLE LOGIN ATTEMPT (POST) ──
     if request.method == 'POST':
         email_input = request.form['email']
         password_input = request.form['password']
@@ -263,17 +266,18 @@ def login():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
 
+        # A. Check standard users table
         cursor.execute("SELECT * FROM users WHERE email = %s", (email_input,))
         user = cursor.fetchone()
 
         if user and check_password_hash(user['password'], password_input):
-            # NEW: Check if account is deactivated
+            # Check if account is deactivated
             if not user['is_active']:
                 flash('Login not allowed. Please contact the administrators.', 'danger')
                 cursor.close(); connection.close()
-                return render_template('login.html')
+                return redirect(url_for('auth.login')) # Redirect to refresh stats on next GET
 
-            # Proceed with login if active
+            # Admin / Super Admin
             if user['role'] in ['admin', 'super_admin']:
                 cursor.execute("SELECT firstname FROM admins WHERE email = %s", (email_input,))
                 admin_data = cursor.fetchone()
@@ -286,6 +290,7 @@ def login():
                 })
                 cursor.close(); connection.close(); return redirect(url_for('admin.admin_dashboard'))
             
+            # Student
             elif user['role'] == 'student':
                 cursor.execute("SELECT firstname, lastname FROM students WHERE email = %s", (email_input,))
                 s_data = cursor.fetchone()
@@ -299,6 +304,7 @@ def login():
                 })
                 cursor.close(); connection.close(); return redirect(url_for('student.student_dashboard'))
             
+            # Teacher
             elif user['role'] == 'teacher':
                 cursor.execute("SELECT firstname, lastname FROM teachers WHERE email = %s", (email_input,))
                 t_data = cursor.fetchone()
@@ -312,7 +318,7 @@ def login():
                 })
                 cursor.close(); connection.close(); return redirect(url_for('teacher.teacher_dashboard'))
 
-        # B. Check Pending Users Table
+        # B. Check Pending Users Table if not found in primary users
         cursor.execute("SELECT * FROM pending_users WHERE email = %s", (email_input,))
         pending = cursor.fetchone()
 
@@ -327,7 +333,7 @@ def login():
                 cursor.close(); connection.close(); 
                 return redirect(url_for('auth.verify_register'))
             
-            if pending['verification_status'] == 'pending_upload' or pending['verification_status'] == 'rejected':
+            if pending['verification_status'] in ['pending_upload', 'rejected']:
                 flash('Please upload verification documents.', 'info')
                 cursor.close(); connection.close(); 
                 return redirect(url_for('auth.upload_verification'))
@@ -336,11 +342,35 @@ def login():
                 cursor.close(); connection.close(); 
                 return render_template('waiting_approval.html', role=pending['role'])
 
-        # Fallback for incorrect password or non-existent user
+        # Fallback for failed credentials
         flash('Invalid email or password!', 'danger')
         cursor.close(); connection.close()
+        return redirect(url_for('auth.login'))
 
-    return render_template('login.html')
+    # ── 5. NEW: FETCH LIVE STATS FOR DESIGN (GET REQUEST) ──
+    # This runs when the page is loaded normally
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor()
+    
+    # Count Students
+    cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'student'")
+    students_count = cursor.fetchone()[0]
+    
+    # Count Exams
+    cursor.execute("SELECT COUNT(*) FROM exams")
+    exams_count = cursor.fetchone()[0]
+    
+    # Count Questions (Replacing Satisfaction)
+    # Using 'exam_questions' based on your logout logic
+    cursor.execute("SELECT COUNT(*) FROM exam_questions")
+    questions_count = cursor.fetchone()[0]
+    
+    cursor.close(); connection.close()
+
+    return render_template('login.html', 
+                           students_count=students_count, 
+                           exams_count=exams_count, 
+                           questions_count=questions_count)
 
 #! 2. REGISTER STUDENT
 @auth.route('/register/student', methods=['GET', 'POST'])

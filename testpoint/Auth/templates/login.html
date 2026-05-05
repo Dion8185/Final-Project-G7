@@ -448,6 +448,168 @@
         /* Responsive */
         @media (max-width: 991px) { .tp-right { padding: 40px 32px; } }
         @media (max-width: 480px) { .tp-right { padding: 32px 20px; } }
+
+        /* ─── LEFT PANEL ANIMATIONS ─── */
+
+        /* Remove static pseudo-element gradients — replaced by animated orbs */
+        .tp-left::before { display: none; }
+
+        /* Animated gradient orbs */
+        .tp-orb {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(72px);
+            opacity: 0;
+            animation: orbAppear .8s ease forwards;
+        }
+
+        .tp-orb-1 {
+            width: 420px; height: 420px;
+            background: radial-gradient(circle, rgba(45,91,227,.55) 0%, rgba(45,91,227,.1) 60%, transparent 80%);
+            bottom: -80px; left: -80px;
+            animation: orbAppear .8s .1s ease forwards, orbDrift1 12s 1s ease-in-out infinite alternate;
+        }
+
+        .tp-orb-2 {
+            width: 280px; height: 280px;
+            background: radial-gradient(circle, rgba(99,140,255,.4) 0%, rgba(45,91,227,.08) 60%, transparent 80%);
+            top: -60px; right: -40px;
+            animation: orbAppear .8s .2s ease forwards, orbDrift2 15s 1s ease-in-out infinite alternate;
+        }
+
+        .tp-orb-3 {
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(120,160,255,.35) 0%, transparent 70%);
+            top: 45%; left: 55%;
+            animation: orbAppear .8s .4s ease forwards, orbDrift3 9s 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes orbAppear { to { opacity: 1; } }
+
+        @keyframes orbDrift1 {
+            0%   { transform: translate(0, 0) scale(1); }
+            33%  { transform: translate(30px, -40px) scale(1.08); }
+            66%  { transform: translate(-20px, -60px) scale(.96); }
+            100% { transform: translate(50px, -20px) scale(1.05); }
+        }
+
+        @keyframes orbDrift2 {
+            0%   { transform: translate(0, 0) scale(1); }
+            50%  { transform: translate(-30px, 40px) scale(1.12); }
+            100% { transform: translate(20px, 60px) scale(.9); }
+        }
+
+        @keyframes orbDrift3 {
+            0%   { transform: translate(0, 0) scale(1); opacity: .6; }
+            50%  { transform: translate(-40px, -30px) scale(1.2); opacity: .3; }
+            100% { transform: translate(20px, 30px) scale(.8); opacity: .7; }
+        }
+
+        /* Particle canvas */
+        #tp-particles {
+            position: absolute; inset: 0;
+            pointer-events: none; z-index: 0;
+        }
+
+        /* Stagger-reveal for left panel content */
+        .tp-brand,
+        .tp-eyebrow,
+        .tp-headline,
+        .tp-desc,
+        .tp-stats,
+        .tp-float-card {
+            opacity: 0;
+            transform: translateY(18px);
+            animation: tpReveal .6s cubic-bezier(.16,1,.3,1) forwards;
+        }
+
+        .tp-brand        { animation-delay: .15s; }
+        .tp-eyebrow      { animation-delay: .3s; }
+        .tp-headline     { animation-delay: .42s; }
+        .tp-desc         { animation-delay: .54s; }
+        .tp-stats        { animation-delay: .66s; }
+        .tp-float-card   { animation-delay: .8s; }
+
+        @keyframes tpReveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typewriter cursor on headline */
+        .tp-headline .tp-cursor {
+            display: inline-block;
+            width: 3px; height: .85em;
+            background: rgba(255,255,255,.55);
+            margin-left: 3px;
+            vertical-align: middle;
+            border-radius: 2px;
+            animation: tpBlink 1s step-end infinite;
+        }
+
+        @keyframes tpBlink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0; }
+        }
+
+        /* Floating exam card — gentle bob */
+        .tp-float-card {
+            animation: tpReveal .6s .8s cubic-bezier(.16,1,.3,1) forwards,
+                       tpBob 5s 1.5s ease-in-out infinite;
+        }
+
+        @keyframes tpBob {
+            0%, 100% { transform: translateY(0) rotate(-1deg); }
+            50%       { transform: translateY(-10px) rotate(1deg); }
+        }
+
+        /* Progress fill animated */
+        .tp-prog-fill {
+            width: 0%;
+            animation: tpProgFill 1.6s 1.2s cubic-bezier(.4,0,.2,1) forwards;
+        }
+
+        @keyframes tpProgFill { to { width: 72%; } }
+
+        /* Stat numbers count-up shimmer */
+        .tp-stat-num {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tp-stat-num::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.18) 50%, transparent 100%);
+            transform: translateX(-100%);
+            animation: tpShimmer 2.5s 1.2s ease forwards;
+        }
+
+        @keyframes tpShimmer {
+            to { transform: translateX(200%); }
+        }
+
+        /* Grid lines subtle pulse */
+        .tp-left::after {
+            animation: tpGridPulse 6s ease-in-out infinite alternate;
+        }
+
+        @keyframes tpGridPulse {
+            0%   { opacity: .5; }
+            100% { opacity: 1; }
+        }
+
+        /* Hover tilt on float card */
+        .tp-float-card:hover {
+            animation: tpBob 5s ease-in-out infinite, tpCardGlow .3s ease forwards;
+        }
+
+        @keyframes tpCardGlow {
+            to {
+                background: rgba(255,255,255,.1);
+                border-color: rgba(255,255,255,.22);
+                box-shadow: 0 8px 32px rgba(45,91,227,.25);
+            }
+        }
     </style>
 </head>
 
@@ -456,6 +618,12 @@
 
     <!-- ── LEFT PANEL (Bootstrap col) ── -->
     <div class="col-lg-6 d-none d-lg-flex tp-left">
+        <!-- Animated background layer -->
+        <canvas id="tp-particles"></canvas>
+        <div class="tp-orb tp-orb-1"></div>
+        <div class="tp-orb tp-orb-2"></div>
+        <div class="tp-orb tp-orb-3"></div>
+
         <div class="tp-brand">
             <div class="tp-brand-icon"><i class="fas fa-book-reader"></i></div>
             <span class="tp-brand-name">TestPoint</span>
@@ -465,20 +633,24 @@
             <div class="tp-eyebrow">Examination System</div>
             <h1 class="tp-headline">Assess what<br><em>truly</em><br>matters.</h1>
             <p class="tp-desc">A modern platform built for educators and students — create, deliver, and evaluate examinations with confidence.</p>
+            
             <div class="tp-stats">
                 <div class="tp-stat">
-                    <span class="tp-stat-num">12k+</span>
+                    <!-- Dynamic Student Count -->
+                    <span class="tp-stat-num">{{ students_count if students_count else 0 }}</span>
                     <span class="tp-stat-label">Students</span>
                 </div>
                 <div class="tp-stat-div"></div>
                 <div class="tp-stat">
-                    <span class="tp-stat-num">840</span>
+                    <!-- Dynamic Exam Count -->
+                    <span class="tp-stat-num">{{ exams_count if exams_count else 0 }}</span>
                     <span class="tp-stat-label">Exams created</span>
                 </div>
                 <div class="tp-stat-div"></div>
                 <div class="tp-stat">
-                    <span class="tp-stat-num">98%</span>
-                    <span class="tp-stat-label">Satisfaction</span>
+                    <!-- Dynamic Question Count (New Metric) -->
+                    <span class="tp-stat-num">{{ questions_count if questions_count else 0 }}</span>
+                    <span class="tp-stat-label">Question Bank</span>
                 </div>
             </div>
         </div>
@@ -603,6 +775,255 @@
     </div>
 </div>
 
+
+<!-- ── LEFT PANEL: particle canvas + typewriter ── -->
+<script>
+(function () {
+    'use strict';
+
+    /* ── Particle Canvas ── */
+    var canvas = document.getElementById('tp-particles');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var W, H, particles = [];
+
+    // Mouse state — tracked relative to canvas
+    var mouse = { x: -9999, y: -9999, inside: false, clicking: false };
+
+    var REPEL_RADIUS  = 110;   // px — cursor pushes particles away within this radius
+    var REPEL_FORCE   = 0.045; // strength of repulsion
+    var ATTRACT_RADIUS = 160;  // px — on click, pull particles toward cursor
+    var ATTRACT_FORCE  = 0.08;
+    var LINE_RADIUS    = 120;  // cursor-to-particle line draw distance
+    var DAMPING        = 0.88; // velocity damping each frame
+
+    function resize() {
+        var parent = canvas.parentElement;
+        W = canvas.width  = parent.offsetWidth;
+        H = canvas.height = parent.offsetHeight;
+    }
+
+    function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+    function createParticle() {
+        return {
+            x:    randomBetween(0, W),
+            y:    randomBetween(0, H),
+            ox:   0, oy: 0,       // origin (unused — free-floating)
+            r:    randomBetween(1, 2.5),
+            vx:   randomBetween(-.18, .18),
+            vy:   randomBetween(-.28, -.06),
+            baseVx: randomBetween(-.18, .18),
+            baseVy: randomBetween(-.28, -.06),
+            alpha: randomBetween(.08, .24),
+            life:  randomBetween(120, 240),
+            age:   0
+        };
+    }
+
+    function initParticles() {
+        particles = [];
+        for (var i = 0; i < 60; i++) { particles.push(createParticle()); }
+    }
+
+    function spawnBurst(cx, cy, count) {
+        // Spawn extra particles exploding outward from click point
+        for (var i = 0; i < count; i++) {
+            var angle = (i / count) * Math.PI * 2;
+            var speed = randomBetween(1.5, 3.5);
+            var p = createParticle();
+            p.x = cx; p.y = cy;
+            p.vx = Math.cos(angle) * speed;
+            p.vy = Math.sin(angle) * speed;
+            p.r  = randomBetween(1.5, 3);
+            p.alpha = randomBetween(.3, .6);
+            p.life = randomBetween(40, 80);
+            p.age  = 0;
+            particles.push(p);
+        }
+    }
+
+    function drawParticles() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Draw cursor glow when inside
+        if (mouse.inside) {
+            var grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, REPEL_RADIUS);
+            grad.addColorStop(0,   'rgba(45,91,227,' + (mouse.clicking ? '.18' : '.07') + ')');
+            grad.addColorStop(0.5, 'rgba(45,91,227,' + (mouse.clicking ? '.06' : '.02') + ')');
+            grad.addColorStop(1,   'rgba(45,91,227,0)');
+            ctx.beginPath();
+            ctx.arc(mouse.x, mouse.y, REPEL_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+        }
+
+        for (var i = 0; i < particles.length; i++) {
+            var p = particles[i];
+
+            // Apply cursor interaction force
+            if (mouse.inside) {
+                var mdx  = p.x - mouse.x;
+                var mdy  = p.y - mouse.y;
+                var mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+
+                if (mouse.clicking && mdist < ATTRACT_RADIUS && mdist > 1) {
+                    // Click: attract toward cursor
+                    p.vx -= (mdx / mdist) * ATTRACT_FORCE * (1 - mdist / ATTRACT_RADIUS);
+                    p.vy -= (mdy / mdist) * ATTRACT_FORCE * (1 - mdist / ATTRACT_RADIUS);
+                } else if (!mouse.clicking && mdist < REPEL_RADIUS && mdist > 1) {
+                    // Hover: repel away from cursor
+                    var force = REPEL_FORCE * (1 - mdist / REPEL_RADIUS);
+                    p.vx += (mdx / mdist) * force * 3.5;
+                    p.vy += (mdy / mdist) * force * 3.5;
+                }
+            }
+
+            // Dampen back toward base drift
+            p.vx = p.vx * DAMPING + p.baseVx * (1 - DAMPING);
+            p.vy = p.vy * DAMPING + p.baseVy * (1 - DAMPING);
+
+            p.x += p.vx;
+            p.y += p.vy;
+            p.age++;
+
+            var progress   = p.age / p.life;
+            var fadeAlpha  = progress < .15
+                ? (progress / .15) * p.alpha
+                : progress > .8
+                    ? ((1 - progress) / .2) * p.alpha
+                    : p.alpha;
+
+            // Draw particle — brighter when cursor nearby
+            var cursorDist = Math.sqrt((p.x - mouse.x) * (p.x - mouse.x) + (p.y - mouse.y) * (p.y - mouse.y));
+            var brightBoost = mouse.inside && cursorDist < REPEL_RADIUS
+                ? (1 - cursorDist / REPEL_RADIUS) * .35
+                : 0;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r + brightBoost * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(120,160,255,' + Math.min(1, fadeAlpha + brightBoost) + ')';
+            ctx.fill();
+
+            // Particle-to-particle lines
+            for (var j = i + 1; j < particles.length; j++) {
+                var q   = particles[j];
+                var dx  = p.x - q.x;
+                var dy  = p.y - q.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 90) {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(q.x, q.y);
+                    ctx.strokeStyle = 'rgba(100,140,255,' + ((1 - dist / 90) * .07) + ')';
+                    ctx.lineWidth   = .6;
+                    ctx.stroke();
+                }
+            }
+
+            // Cursor-to-particle lines (within LINE_RADIUS)
+            if (mouse.inside && cursorDist < LINE_RADIUS) {
+                var lineAlpha = (1 - cursorDist / LINE_RADIUS) * (mouse.clicking ? .5 : .22);
+                ctx.beginPath();
+                ctx.moveTo(mouse.x, mouse.y);
+                ctx.lineTo(p.x, p.y);
+                ctx.strokeStyle = 'rgba(90,130,255,' + lineAlpha + ')';
+                ctx.lineWidth   = mouse.clicking ? 1 : .7;
+                ctx.stroke();
+            }
+
+            if (p.age >= p.life) {
+                if (i >= 60) {
+                    // Burst particle — remove when expired
+                    particles.splice(i, 1); i--;
+                } else {
+                    particles[i] = createParticle();
+                }
+            }
+        }
+        requestAnimationFrame(drawParticles);
+    }
+
+    // Track mouse relative to canvas bounds
+    canvas.parentElement.addEventListener('mousemove', function (e) {
+        var rect   = canvas.getBoundingClientRect();
+        mouse.x    = e.clientX - rect.left;
+        mouse.y    = e.clientY - rect.top;
+        mouse.inside = true;
+    });
+
+    canvas.parentElement.addEventListener('mouseleave', function () {
+        mouse.inside   = false;
+        mouse.clicking = false;
+        mouse.x = -9999; mouse.y = -9999;
+    });
+
+    canvas.parentElement.addEventListener('mousedown', function (e) {
+        mouse.clicking = true;
+        var rect = canvas.getBoundingClientRect();
+        spawnBurst(e.clientX - rect.left, e.clientY - rect.top, 14);
+    });
+
+    canvas.parentElement.addEventListener('mouseup', function () {
+        mouse.clicking = false;
+    });
+
+    resize();
+    initParticles();
+    drawParticles();
+    window.addEventListener('resize', function () { resize(); initParticles(); });
+
+    /* ── Typewriter on headline ── */
+    var hl = document.querySelector('.tp-headline');
+    if (!hl) return;
+
+    // Pull original text and rebuild with cursor
+    var lines = ['Assess what', '\u00a0truly\u00a0', 'matters.'];
+    var cursorHTML = '<span class="tp-cursor"></span>';
+    hl.innerHTML = '';           // cleared; will be built char-by-char
+
+    var lineEls = lines.map(function (txt, i) {
+        var el = document.createElement('span');
+        el.style.display = 'block';
+        if (i === 1) { el.className = 'italic-placeholder'; }
+        hl.appendChild(el);
+        return { el: el, txt: txt, italic: i === 1 };
+    });
+
+    var cursor = document.createElement('span');
+    cursor.className = 'tp-cursor';
+    hl.appendChild(cursor);
+
+    var delay    = 520;   // ms before typing starts (matches CSS reveal delay)
+    var charSpeed = 50;
+    var lineGap   = 120;
+    var lineIdx   = 0;
+    var charIdx   = 0;
+
+    function typeNext() {
+        if (lineIdx >= lineEls.length) {
+            // Done typing — cursor stays blinking
+            return;
+        }
+        var current = lineEls[lineIdx];
+        if (charIdx < current.txt.length) {
+            var ch = document.createElement('span');
+            ch.textContent = current.txt[charIdx];
+            if (current.italic) { ch.style.fontStyle = 'italic'; ch.style.color = 'rgba(255,255,255,.42)'; }
+            current.el.appendChild(ch);
+            charIdx++;
+            setTimeout(typeNext, charSpeed);
+        } else {
+            lineIdx++;
+            charIdx = 0;
+            setTimeout(typeNext, lineGap);
+        }
+    }
+
+    setTimeout(typeNext, delay);
+
+})();
+</script>
 
 <!-- ── JS: your existing stack, plus small enhancements ── -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
