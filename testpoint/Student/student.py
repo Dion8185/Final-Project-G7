@@ -514,6 +514,7 @@ def review_exam(attempt_id):
 def log_violation():
     data = request.get_json()
     attempt_id = data.get('attempt_id')
+    violation_type = data.get('violation_type', 'Tab Switch/Blur') # Default type
     
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
@@ -526,7 +527,15 @@ def log_violation():
         if not attempt or attempt['status'] == 'blocked':
             return jsonify({"status": "blocked"}), 403
 
+        # 1. Increment the summary counter
         cursor.execute("UPDATE exam_attempts SET tab_switches = tab_switches + 1 WHERE attempt_id = %s", (attempt_id,))
+        
+        # 2. Insert detailed timestamped log
+        cursor.execute("""
+            INSERT INTO violation_logs (attempt_id, violation_type, violation_time) 
+            VALUES (%s, %s, NOW())
+        """, (attempt_id, violation_type))
+        
         connection.commit()
         
         cursor.execute("SELECT tab_switches FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))

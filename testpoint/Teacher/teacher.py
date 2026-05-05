@@ -337,8 +337,7 @@ def manage_exams():
     if teacher_logged_in():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
-        
-        # ADDED: JOIN blocks b ON cl.block_id = b.block_id to get b.block_name
+
         cursor.execute("""
             SELECT e.*, c.course_name, cl.class_code, cl.course_code, b.block_name,
                 (SELECT COUNT(*) FROM exam_questions WHERE exam_id = e.exam_id) as q_count,
@@ -350,19 +349,30 @@ def manage_exams():
             WHERE cl.teacher_id = %s AND e.archived = 0
         """, (session.get('user_id'),))
         exams = cursor.fetchall()
-        
+
         cursor.execute("""
-            SELECT cl.class_code, c.course_name, cl.course_code, b.block_name 
+            SELECT cl.class_code, c.course_name, cl.course_code, b.block_name, p.program_name
             FROM classes cl 
             JOIN courses c ON cl.course_code = c.course_code 
             JOIN blocks b ON cl.block_id = b.block_id
+            JOIN programs p ON b.program_id = p.program_id
             WHERE cl.teacher_id = %s
         """, (session.get('user_id'),))
         classes = cursor.fetchall()
-        
+
+        classes_map = {c['class_code']: c for c in classes}
+
         cursor.close()
         connection.close()
-        return render_template('teacher_exams.html', exams=exams, classes=classes, now=datetime.now())
+
+        return render_template(
+            'teacher_exams.html',
+            exams=exams,
+            classes=classes,
+            classes_map=classes_map,
+            now=datetime.now()
+        )
+
     return redirect(url_for('auth.login'))
 
 @teacher.route('/publish_exam_to_classes', methods=['POST'])
@@ -1176,7 +1186,7 @@ def review_student_attempt(attempt_id):
     cursor = connection.cursor(dictionary=True, buffered=True)
     
     try:
-        # 1. Fetch Attempt, Student, and Exam Metadata (including pass_percentage)
+        # 1. Fetch Attempt, Student, and Exam Metadata
         cursor.execute("""
             SELECT ea.*, s.firstname, s.lastname, e.title, e.pass_percentage 
             FROM exam_attempts ea 
@@ -1190,7 +1200,7 @@ def review_student_attempt(attempt_id):
             flash("Attempt not found.", "danger")
             return redirect(url_for('teacher.manage_exams'))
 
-        # 2. Fetch questions served during this attempt along with the student's answer
+        # 2. Fetch questions served during this attempt
         cursor.execute("""
             SELECT q.*, sa.submitted_answer, sa.is_correct 
             FROM questions q 
@@ -1200,12 +1210,24 @@ def review_student_attempt(attempt_id):
         """, (attempt_id, attempt_id))
         questions = cursor.fetchall()
 
-        # 3. Fetch options for each question so we can show the correct answer
+        # 3. Fetch options for each question
         for q in questions:
             cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
             q['options'] = cursor.fetchall()
 
-        return render_template('teacher_review_attempt.html', attempt=attempt, questions=questions)
+        # 4. NEW: Fetch detailed violation logs for this attempt
+        cursor.execute("""
+            SELECT violation_type, violation_time 
+            FROM violation_logs 
+            WHERE attempt_id = %s 
+            ORDER BY violation_time ASC
+        """, (attempt_id,))
+        violation_logs = cursor.fetchall()
+
+        return render_template('teacher_review_attempt.html', 
+                               attempt=attempt, 
+                               questions=questions, 
+                               violation_logs=violation_logs)
     
     finally:
         cursor.close()
