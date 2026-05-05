@@ -31,7 +31,7 @@
                 <!-- Main Overview Link -->
                 <a class="collapse-item font-weight-bold {% if request.endpoint == 'teacher.my_courses' %}active{% endif %}" 
                    href="{{ url_for('teacher.my_courses') }}">
-                   <i class="fas fa-list-ul mr-2 small"></i> View All Classes
+                   <i class="fas fa-list-ul small"></i> View All Classes
                 </a>
 
                 <div class="dropdown-divider mx-2" style="opacity: 0.1;"></div>
@@ -42,7 +42,7 @@
                     <a class="collapse-item d-flex align-items-center {% if class_code == course.class_code %}active font-weight-bold{% endif %}"
                         href="{{ url_for('teacher.manage_enrollees', class_code=course.class_code) }}">
                         <i class="fas fa-circle mr-2" style="font-size: 6px; opacity: 0.5;"></i>
-                        <span style="white-space: normal; line-height: 1.3;">{{ course.course_name }}</span>
+                        <span style="white-space: normal; line-height: 1.3;">{{ course.course_name }} {{ course.class_code }}</span>
                     </a>
                     {% endfor %}
                 {% else %}

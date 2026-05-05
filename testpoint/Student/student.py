@@ -86,7 +86,7 @@ def student_dashboard():
                 SELECT (ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0) * 100) as percentage
                 FROM exam_attempts ea
                 JOIN exams e ON ea.exam_id = e.exam_id
-                WHERE ea.student_id = %s AND ea.status = 'finished'
+                WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
             ) as sub
         """, (student_id,))
         avg_res = cursor.fetchone()
@@ -406,10 +406,7 @@ def take_exam(exam_id):
             WHERE aq.attempt_id = %s
         """, (attempt_id,))
         questions = cursor.fetchall()
-
-        # We use a localized Random instance seeded with attempt_id.
-        # This ensures Student A and Student B get different orders, 
-        # but Student A always gets the SAME order even if they refresh the page.
+        
         rng = random.Random(attempt_id)
         rng.shuffle(questions)
 
@@ -719,7 +716,6 @@ def student_analytics():
 
     try:
         # 1. COMPREHENSIVE STANDINGS (Leaderboard Logic)
-        # Groups all students in the same classes and ranks them by their average score
         cursor.execute("""
             SELECT 
                 r.class_code,
@@ -733,18 +729,40 @@ def student_analytics():
                 SELECT 
                     en.class_code, 
                     en.student_id, 
-                    AVG(COALESCE((ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0)) * 100, 0)) as avg_score
+                    AVG(
+                        COALESCE(
+                            (ea.score / NULLIF(
+                                (SELECT COUNT(*) 
+                                FROM attempt_questions aq 
+                                WHERE aq.attempt_id = ea.attempt_id
+                                ), 0)
+                            ) * 100, 
+                        0)
+                    ) as avg_score
                 FROM enrollments en
-                LEFT JOIN exam_attempts ea ON en.student_id = ea.student_id
-                WHERE ea.status = 'finished' OR ea.status IS NULL
+                LEFT JOIN exam_attempts ea 
+                    ON en.student_id = ea.student_id
+                LEFT JOIN exams e 
+                    ON ea.exam_id = e.exam_id
+                WHERE 
+                    (ea.status = 'finished' OR ea.status IS NULL)
+                    AND (e.archived = 0 OR e.archived IS NULL)
                 GROUP BY en.class_code, en.student_id
             ) r
-            JOIN students s ON r.student_id = s.student_id
-            JOIN classes cl ON r.class_code = cl.class_code
-            JOIN courses c ON cl.course_code = c.course_code
-            WHERE r.class_code IN (SELECT class_code FROM enrollments WHERE student_id = %s)
+            JOIN students s 
+                ON r.student_id = s.student_id
+            JOIN classes cl 
+                ON r.class_code = cl.class_code
+            JOIN courses c 
+                ON cl.course_code = c.course_code
+            WHERE r.class_code IN (
+                SELECT class_code 
+                FROM enrollments 
+                WHERE student_id = %s
+            )
             ORDER BY r.class_code, rank_pos ASC
         """, (student_id,))
+
         raw_standings = cursor.fetchall()
         
         # Group standings by course for the UI
@@ -783,7 +801,7 @@ def student_analytics():
                 SUM(CASE WHEN (ea.score / (SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id) * 100) < e.pass_percentage THEN 1 ELSE 0 END) as fail_count
             FROM exam_attempts ea
             JOIN exams e ON ea.exam_id = e.exam_id
-            WHERE ea.student_id = %s AND ea.status = 'finished'
+            WHERE ea.student_id = %s AND ea.status = 'finished' AND e.archived = 0
         """, (student_id,))
         stats = cursor.fetchone()
 
@@ -827,25 +845,68 @@ def student_certificates():
             ORDER BY course_name ASC, exam_rank ASC
         """, (student_id,))
         exam_certs = cursor.fetchall()
-
-        # COURSE HONORS (Top 20) - Protected against 0 questions
+        # COURSE HONORS (Top 20) - Protected against 0 questions + excludes archived exams
         cursor.execute("""
             SELECT * FROM (
                 SELECT 
-                    en.student_id, c.course_name, c.course_code, cl.class_code,
-                    AVG(ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0) * 100) as avg_pct,
-                    RANK() OVER (PARTITION BY cl.class_code ORDER BY AVG(ea.score / NULLIF((SELECT COUNT(*) FROM attempt_questions WHERE attempt_id = ea.attempt_id), 0)) DESC) as course_rank
+                    en.student_id, 
+                    c.course_name, 
+                    c.course_code, 
+                    cl.class_code,
+
+                    AVG(
+                        COALESCE(
+                            (ea.score / NULLIF(
+                                (SELECT COUNT(*) 
+                                FROM attempt_questions aq 
+                                WHERE aq.attempt_id = ea.attempt_id
+                                ), 0)
+                            ) * 100,
+                        0)
+                    ) as avg_pct,
+
+                    RANK() OVER (
+                        PARTITION BY cl.class_code 
+                        ORDER BY AVG(
+                            COALESCE(
+                                (ea.score / NULLIF(
+                                    (SELECT COUNT(*) 
+                                    FROM attempt_questions aq 
+                                    WHERE aq.attempt_id = ea.attempt_id
+                                    ), 0)
+                                ), 
+                            0)
+                        ) DESC
+                    ) as course_rank
+
                 FROM enrollments en
-                JOIN classes cl ON en.class_code = cl.class_code
-                JOIN courses c ON cl.course_code = c.course_code
-                LEFT JOIN exams e ON cl.class_code = e.class_code
-                LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND en.student_id = ea.student_id
-                WHERE ea.status = 'finished' OR ea.status IS NULL
+                JOIN classes cl 
+                    ON en.class_code = cl.class_code
+                JOIN courses c 
+                    ON cl.course_code = c.course_code
+
+                LEFT JOIN exams e 
+                    ON cl.class_code = e.class_code
+
+                LEFT JOIN exam_attempts ea 
+                    ON e.exam_id = ea.exam_id 
+                    AND en.student_id = ea.student_id
+
+                WHERE 
+                    (ea.status = 'finished' OR ea.status IS NULL)
+                    AND (e.archived = 0 OR e.archived IS NULL)
+
                 GROUP BY en.student_id, cl.class_code
             ) AS ranked_courses
-            WHERE ranked_courses.student_id = %s AND course_rank <= 20 AND avg_pct IS NOT NULL
+
+            WHERE 
+                ranked_courses.student_id = %s 
+                AND course_rank <= 20 
+                AND avg_pct IS NOT NULL
+
             ORDER BY avg_pct DESC
         """, (student_id,))
+
         course_certs = cursor.fetchall()
 
         cursor.execute("""

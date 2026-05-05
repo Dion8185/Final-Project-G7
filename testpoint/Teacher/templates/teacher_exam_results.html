@@ -131,7 +131,7 @@
                 </thead>
                 <tbody class="text-dark">
                     {% for r in results %}
-                    {% set percent = ((r.score / r.total_questions) * 100)|round(1) if r.attempt_id and r.total_questions > 0 else 0 %}
+                    {% set percent = ((r.score / exam.question_limit) * 100)|round(1) if r.attempt_id and exam.question_limit > 0 else 0 %}
                     <tr class="student-row {% if r.attempt_status == 'blocked' %}bg-light opacity-75{% endif %}">
                         <td class="pl-4 py-3 align-middle">
                             <div class="d-flex align-items-center">
@@ -145,7 +145,7 @@
                         </td>
                         <td class="text-center align-middle">
                             {% if r.attempt_id %}
-                                <span class="score-val">{{ r.score }}</span> <span class="text-muted small">/ {{ r.total_questions }}</span>
+                                <span class="score-val">{{ r.score }}</span> <span class="text-muted small">/ {{ exam.question_limit }}</span>
                             {% else %}
                                 <span class="text-gray-300">--</span>
                             {% endif %}

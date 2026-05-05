@@ -93,10 +93,11 @@
                             {{ 'Active' if exam.is_active else 'Draft' }}
                         </span>
                         
+                        
                         <div class="dropdown no-arrow">
                             <a class="dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-ellipsis-v fa-sm text-gray-400"></i></a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
-                                <a class="dropdown-item" href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}"><i class="fas fa-chart-bar mr-2 text-success"></i>Results</a>
+                              
                                 <button class="dropdown-item" data-toggle="modal" data-target="#publishModal{{ exam.exam_id }}"><i class="fas fa-share-square mr-2 text-primary"></i>Publish</button>
                                 <button class="dropdown-item" onclick="duplicateExam({{ exam.exam_id }})"><i class="fas fa-clone mr-2 text-info"></i>Clone</button>
                                 <div class="dropdown-divider"></div>
@@ -114,6 +115,7 @@
                         <div class="tp-info-item"><span class="tp-meta-label">Attempts</span><span class="tp-meta-val"><i class="fas fa-users mr-1 text-info"></i> {{ exam.attempt_count }}</span></div>
                     </div>
 
+                    <a class="dropdown-item" href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}"><i class="fas fa-chart-bar mr-3 text-success"></i>Results</a>
                     <div class="mt-auto d-flex" style="gap: 10px;">
                         <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}" class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Edit Pool</a>
                         <button class="btn btn-light border rounded-pill px-3 shadow-sm" data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}"><i class="fas fa-cog"></i></button>

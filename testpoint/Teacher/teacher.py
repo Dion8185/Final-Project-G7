@@ -85,7 +85,7 @@ def teacher_dashboard():
                 JOIN exams ex ON ea.exam_id = ex.exam_id
                 JOIN classes cl ON ex.class_code = cl.class_code
                 JOIN courses c ON cl.course_code = c.course_code
-                WHERE cl.teacher_id = %s AND ea.status = 'finished'
+                WHERE cl.teacher_id = %s AND ea.status = 'finished' AND ex.archived = 0
                 GROUP BY c.course_code LIMIT 5
             """, (teacher_id,))
             course_data = cursor.fetchall()
@@ -117,7 +117,7 @@ def teacher_dashboard():
                 JOIN students s ON ea.student_id = s.student_id
                 JOIN exams ex ON ea.exam_id = ex.exam_id
                 JOIN classes cl ON ex.class_code = cl.class_code
-                WHERE cl.teacher_id = %s AND ea.status = 'finished'
+                WHERE cl.teacher_id = %s AND ea.status = 'finished' AND ex.archived = 0
                 ORDER BY ea.end_time DESC LIMIT 5
             """, (teacher_id,))
             recent_submissions = cursor.fetchall()
@@ -136,7 +136,7 @@ def teacher_dashboard():
                                    dist_labels=dist_labels, 
                                    dist_values=dist_values, 
                                    recent_submissions=recent_submissions)
-        finally:
+        finally: 
             cursor.close()
             connection.close()
             
@@ -821,7 +821,7 @@ def bulk_question_action(exam_id):
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
 
 
-@teacher.route('/delete_question/<int:q_id>/<int:exam_id>', methods=['POST'])
+@teacher.route('/delete_question/<int:q_id>/<int:exam_id>')
 def delete_question(q_id, exam_id):
     if not teacher_logged_in(): return redirect(url_for('auth.login'))
     locked, msg = is_exam_locked(exam_id)
@@ -992,6 +992,7 @@ def exam_results(exam_id):
             WHERE e.exam_id = %s AND cl.teacher_id = %s
         """, (exam_id, teacher_id))
         exam = cursor.fetchone()
+        
         
         if not exam:
             flash("Exam not found or access denied.", "danger")

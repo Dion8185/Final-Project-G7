@@ -552,6 +552,17 @@
         let isUnloading = false;
         let isBlocked = false;
 
+        // FIX: Move modal to body to bypass stacking context issues (Grey Area Fix)
+        $('#blockedModal').appendTo('body');
+
+        // FIX: Prevent Enter Key from submitting the form in identification questions
+        $(window).keydown(function (event) {
+            if (event.keyCode == 13) {
+                event.preventDefault();
+                return false;
+            }
+        });
+
         // 1. Fullscreen Lockdown
         window.startLockdown = function () {
             const el = document.documentElement;
@@ -564,7 +575,7 @@
         document.addEventListener('fullscreenchange', () => {
             if (!isUnloading && !document.fullscreenElement && !isBlocked) {
                 $('#lockdown-overlay').fadeIn(200);
-                throttledViolation('Fullscreen exited');
+                handleViolation('Fullscreen exited');
             }
         });
 
@@ -581,10 +592,13 @@
         const timerInt = setInterval(() => {
             if (isBlocked) return;
             if (timeLeft <= 0) {
-                clearInterval(timerInt); isUnloading = true;
-                document.getElementById('exam-form').submit(); return;
+                clearInterval(timerInt);
+                isUnloading = true;
+                document.getElementById('exam-form').submit();
+                return;
             }
-            timeLeft--; renderTimer();
+            timeLeft--;
+            renderTimer();
         }, 1000);
 
         // 3. Navigation
@@ -599,7 +613,8 @@
             $('#btn-next').toggle(idx < totalQ - 1);
             $('#btn-submit').toggle(idx === totalQ - 1);
             $('#btn-flag').toggleClass('active', $(`#map-${idx}`).hasClass('flagged'));
-            currentIdx = idx; updateProgressBar();
+            currentIdx = idx;
+            updateProgressBar();
         }
 
         window.jumpTo = idx => { saveCurrentProgress(); showStep(idx); };
@@ -609,7 +624,8 @@
         $('#btn-flag').click(function () {
             if (isBlocked) return;
             $(`#map-${currentIdx}`).toggleClass('flagged');
-            $(this).toggleClass('active'); saveCurrentProgress();
+            $(this).toggleClass('active');
+            saveCurrentProgress();
         });
 
         function updateProgressBar() {
@@ -617,7 +633,7 @@
             $('#progress-fill').css('width', progress + '%');
         }
 
-        // 4. Data Sync
+        // 4. Data Sync (Auto-save)
         function saveCurrentProgress() {
             if (isUnloading || isBlocked) return;
             const $step = $(`#step-${currentIdx}`);
@@ -640,7 +656,9 @@
                 is_flagged: $indicator.hasClass('flagged') ? 1 : 0,
                 current_idx: currentIdx
                     })
-                }).then(res => { if (res.status === 403) triggerBlockedState(); });
+                }).then(res => {
+                    if (res.status === 403) triggerBlockedState();
+                });
             }
 
         $(document).on('change keyup', '.ajax-save', function () { saveCurrentProgress(); });
@@ -650,34 +668,53 @@
             if (isUnloading || isBlocked) return;
             $('#violation-banner').slideDown(200);
             fetch("{{ url_for('student.log_violation') }}", {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ attempt_id: {{ attempt_id }} })
-                }).then(res => { if (res.status === 403) triggerBlockedState(); });
+                }).then(res => {
+                    if (res.status === 403) triggerBlockedState();
+                });
             }
 
         let violationCooldown = false;
-        function throttledViolation(reason) {
+        function throttledViolation() {
             if (violationCooldown || isUnloading || isBlocked) return;
-            violationCooldown = true; handleViolation(reason);
+            violationCooldown = true;
+            handleViolation('Window switch/blur');
             setTimeout(() => { violationCooldown = false; }, 2000);
         }
 
-        document.addEventListener('visibilitychange', () => { if (document.hidden && !isUnloading) throttledViolation('Tab switch'); });
-        window.addEventListener('blur', () => { if (!isUnloading) throttledViolation('Window blur'); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden && !isUnloading) throttledViolation(); });
+        window.addEventListener('blur', () => { if (!isUnloading) throttledViolation(); });
 
-        // 6. Security Blocking
+        // 6. Security Blocking State
         function triggerBlockedState() {
             if (isBlocked) return;
-            isBlocked = true; isUnloading = true;
+            isBlocked = true;
+            isUnloading = true;
+
+            // Exit fullscreen to reset UI
             if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+
+            // Clear overlay and blur background
             $('#lockdown-overlay').remove();
             $('body').addClass('is-blocked');
-            $('input, button').prop('disabled', true);
-            $('#blockedModal').modal('show');
+
+            // Disable all interaction
+            $('input, button, .ajax-save').prop('disabled', true);
+            $('.q-indicator').css('pointer-events', 'none');
+
+            // Show the modal (Now at Body level)
+            $('#blockedModal').modal({ backdrop: 'static', keyboard: false, show: true });
+
             let count = 5;
             const logoutInt = setInterval(() => {
-                count--; $('#logout-countdown').text(count);
-                if (count <= 0) { clearInterval(logoutInt); window.location.href = "{{ url_for('auth.logout') }}"; }
+                count--;
+                $('#logout-countdown').text(count);
+                if (count <= 0) {
+                    clearInterval(logoutInt);
+                    window.location.href = "{{ url_for('auth.logout') }}";
+                }
             }, 1000);
         }
 
@@ -689,13 +726,12 @@
             }
         };
 
-        // Init
-        if (!document.fullscreenElement) $('#lockdown-overlay').show();
+        // Init Exam View
         renderTimer();
         showStep(currentIdx);
         updateProgressBar();
 
-        // Prevent Back Button
+        // Prevent Browser Back Button
         history.pushState(null, null, location.href);
         window.onpopstate = function () { history.go(1); };
         document.addEventListener('contextmenu', e => e.preventDefault());
