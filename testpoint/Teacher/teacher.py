@@ -1096,7 +1096,6 @@ def review_student_attempt(attempt_id):
     cursor = connection.cursor(dictionary=True, buffered=True)
     
     try:
-        # 1. Fetch Attempt, Student, and Exam Metadata
         cursor.execute("""
             SELECT ea.*, s.firstname, s.lastname, e.title, e.pass_percentage 
             FROM exam_attempts ea 
@@ -1110,7 +1109,6 @@ def review_student_attempt(attempt_id):
             flash("Attempt not found.", "danger")
             return redirect(url_for('teacher.manage_exams'))
 
-        # 2. Fetch questions served during this attempt
         cursor.execute("""
             SELECT q.*, sa.submitted_answer, sa.is_correct 
             FROM questions q 
@@ -1120,14 +1118,13 @@ def review_student_attempt(attempt_id):
         """, (attempt_id, attempt_id))
         questions = cursor.fetchall()
 
-        # 3. Fetch options for each question
         for q in questions:
             cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
             q['options'] = cursor.fetchall()
 
-        # 4. NEW: Fetch detailed violation logs for this attempt
+        # Fetch logs including Latitude and Longitude
         cursor.execute("""
-            SELECT violation_type, violation_time 
+            SELECT violation_type, violation_time, latitude, longitude 
             FROM violation_logs 
             WHERE attempt_id = %s 
             ORDER BY violation_time ASC
@@ -1138,10 +1135,8 @@ def review_student_attempt(attempt_id):
                                attempt=attempt, 
                                questions=questions, 
                                violation_logs=violation_logs)
-    
     finally:
-        cursor.close()
-        connection.close()
+        cursor.close(); connection.close()
 
 #! 7. PROFILE
 @teacher.route('/profile', methods=['GET', 'POST'])
