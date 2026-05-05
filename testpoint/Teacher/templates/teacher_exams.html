@@ -7,22 +7,51 @@
     body.modal-open .modal {
         z-index: 1060 !important;
     }
+
     .modal-backdrop {
         z-index: 1050 !important;
     }
 
     /* ── DASHBOARD UI ── */
-    .tp-subject-section { margin-bottom: 3.5rem; }
-    .tp-subject-header {
+    .tp-course-section {
+        margin-bottom: 4rem;
+    }
+
+    .tp-course-header {
         background: #fff;
-        border: 1px solid var(--tp-teacher-border);
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
+        border-bottom: 2px solid var(--tp-teacher-accent);
+        padding: 1rem 0;
+        margin-bottom: 2rem;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
     }
+
+    .tp-section-divider {
+        display: flex;
+        align-items: center;
+        margin: 1.5rem 0 1rem 0;
+        color: #64748b;
+    }
+
+    .tp-section-divider span {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: #f1f5f9;
+        padding: 4px 12px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .tp-section-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
+        margin-left: 10px;
+    }
+
     .tp-exam-card {
         border: 1.5px solid var(--tp-teacher-border) !important;
         border-radius: 12px !important;
@@ -30,19 +59,57 @@
         background: #fff;
         position: relative;
     }
-    .tp-exam-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(217, 48, 37, 0.1) !important; }
-    .tp-accent-bar { width: 5px; position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; }
-    .st-active { background-color: #10b981 !important; }
-    .st-draft { background-color: #94a3b8 !important; }
+
+    .tp-exam-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(217, 48, 37, 0.1) !important;
+    }
+
+    .tp-accent-bar {
+        width: 5px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 2;
+    }
+
+    .st-active {
+        background-color: #10b981 !important;
+    }
+
+    .st-draft {
+        background-color: #94a3b8 !important;
+    }
 
     .tp-info-grid {
         background: #f8fafc;
         border-radius: 10px;
         padding: 14px;
-        display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
     }
-    .tp-meta-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #94a3b8; }
-    .tp-meta-val { font-size: 13px; font-weight: 700; color: #1e293b; }
+
+    .tp-meta-label {
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+
+    .tp-meta-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .form-control:disabled,
+    .custom-select:disabled {
+        background-color: #e9ecef !important;
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
 </style>
 {% endblock %}
 
@@ -50,11 +117,13 @@
 <!-- ── PAGE HEADER ── -->
 <div class="row mb-4 align-items-center">
     <div class="col-md-7">
-        <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.2rem;" class="mb-1">Exams Manager</h1>
+        <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.2rem;" class="mb-1">Exams
+            Manager</h1>
         <p class="text-muted small mb-0">Create, deploy, and manage assessments.</p>
     </div>
     <div class="col-md-5 text-md-right">
-        <button class="btn btn-danger px-4 rounded-pill font-weight-bold" data-toggle="modal" data-target="#addExamModal">
+        <button class="btn btn-danger px-4 rounded-pill font-weight-bold" data-toggle="modal"
+            data-target="#addExamModal">
             <i class="fas fa-plus mr-2"></i> Create New Exam
         </button>
         <a href="{{ url_for('teacher.trashed_exams') }}" class="btn btn-light border px-3 rounded-pill ml-1">
@@ -63,136 +132,274 @@
     </div>
 </div>
 
-<!-- ── SUBJECT GROUPING ── -->
-{% for class_code, class_exams in exams|groupby('class_code') %}
-<div class="tp-subject-section">
-    <div class="tp-subject-header shadow-sm">
-        <div class="d-flex align-items-center">
-            <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" 
-                 style="width: 40px; height: 40px; background: var(--tp-teacher-accent-lt); color: var(--tp-teacher-accent);">
-                <i class="fas fa-book-open fa-sm"></i>
-            </div>
-            <div>
-                <h4 class="m-0 font-weight-bold text-dark">{{ class_exams[0].course_name }}</h4>
-                <div class="small mt-1">
-                    <span class="badge badge-light border px-2 py-1 mr-2">ID: {{ class_code }}</span>
-                    <span class="badge badge-warning border px-2 py-1" style="background:#fffbe2; color:#854d0e;">SECTION: {{ class_exams[0].block_name }}</span>
-                </div>
-            </div>
+<!-- ── SEARCH BAR ── -->
+<div class="mb-4">
+    <div class="input-group shadow-sm border rounded-pill overflow-hidden bg-white">
+        <div class="input-group-prepend">
+            <span class="input-group-text bg-white border-0 pl-4"><i class="fas fa-search text-muted"></i></span>
         </div>
+        <input type="text" id="examSearchInput" class="form-control border-0 py-4"
+            placeholder="Search by exam title, course name, or section...">
+    </div>
+</div>
+
+<!-- ── SUBJECT GROUPING (OUTER: COURSE NAME) ── -->
+{% for course_name, course_exams in exams|groupby('course_name') %}
+<div class="tp-course-section course-group">
+    <div class="tp-course-header">
+        <div class="rounded-circle d-flex align-items-center justify-content-center mr-3 shadow-sm"
+            style="width: 45px; height: 45px; background: var(--tp-teacher-accent); color: #fff;">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <h3 class="m-0 font-weight-bold text-dark course-title-text">{{ course_name }}</h3>
     </div>
 
-    <div class="row">
-        {% for exam in class_exams %}
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card tp-exam-card h-100 shadow-sm pl-2">
-                <div class="tp-accent-bar {{ 'st-active' if exam.is_active else 'st-draft' }}"></div>
-                <div class="card-body d-flex flex-column pt-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <span class="badge badge-pill {{ 'badge-success' if exam.is_active else 'badge-secondary' }} px-3" style="font-size: 10px;">
-                            {{ 'Active' if exam.is_active else 'Draft' }}
-                        </span>
-                        
-                        
-                        <div class="dropdown no-arrow">
-                            <a class="dropdown-toggle" href="#" data-toggle="dropdown"><i class="fas fa-ellipsis-v fa-sm text-gray-400"></i></a>
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
-                              
-                                <button class="dropdown-item" data-toggle="modal" data-target="#publishModal{{ exam.exam_id }}"><i class="fas fa-share-square mr-2 text-primary"></i>Publish</button>
-                                <button class="dropdown-item" onclick="duplicateExam({{ exam.exam_id }})"><i class="fas fa-clone mr-2 text-info"></i>Clone</button>
-                                <div class="dropdown-divider"></div>
-                                <form action="{{ url_for('teacher.soft_delete_exam', exam_id=exam.exam_id) }}" method="POST"><button type="submit" class="dropdown-item text-danger"><i class="fas fa-archive mr-2"></i>Archive</button></form>
+    <!-- ── INNER GROUPING: CLASS/SECTION ── -->
+    {% for class_code, section_exams in course_exams|groupby('class_code') %}
+    <div class="section-container mb-5">
+        <div class="tp-section-divider">
+            <span class="shadow-sm">
+                <i class="fas fa-layer-group mr-1"></i> Section: 
+
+                {# FIX: use direct lookup instead of looping #}
+                {% set class_info = classes_map.get(class_code) %}
+
+                {% if class_info %}
+                    {{ class_info.program_name }}
+                {% endif %}
+
+                <b class="block-name-text">
+                    {{ section_exams[0].block_name }}
+                </b>
+
+                <i class="fas fa-hashtag ml-3 mr-1"></i>
+                Code: <b class="class-code-text">{{ class_code }}</b>
+            </span>
+        </div>
+        
+        <div class="row">
+            {% for exam in section_exams %}
+            <div class="col-xl-4 col-md-6 mb-4 exam-card-container">
+                <div class="card tp-exam-card h-100 shadow-sm pl-2">
+                    <div class="tp-accent-bar {{ 'st-active' if exam.is_active else 'st-draft' }}"></div>
+                    <div class="card-body d-flex flex-column pt-4">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <span
+                                class="badge badge-pill {{ 'badge-success' if exam.is_active else 'badge-secondary' }} px-3"
+                                style="font-size: 10px;">
+                                {{ 'Active' if exam.is_active else 'Draft' }}
+                            </span>
+
+                            <div class="dropdown no-arrow">
+                                <a class="dropdown-toggle" href="#" data-toggle="dropdown"><i
+                                        class="fas fa-ellipsis-v fa-sm text-gray-400"></i></a>
+                                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                                    <button class="dropdown-item" data-toggle="modal"
+                                        data-target="#publishModal{{ exam.exam_id }}"><i
+                                            class="fas fa-share-square mr-2 text-primary"></i>Publish to
+                                        Sections</button>
+                                    <button class="dropdown-item" onclick="duplicateExam({{ exam.exam_id }})"><i
+                                            class="fas fa-clone mr-2 text-info"></i>Clone Exam</button>
+                                    <div class="dropdown-divider"></div>
+                                    <form action="{{ url_for('teacher.soft_delete_exam', exam_id=exam.exam_id) }}"
+                                        method="POST">
+                                        <button type="submit" class="dropdown-item text-danger"
+                                            onclick="return confirm('Archive this exam?')"><i
+                                                class="fas fa-archive mr-2"></i>Archive</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <h5 class="font-weight-bold text-dark mb-4">{{ exam.title }}</h5>
+                        <h5 class="font-weight-bold text-dark mb-4 exam-title-text">{{ exam.title }}</h5>
 
-                    <div class="tp-info-grid mb-4">
-                        <div class="tp-info-item"><span class="tp-meta-label">Duration</span><span class="tp-meta-val"><i class="fas fa-clock mr-1 text-danger"></i> {{ exam.duration_minutes }}m</span></div>
-                        <div class="tp-info-item"><span class="tp-meta-label">Passing</span><span class="tp-meta-val"><i class="fas fa-award mr-1 text-warning"></i> {{ exam.pass_percentage }}%</span></div>
-                        <div class="tp-info-item"><span class="tp-meta-label">Pool Count</span><span class="tp-meta-val"><i class="fas fa-database mr-1 text-primary"></i> {{ exam.q_count }} / {{ exam.question_limit }}</span></div>
-                        <div class="tp-info-item"><span class="tp-meta-label">Attempts</span><span class="tp-meta-val"><i class="fas fa-users mr-1 text-info"></i> {{ exam.attempt_count }}</span></div>
-                    </div>
+                        <div class="tp-info-grid mb-4">
+                            <div class="tp-info-item"><span class="tp-meta-label">Duration</span><span
+                                    class="tp-meta-val"><i class="fas fa-clock mr-1 text-danger"></i> {{
+                                    exam.duration_minutes }}m</span></div>
+                            <div class="tp-info-item"><span class="tp-meta-label">Passing</span><span
+                                    class="tp-meta-val"><i class="fas fa-award mr-1 text-warning"></i> {{
+                                    exam.pass_percentage }}%</span></div>
+                            <div class="tp-info-item"><span class="tp-meta-label">Pool Count</span><span
+                                    class="tp-meta-val"><i class="fas fa-database mr-1 text-primary"></i> {{
+                                    exam.q_count }} / {{ exam.question_limit }}</span></div>
+                            <div class="tp-info-item"><span class="tp-meta-label">Attempts</span><span
+                                    class="tp-meta-val"><i class="fas fa-users mr-1 text-info"></i> {{
+                                    exam.attempt_count }}</span></div>
+                        </div>
 
-                    <a class="dropdown-item" href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}"><i class="fas fa-chart-bar mr-3 text-success"></i>Results</a>
-                    <div class="mt-auto d-flex" style="gap: 10px;">
-                        <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}" class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Edit Pool</a>
-                        <button class="btn btn-light border rounded-pill px-3 shadow-sm" data-toggle="modal" data-target="#editExamModal{{ exam.exam_id }}"><i class="fas fa-cog"></i></button>
+                        <a class="dropdown-item p-0 mb-3 text-success font-weight-bold"
+                            href="{{ url_for('teacher.exam_results', exam_id=exam.exam_id) }}">
+                            <i class="fas fa-chart-bar mr-2"></i>View Results
+                        </a>
+
+                        <div class="mt-auto d-flex" style="gap: 10px;">
+                            <a href="{{ url_for('teacher.manage_questions', exam_id=exam.exam_id) }}"
+                                class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Manage
+                                Questions</a>
+                            <button class="btn btn-light border rounded-pill px-3 shadow-sm" data-toggle="modal"
+                                data-target="#editExamModal{{ exam.exam_id }}"><i class="fas fa-cog"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
 </div>
 {% endfor %}
 
-<!-- ── ALL MODALS ── -->
+<div id="noResultsMessage" class="text-center py-5 d-none">
+    <i class="fas fa-search fa-3x text-gray-300 mb-3"></i>
+    <h5 class="text-gray-500">No matching exams found.</h5>
+</div>
+
+<!-- ── ALL MODALS (Keep Logic Intact) ── -->
 <div class="modal-source-container">
+    <!-- ADD EXAM MODAL -->
     <div class="modal fade" id="addExamModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                <div class="modal-header border-0 pb-0">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
                     <h5 class="modal-title font-weight-bold">Create New Exam</h5>
                     <button class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <form action="{{ url_for('teacher.add_exam') }}" method="POST">
-                    <div class="modal-body">
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Target Class</label><select name="class_code" class="form-control rounded-pill">{% for c in classes %}<option value="{{ c.class_code }}">{{ c.course_name }} ({{ c.block_name }})</option>{% endfor %}</select></div>
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Exam Title</label><input type="text" name="title" class="form-control rounded-pill" required></div>
-                        <div class="row">
-                            <div class="col-6"><div class="form-group"><label class="small font-weight-bold text-muted">Duration (m)</label><input type="number" name="duration" class="form-control rounded-pill" value="60"></div></div>
-                            <div class="col-6"><div class="form-group"><label class="small font-weight-bold text-muted">Pass %</label><input type="number" name="pass_percentage" class="form-control rounded-pill" value="50"></div></div>
+                    <div class="modal-body p-4">
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Target
+                                Class</label><select name="class_code" class="form-control rounded-pill">{% for c in
+                                classes %}<option value="{{ c.class_code }}">{{ c.course_name }} ({{ c.block_name }})
+                                </option>{% endfor %}</select></div>
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Exam
+                                Title</label><input type="text" name="title" class="form-control rounded-pill" required>
                         </div>
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Questions Limit</label><input type="number" name="question_limit" class="form-control rounded-pill" value="50"></div>
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Schedule</label><input type="datetime-local" name="schedule" class="form-control rounded-pill" required></div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="form-group"><label class="small font-weight-bold text-muted">Duration
+                                        (m)</label><input type="number" name="duration"
+                                        class="form-control rounded-pill" value="60"></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group"><label class="small font-weight-bold text-muted">Pass
+                                        %</label><input type="number" name="pass_percentage"
+                                        class="form-control rounded-pill" value="50"></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Questions
+                                Limit</label><input type="number" name="question_limit"
+                                class="form-control rounded-pill" value="50"></div>
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Schedule</label><input
+                                type="datetime-local" name="schedule" class="form-control rounded-pill" required></div>
                     </div>
-                    <div class="modal-footer border-0"><button type="submit" class="btn btn-danger btn-block rounded-pill">Create Exam</button></div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0"><button type="submit"
+                            class="btn btn-danger btn-block rounded-pill font-weight-bold py-2">Create Exam</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 
     {% for exam in exams %}
+    <!-- PUBLISH MODAL -->
     <div class="modal fade" id="publishModal{{ exam.exam_id }}" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                <div class="modal-header border-0"><h5 class="modal-title font-weight-bold">Publish Exam</h5><button class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title font-weight-bold">Publish Assessment</h5><button class="close"
+                        data-dismiss="modal"><span>&times;</span></button>
+                </div>
                 <form action="{{ url_for('teacher.publish_exam_to_classes') }}" method="POST">
                     <input type="hidden" name="source_exam_id" value="{{ exam.exam_id }}">
-                    <div class="modal-body">
-                        <p class="small text-muted mb-3">Target Classes:</p>
-                        {% for cls in classes %}
-                        <div class="custom-control custom-checkbox mb-2">
-                            <input type="checkbox" class="custom-control-input" id="cls{{ exam.exam_id }}{{ loop.index }}" name="target_class_codes[]" value="{{ cls.class_code }}">
-                            <label class="custom-control-label font-weight-bold" for="cls{{ exam.exam_id }}{{ loop.index }}">{{ cls.course_name }} ({{ cls.block_name }})</label>
+                    <div class="modal-body p-4">
+                        <p class="small text-muted mb-3">Target Sections for <strong>{{ exam.title }}</strong>:</p>
+                        <div class="list-group">
+                            {% set count = namespace(value=0) %}
+                            {% set classes_that_already_have_this_exam = exams | selectattr('title', 'equalto',
+                            exam.title) | map(attribute='class_code') | list %}
+                            {% for cls in classes %}
+                            {% if cls.course_code == exam.course_code and cls.class_code not in
+                            classes_that_already_have_this_exam %}
+                            {% set count.value = count.value + 1 %}
+                            <label
+                                class="list-group-item d-flex align-items-center mb-1 rounded border shadow-sm"><input
+                                    type="checkbox" name="target_class_codes[]" value="{{ cls.class_code }}"
+                                    class="mr-3">
+                                <div><span class="d-block font-weight-bold text-dark">{{ cls.block_name }}</span><span
+                                        class="small text-muted">Class Code: {{ cls.class_code }}</span></div>
+                            </label>
+                            {% endif %}
+                            {% endfor %}
+                            {% if count.value == 0 %}<div class="text-center py-4 bg-light rounded border"><i
+                                    class="fas fa-check-double text-success mb-2 d-block fa-2x"></i>
+                                <p class="small text-muted mb-0 px-3">This exam title already exists in all other
+                                    sections.</p>
+                            </div>{% endif %}
                         </div>
-                        {% endfor %}
                     </div>
-                    <div class="modal-footer border-0"><button type="submit" class="btn btn-primary btn-block rounded-pill">Confirm Publication</button></div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0"><button type="submit"
+                            class="btn btn-primary btn-block rounded-pill font-weight-bold py-2" {% if count.value==0
+                            %}disabled{% endif %}>Confirm Publication</button></div>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- EDIT SETTINGS MODAL -->
     <div class="modal fade" id="editExamModal{{ exam.exam_id }}" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-                <div class="modal-header border-0"><h5 class="modal-title font-weight-bold">Exam Settings</h5><button class="close" data-dismiss="modal"><span>&times;</span></button></div>
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title font-weight-bold">Exam Configuration</h5><button class="close"
+                        data-dismiss="modal"><span>&times;</span></button>
+                </div>
                 <form action="{{ url_for('teacher.update_exam') }}" method="POST">
                     <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
-                    <div class="modal-body">
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Title</label><input type="text" name="title" class="form-control rounded-pill" value="{{ exam.title }}"></div>
+                    <div class="modal-body p-4">
+                        {% if exam.is_active %}<div
+                            class="alert alert-warning py-2 px-3 border-0 small rounded-lg mb-4 d-flex align-items-center"
+                            style="background: #fffbe2; color: #854d0e;"><i
+                                class="fas fa-lock mr-3 fa-lg"></i><span>Settings are locked while the exam is
+                                <strong>Active</strong>.</span></div>{% endif %}
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Exam
+                                Title</label><input type="text" name="title" class="form-control rounded-pill"
+                                value="{{ exam.title }}" {{ 'disabled' if exam.is_active }}></div>
                         <div class="row">
-                            <div class="col-6"><div class="form-group"><label class="small font-weight-bold text-muted">Duration (m)</label><input type="number" name="duration" class="form-control rounded-pill" value="{{ exam.duration_minutes }}"></div></div>
-                            <div class="col-6"><div class="form-group"><label class="small font-weight-bold text-muted">Pass %</label><input type="number" name="pass_percentage" class="form-control rounded-pill" value="{{ exam.pass_percentage }}"></div></div>
+                            <div class="col-6">
+                                <div class="form-group"><label class="small font-weight-bold text-muted">Duration
+                                        (m)</label><input type="number" name="duration"
+                                        class="form-control rounded-pill" value="{{ exam.duration_minutes }}"
+                                        {{ 'disabled' if exam.is_active }}></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group"><label class="small font-weight-bold text-muted">Pass
+                                        %</label><input type="number" name="pass_percentage"
+                                        class="form-control rounded-pill" value="{{ exam.pass_percentage }}"
+                                        {{ 'disabled' if exam.is_active }}></div>
+                            </div>
                         </div>
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Question Limit</label><input type="number" name="question_limit" class="form-control rounded-pill" value="{{ exam.question_limit }}"></div>
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Schedule</label><input type="datetime-local" name="schedule" class="form-control rounded-pill" value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}"></div>
-                        <div class="form-group"><label class="small font-weight-bold text-muted">Status</label><select name="status" class="form-control rounded-pill"><option value="draft" {{ 'selected' if not exam.is_active }}>Draft</option><option value="active" {{ 'selected' if exam.is_active }}>Active</option></select></div>
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Question
+                                Limit</label><input type="number" name="question_limit"
+                                class="form-control rounded-pill" value="{{ exam.question_limit }}" {{ 'disabled' if
+                                exam.is_active }}></div>
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Schedule</label><input
+                                type="datetime-local" name="schedule" class="form-control rounded-pill"
+                                value="{{ exam.date_time.strftime('%Y-%m-%dT%H:%M') if exam.date_time else '' }}"
+                                {{ 'disabled' if exam.is_active }}></div>
+                        <div class="form-group"><label class="small font-weight-bold text-muted">Publish
+                                Status</label><select name="status" class="form-control rounded-pill" {{ 'disabled' if
+                                exam.is_active }}>
+                                <option value="draft" {{ 'selected' if not exam.is_active }}>Draft Mode</option>
+                                <option value="active" {{ 'selected' if exam.is_active }}>Active Mode</option>
+                            </select></div>
                     </div>
-                    <div class="modal-footer border-0"><button type="submit" class="btn btn-danger btn-block rounded-pill">Save Changes</button></div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        {% if not exam.is_active %}<button type="submit"
+                            class="btn btn-danger btn-block rounded-pill font-weight-bold py-2">Save Settings</button>{%
+                        else %}<button type="button"
+                            class="btn btn-light border btn-block rounded-pill text-muted font-weight-bold py-2"
+                            disabled><i class="fas fa-lock mr-2"></i> Integrity Locked</button>{% endif %}
+                    </div>
                 </form>
             </div>
         </div>
@@ -203,13 +410,53 @@
 
 {% block extra_js %}
 <script>
-
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('.modal').appendTo('body');
+
+        // REFINED SEARCH LOGIC
+        $('#examSearchInput').on('keyup', function () {
+            const query = $(this).val().toLowerCase().trim();
+            let totalFound = 0;
+
+            $('.course-group').each(function () {
+                const group = $(this);
+                const courseTitle = group.find('.course-title-text').text().toLowerCase();
+                let groupHasMatch = false;
+
+                group.find('.section-container').each(function () {
+                    const section = $(this);
+                    const classCode = section.find('.class-code-text').text().toLowerCase();
+                    const blockName = section.find('.block-name-text').text().toLowerCase();
+                    let sectionHasMatch = false;
+
+                    section.find('.exam-card-container').each(function () {
+                        const card = $(this);
+                        const examTitle = card.find('.exam-title-text').text().toLowerCase();
+
+                        if (examTitle.includes(query) || courseTitle.includes(query) || classCode.includes(query) || blockName.includes(query)) {
+                            card.show();
+                            sectionHasMatch = true;
+                            totalFound++;
+                        } else {
+                            card.hide();
+                        }
+                    });
+
+                    if (sectionHasMatch) { section.show(); groupHasMatch = true; }
+                    else { section.hide(); }
+                });
+
+                if (groupHasMatch) { group.show(); }
+                else { group.hide(); }
+            });
+
+            if (totalFound === 0 && query !== "") { $('#noResultsMessage').removeClass('d-none'); }
+            else { $('#noResultsMessage').addClass('d-none'); }
+        });
     });
 
     function duplicateExam(examId) {
-        if(confirm('Clone this exam?')) {
+        if (confirm('Clone this exam and all its settings?')) {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/teacher/clone_exam/${examId}`;
@@ -217,87 +464,5 @@
             form.submit();
         }
     }
-    
-    $(document).ready(function () {
-        // 1. Full list of classes passed from Flask
-        const teacherClasses = [
-            {% for c in classes %}
-            { code: "{{ c.class_code }}", course: "{{ c.course_code }}", block: "{{ c.block_name }}", name: "{{ c.course_name }}" },
-        {% endfor %}
-        ];
-
-    // 2. Map of existing exams (to prevent the loop)
-    // We store which Class Codes already have which Exam Titles
-    const existingExams = [
-        {% for e in exams %}
-    { class_code: "{{ e.class_code }}", title: "{{ e.title }}" },
-    {% endfor %}
-        ];
-
-    // Search Filter Logic
-    $('#searchInput').on('keyup', function () {
-        var val = $(this).val().toLowerCase();
-        $('.exam-item').each(function () {
-            $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
-        });
-        $('.course-section').each(function () {
-            var visibleItems = $(this).find('.exam-item:visible').length;
-            $(this).toggle(visibleItems > 0);
-        });
-    });
-
-    // Delete Modal logic
-    $('#deleteExamModal').on('show.bs.modal', function (event) {
-        var btn = $(event.relatedTarget);
-        $('#delExamTitle').text(btn.data('title'));
-        var action = "{{ url_for('teacher.soft_delete_exam', exam_id='0') }}".replace('0', btn.data('id'));
-        $('#deleteExamForm').attr('action', action);
-    });
-
-    // PUBLISH MODAL DYNAMIC FILTERING (THE FIX)
-    $('#publishExamModal').on('show.bs.modal', function (event) {
-        const btn = $(event.relatedTarget);
-        const sourceId = btn.data('id');
-        const sourceTitle = btn.data('title');
-        const courseCode = btn.data('coursecode');
-        const currentClass = btn.data('classcode');
-
-        $('#pubSourceId').val(sourceId);
-        $('#pubExamTitle').text(sourceTitle);
-
-        const listContainer = $('#targetClassList').empty();
-        let count = 0;
-
-        teacherClasses.forEach(c => {
-            // RULE 1: Must be the same course
-            // RULE 2: Must not be the source class itself
-            // RULE 3: The target class must NOT already have an exam with this title (Prevents the Loop)
-            const alreadyHasThisExam = existingExams.some(e => e.class_code === c.code && e.title === sourceTitle);
-
-            if (c.course === courseCode && c.code !== currentClass && !alreadyHasThisExam) {
-                count++;
-                listContainer.append(`
-                        <label class="list-group-item publish-item d-flex align-items-center mb-1 rounded border">
-                            <input type="checkbox" name="target_class_codes[]" value="${c.code}" class="mr-3">
-                            <div>
-                                <span class="d-block font-weight-bold text-dark">Class Code: ${c.code}</span>
-                                <span class="small text-muted">Block: ${c.block}</span>
-                            </div>
-                        </label>
-                    `);
-            }
-        });
-
-        if (count === 0) {
-            $('#targetClassList').addClass('d-none');
-            $('#noOtherClasses').removeClass('d-none');
-            $('#pubSubmitBtn').prop('disabled', true);
-        } else {
-            $('#targetClassList').removeClass('d-none');
-            $('#noOtherClasses').addClass('d-none');
-            $('#pubSubmitBtn').prop('disabled', false);
-        }
-    });
-    });
 </script>
 {% endblock %}
