@@ -193,11 +193,101 @@ def my_courses():
 
 @teacher.route('/exam_analysis')
 def exam_analysis():
-    if not teacher_logged_in(): return redirect(url_for('auth.login'))
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-    cursor.execute("SELECT e.exam_id, e.title, c.course_name, COUNT(ea.attempt_id) as total_takers, AVG(ea.score) as average_score FROM exams e JOIN classes cl ON e.class_code = cl.class_code JOIN courses c ON cl.course_code = c.course_code LEFT JOIN exam_attempts ea ON e.exam_id = ea.exam_id AND ea.status = 'finished' WHERE cl.teacher_id = %s GROUP BY e.exam_id", (session.get('user_id'),))
-    exams = cursor.fetchall(); cursor.close(); connection.close()
-    return render_template('teacher_analysis.html', exams=exams)
+    if not teacher_logged_in(): 
+        return redirect(url_for('auth.login'))
+    
+    teacher_id = session.get('user_id')
+    exam_id = request.args.get('exam_id', type=int)
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("""
+            SELECT e.exam_id, e.title, c.course_name 
+            FROM exams e 
+            JOIN classes cl ON e.class_code = cl.class_code 
+            JOIN courses c ON cl.course_code = c.course_code 
+            WHERE cl.teacher_id = %s AND e.archived = 0
+        """, (teacher_id,))
+        all_exams = cursor.fetchall()
+
+        selected_exam = None
+        stats = {}
+        rankings = []
+        item_analysis = []
+
+        if exam_id:
+            cursor.execute("SELECT * FROM exams WHERE exam_id = %s", (exam_id,))
+            selected_exam = cursor.fetchone()
+
+            if selected_exam:
+                passing_threshold = float(selected_exam['question_limit']) * (float(selected_exam['pass_percentage']) / 100)
+
+                cursor.execute("""
+                    SELECT 
+                        COUNT(attempt_id) as total_takers,
+                        AVG(score) as avg_raw_score,
+                        SUM(tab_switches) as total_violations,
+                        SUM(CASE WHEN score >= %s THEN 1 ELSE 0 END) as passed_count
+                    FROM exam_attempts 
+                    WHERE exam_id = %s AND status = 'finished'
+                """, (passing_threshold, exam_id))
+                summary = cursor.fetchone()
+                
+                if summary and summary['total_takers'] > 0:
+                    stats = {
+                        'total_takers': summary['total_takers'],
+                        'avg_percent': round((summary['avg_raw_score'] / selected_exam['question_limit']) * 100, 1) if summary['avg_raw_score'] else 0,
+                        'pass_rate': round((summary['passed_count'] / summary['total_takers']) * 100, 1),
+                        'violations': summary['total_violations'] or 0
+                    }
+
+                    cursor.execute("""
+                        SELECT s.firstname, s.lastname, ea.score, ea.attempt_id,
+                               round((ea.score / %s) * 100, 1) as percentage
+                        FROM exam_attempts ea
+                        JOIN students s ON ea.student_id = s.student_id
+                        WHERE ea.exam_id = %s AND ea.status = 'finished'
+                        ORDER BY ea.score DESC, ea.end_time ASC
+                        LIMIT 10
+                    """, (selected_exam['question_limit'], exam_id))
+                    rankings = cursor.fetchall()
+
+                    # FETCH ALL ITEMS (for modal), ORDER BY FAIL RATE
+                    cursor.execute("""
+                        SELECT 
+                            q.question_text, 
+                            COUNT(sa.answer_id) as total,
+                            SUM(CASE WHEN sa.is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
+                            SUM(CASE WHEN sa.is_correct = 0 THEN 1 ELSE 0 END) as incorrect_count
+                        FROM attempt_questions aq
+                        JOIN questions q ON aq.question_id = q.question_id
+                        LEFT JOIN student_answers sa ON q.question_id = sa.question_id AND sa.attempt_id = aq.attempt_id
+                        WHERE aq.attempt_id IN (SELECT attempt_id FROM exam_attempts WHERE exam_id = %s AND status='finished')
+                        GROUP BY q.question_id
+                        ORDER BY incorrect_count DESC
+                    """, (exam_id,))
+                    items = cursor.fetchall()
+                    
+                    for item in items:
+                        total = item['total']
+                        item_analysis.append({
+                            'text': item['question_text'],
+                            'correct_p': round((item['correct_count'] / total) * 100, 1) if total > 0 else 0,
+                            'incorrect_p': round((item['incorrect_count'] / total) * 100, 1) if total > 0 else 0,
+                            'incorrect_count': item['incorrect_count']
+                        })
+
+        return render_template('teacher_analysis.html', 
+                               all_exams=all_exams, 
+                               selected_exam=selected_exam,
+                               stats=stats,
+                               rankings=rankings,
+                               item_analysis=item_analysis) # This now contains the full list
+    finally:
+        cursor.close()
+        connection.close()
 
 #! 2. QUESTION BANK MANAGEMENT
 @teacher.route('/add_bank_question/<string:course_code>', methods=['POST'])
