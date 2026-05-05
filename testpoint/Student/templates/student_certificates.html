@@ -126,9 +126,9 @@
                             <p class="small text-muted mb-3">Final Standing: <strong>Rank #{{ cert.course_rank
                                     }}</strong></p>
                             <button
-                                onclick="generateCertificate('{{ cert.course_name }}', 'Course Honor Roll', '{{ cert.course_rank }}', 'Top 20 Graduate')"
+                                onclick="generateCertificate('{{ cert.course_name }}', 'Outstanding Performance', '{{ cert.course_rank }}', 'Top 20 Performing Students')"
                                 class="btn btn-primary btn-sm btn-block rounded-pill">
-                                <i class="fas fa-certificate mr-1"></i> View Honor Certificate
+                                <i class="fas fa-certificate mr-1"></i> View Class Ranking Certificate
                             </button>
                         </div>
                     </div>
@@ -156,9 +156,9 @@
                                 <p class="text-xxs text-muted mb-3">Score: {{ item.score }}/{{ item.total_q }} • Issued
                                     {{ item.issued_date.strftime('%b %d, %Y') }}</p>
                                 <button
-                                    onclick="generateCertificate('{{ item.assessment_name }}', 'Outstanding Performance', '{{ item.exam_rank }}', '{{ course_name }}')"
+                                    onclick="generateCertificate('{{ item.assessment_name }}', 'Quiz Excellence', '{{ item.exam_rank }}', '{{ course_name }}')"
                                     class="btn btn-outline-primary btn-sm btn-block rounded-pill font-weight-bold">
-                                    <i class="fas fa-file-download mr-1"></i> Download Achievement
+                                    <i class="fas fa-file-download mr-1"></i>View Achievement
                                 </button>
                             </div>
                         </div>
@@ -214,35 +214,116 @@
 <script>
     const { jsPDF } = window.jspdf;
     const studentName = "{{ session.get('firstname') }} {{ session.get('lastname') }}".toUpperCase();
+ 
+function generateCertificate(subject, awardType, rank, courseContext) {
 
-    function generateCertificate(subject, awardType, rank, courseContext) {
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        doc.setDrawColor(26, 54, 93); doc.setLineWidth(1.5); doc.rect(10, 10, 277, 190);
-        doc.setLineWidth(0.5); doc.rect(13, 13, 271, 184);
-        doc.setDrawColor(184, 134, 11); doc.line(10, 30, 25, 30); doc.line(30, 10, 30, 25);
-        doc.setTextColor(26, 54, 93); doc.setFont("times", "bolditalic"); doc.setFontSize(32);
-        doc.text("TestPoint Examination System", 148.5, 45, { align: "center" });
-        doc.setDrawColor(184, 134, 11); doc.setLineWidth(1); doc.line(80, 50, 217, 50);
-        doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold"); doc.setFontSize(22);
-        doc.text("CERTIFICATE OF " + awardType.toUpperCase(), 148.5, 75, { align: "center" });
-        doc.setFont("times", "normal"); doc.setFontSize(16);
-        doc.text("This official credential is proudly presented to", 148.5, 90, { align: "center" });
-        doc.setTextColor(26, 54, 93); doc.setFont("times", "bold"); doc.setFontSize(42);
-        doc.text(studentName, 148.5, 110, { align: "center" });
-        doc.setTextColor(0, 0, 0); doc.setFont("times", "normal"); doc.setFontSize(16);
-        doc.text(`For achieving exceptional academic standing of Rank #${rank}`, 148.5, 125, { align: "center" });
-        doc.text(`in the assessment of`, 148.5, 135, { align: "center" });
-        doc.setFont("times", "bold"); doc.setFontSize(24); doc.text(subject, 148.5, 150, { align: "center" });
-        doc.setFont("times", "italic"); doc.setFontSize(14); doc.text(`Department of ${courseContext}`, 148.5, 160, { align: "center" });
-        doc.setDrawColor(184, 134, 11); doc.setLineWidth(0.8); doc.circle(245, 160, 18, 'D');
-        doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text("VERIFIED", 245, 158, { align: "center" });
-        doc.text("RESULT", 245, 163, { align: "center" });
-        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(100, 100, 100);
-        doc.text("Issued on: " + new Date().toLocaleDateString(), 15, 185);
-        window.open(doc.output('bloburl'), '_blank');
+    const logoUrl = "{{ url_for('auth.static', filename='img/testpoint.svg') }}";
+    const sealUrl = "{{ url_for('auth.static', filename='img/seal.svg') }}";
+
+    function loadImage(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = url;
+
+            img.onload = function () {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+
+                resolve(canvas.toDataURL("image/png"));
+            };
+        });
     }
 
-    function generateFullReport() {
+    Promise.all([
+        loadImage(logoUrl),
+        loadImage(sealUrl)
+    ]).then(([logoData, sealData]) => {
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+        // Borders
+        doc.setDrawColor(26, 54, 93);
+        doc.setLineWidth(1.5);
+        doc.rect(10, 10, 277, 190);
+
+        doc.setLineWidth(0.5);
+        doc.rect(13, 13, 271, 184);
+
+        // Decorations
+        doc.setDrawColor(184, 134, 11);
+        doc.line(10, 30, 25, 30);
+        doc.line(30, 10, 30, 25);
+
+        // === LOGO (TOP CENTER) ===
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const logoSize = 20;
+        const logoX = (pageWidth - logoSize) / 2;
+
+        doc.addImage(logoData, "PNG", logoX, 20, logoSize, logoSize);
+
+        // Title
+        doc.setTextColor(26, 54, 93);
+        doc.setFont("times", "bold");
+        doc.setFontSize(32);
+        doc.text("TestPoint. Examination System", 148.5, 55, { align: "center" });
+
+        // Line under title
+        doc.setDrawColor(184, 134, 11);
+        doc.setLineWidth(1);
+        doc.line(80, 60, 217, 60);
+
+        // Certificate label
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text("CERTIFICATE OF " + awardType.toUpperCase(), 148.5, 80, { align: "center" });
+
+        // Body
+        doc.setFont("times", "normal");
+        doc.setFontSize(16);
+        doc.text("This official credential is proudly presented to", 148.5, 95, { align: "center" });
+
+        doc.setTextColor(26, 54, 93);
+        doc.setFont("times", "bold");
+        doc.setFontSize(42);
+        doc.text(studentName, 148.5, 115, { align: "center" });
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("times", "normal");
+        doc.setFontSize(16);
+        doc.text(`For achieving Rank #${rank}`, 148.5, 130, { align: "center" });
+        doc.text(`in the assessments of this course`, 148.5, 140, { align: "center" });
+
+        doc.setFont("times", "bold");
+        doc.setFontSize(24);
+        doc.text(subject, 148.5, 155, { align: "center" });
+
+        doc.setFont("times", "italic");
+        doc.setFontSize(14);
+        doc.text(`${courseContext}`, 148.5, 165, { align: "center" });
+
+        // === SEAL (single image) ===
+        const sealSize = 36;
+        const sealX = 245 - (sealSize / 2);
+        const sealY = 160 - (sealSize / 2);
+
+        doc.addImage(sealData, "PNG", sealX, sealY, sealSize, sealSize);
+
+        // Footer
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.text("Issued on: " + new Date().toLocaleDateString(), 15, 185);
+
+        window.open(doc.output('bloburl'), '_blank');
+    });
+}
+ function generateFullReport() {
         const doc = new jsPDF();
         doc.setFontSize(18); doc.setFont("helvetica", "bold");
         doc.text("OFFICIAL ACADEMIC PERFORMANCE REPORT", 14, 22);
@@ -272,4 +353,6 @@
     window.open(doc.output('bloburl'), '_blank');
     }
 </script>
+
+
 {% endblock %}
