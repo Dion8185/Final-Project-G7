@@ -374,3 +374,111 @@ This document has been updated to capture the full current system architecture, 
 - Database relationships and key tables
 - Template organization and static asset usage
 - Security and operational characteristics
+
+FILE STRUCTURE
+
+
+```
+├── 📁 templates
+├── 📁 testpoint
+│   ├── 📁 Admin
+│   │   ├── 📁 templates
+│   │   │   ├── 🌐 admin_accounts.html
+│   │   │   ├── 🌐 admin_base.html
+│   │   │   ├── 🌐 admin_block_students.html
+│   │   │   ├── 🌐 admin_blocks.html
+│   │   │   ├── 🌐 admin_classes.html
+│   │   │   ├── 🌐 admin_courses.html
+│   │   │   ├── 🌐 admin_dashboard.html
+│   │   │   ├── 🌐 admin_enrollees.html
+│   │   │   ├── 🌐 admin_exams.html
+│   │   │   ├── 🌐 admin_logs.html
+│   │   │   ├── 🌐 admin_navbar.html
+│   │   │   ├── 🌐 admin_profile.html
+│   │   │   ├── 🌐 admin_program_blocks_view.html
+│   │   │   ├── 🌐 admin_programs.html
+│   │   │   ├── 🌐 admin_settings.html
+│   │   │   ├── 🌐 admin_sidebar.html
+│   │   │   ├── 🌐 admin_trashed.html
+│   │   │   ├── 🌐 admin_trashed_blocks.html
+│   │   │   ├── 🌐 admin_trashed_classes.html
+│   │   │   ├── 🌐 admin_trashed_courses.html
+│   │   │   ├── 🌐 admin_trashed_programs.html
+│   │   │   └── 🌐 admin_verifications.html
+│   │   └── 🐍 admin.py
+│   ├── 📁 Auth
+│   │   ├── 📁 static
+│   │   │   ├── 📁 img
+│   │   │   │   ├── 🖼️ seal.svg
+│   │   │   │   └── 🖼️ testpoint.svg
+│   │   │   ├── 📁 js
+│   │   │   │   └── 📄 ph-address-selector.js
+│   │   │   └── 📁 ph-json
+│   │   │       ├── ⚙️ barangay.json
+│   │   │       ├── ⚙️ city.json
+│   │   │       ├── ⚙️ province.json
+│   │   │       ├── 📄 references.txt
+│   │   │       └── ⚙️ region.json
+│   │   ├── 📁 templates
+│   │   │   ├── 🌐 auth_base.html
+│   │   │   ├── 🌐 login.html
+│   │   │   ├── 🌐 register.html
+│   │   │   ├── 🌐 register_teacher.html
+│   │   │   ├── 🌐 reset_password.html
+│   │   │   ├── 🌐 upload_verification.html
+│   │   │   ├── 🌐 verify.html
+│   │   │   ├── 🌐 verify_reset_otp.html
+│   │   │   └── 🌐 waiting_approval.html
+│   │   └── 🐍 login.py
+│   ├── 📁 Student
+│   │   ├── 📁 static
+│   │   ├── 📁 templates
+│   │   │   ├── 🌐 student_analytics.html
+│   │   │   ├── 🌐 student_base.html
+│   │   │   ├── 🌐 student_certificates.html
+│   │   │   ├── 🌐 student_courses.html
+│   │   │   ├── 🌐 student_dashboard.html
+│   │   │   ├── 🌐 student_exams.html
+│   │   │   ├── 🌐 student_navbar.html
+│   │   │   ├── 🌐 student_profile.html
+│   │   │   ├── 🌐 student_results.html
+│   │   │   ├── 🌐 student_review.html
+│   │   │   ├── 🌐 student_sidebar.html
+│   │   │   └── 🌐 take_exam.html
+│   │   └── 🐍 student.py
+│   ├── 📁 Teacher
+│   │   ├── 📁 static
+│   │   ├── 📁 templates
+│   │   │   ├── 🌐 teacher_analysis.html
+│   │   │   ├── 🌐 teacher_bank_courses.html
+│   │   │   ├── 🌐 teacher_bank_details.html
+│   │   │   ├── 🌐 teacher_base.html
+│   │   │   ├── 🌐 teacher_dashboard.html
+│   │   │   ├── 🌐 teacher_enrollees.html
+│   │   │   ├── 🌐 teacher_exam_results.html
+│   │   │   ├── 🌐 teacher_exams.html
+│   │   │   ├── 🌐 teacher_monitor.html
+│   │   │   ├── 🌐 teacher_my_courses.html
+│   │   │   ├── 🌐 teacher_navbar.html
+│   │   │   ├── 🌐 teacher_profile.html
+│   │   │   ├── 🌐 teacher_questions.html
+│   │   │   ├── 🌐 teacher_review_attempt.html
+│   │   │   ├── 🌐 teacher_sidebar.html
+│   │   │   └── 🌐 teacher_trashed_exams.html
+│   │   └── 🐍 teacher.py
+│   └── 📁 static
+│       ├── 📁 img
+│       │   └── 🖼️ testpoint.svg
+│       ├── 📁 js
+│       │   └── 📄 paginator.js
+│       └── 📁 uploads
+│           └── 📁 verifications
+├── ⚙️ .gitignore
+├── 📝 README.md
+├── 📄 SYSTEM_CONTEXT.txt
+├── 🐍 app.py
+└── 📄 requirements.txt
+```
+
+
+https://github.com/Dion8185/Final-Project-G7

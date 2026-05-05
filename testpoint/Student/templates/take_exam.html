@@ -671,7 +671,10 @@
             fetch("{{ url_for('student.log_violation') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ attempt_id: {{ attempt_id }} })
+                body: JSON.stringify({
+                    attempt_id: {{ attempt_id }},
+                violation_type: reason
+                })
                 }).then(res => {
                     if (res.status === 403) triggerBlockedState();
                 });

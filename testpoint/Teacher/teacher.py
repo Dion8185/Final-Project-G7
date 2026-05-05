@@ -1096,7 +1096,7 @@ def review_student_attempt(attempt_id):
     cursor = connection.cursor(dictionary=True, buffered=True)
     
     try:
-        # 1. Fetch Attempt, Student, and Exam Metadata (including pass_percentage)
+        # 1. Fetch Attempt, Student, and Exam Metadata
         cursor.execute("""
             SELECT ea.*, s.firstname, s.lastname, e.title, e.pass_percentage 
             FROM exam_attempts ea 
@@ -1110,7 +1110,7 @@ def review_student_attempt(attempt_id):
             flash("Attempt not found.", "danger")
             return redirect(url_for('teacher.manage_exams'))
 
-        # 2. Fetch questions served during this attempt along with the student's answer
+        # 2. Fetch questions served during this attempt
         cursor.execute("""
             SELECT q.*, sa.submitted_answer, sa.is_correct 
             FROM questions q 
@@ -1120,12 +1120,24 @@ def review_student_attempt(attempt_id):
         """, (attempt_id, attempt_id))
         questions = cursor.fetchall()
 
-        # 3. Fetch options for each question so we can show the correct answer
+        # 3. Fetch options for each question
         for q in questions:
             cursor.execute("SELECT * FROM options WHERE question_id = %s", (q['question_id'],))
             q['options'] = cursor.fetchall()
 
-        return render_template('teacher_review_attempt.html', attempt=attempt, questions=questions)
+        # 4. NEW: Fetch detailed violation logs for this attempt
+        cursor.execute("""
+            SELECT violation_type, violation_time 
+            FROM violation_logs 
+            WHERE attempt_id = %s 
+            ORDER BY violation_time ASC
+        """, (attempt_id,))
+        violation_logs = cursor.fetchall()
+
+        return render_template('teacher_review_attempt.html', 
+                               attempt=attempt, 
+                               questions=questions, 
+                               violation_logs=violation_logs)
     
     finally:
         cursor.close()
