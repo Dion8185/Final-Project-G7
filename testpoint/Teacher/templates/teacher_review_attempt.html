@@ -269,7 +269,7 @@
                     <div class="card-header bg-white py-3 border-bottom"
                         style="border-bottom: 1.5px solid var(--tp-teacher-border) !important;">
                         <h6 class="m-0 font-weight-bold text-danger text-uppercase small" style="letter-spacing: 1px;">
-                            <i class="fas fa-history mr-1"></i> Violation Timeline
+                            <i class="fas fa-history mr-1"></i> Exam & Violation Timeline
                         </h6>
                     </div>
                     <div class="card-body p-4">
@@ -296,7 +296,41 @@
                     </div>
                 </div>
             </div>
+            <div class="mt-4">
+                <label class="meta-label d-block mb-2">Geographic Locator</label>
+                <div id="violationMap" style="height: 250px; border-radius: 12px; border: 1px solid #ddd;"></div>
+            </div>
+
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const logs = {{ violation_logs | tojson
+    }};
+    // Filter only logs that have valid coordinates
+    const geoLogs = logs.filter(l => l.latitude && l.longitude);
+
+    if (geoLogs.length > 0) {
+        // Initialize map centered on the first violation
+        const map = L.map('violationMap').setView([geoLogs[0].latitude, geoLogs[0].longitude], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap',
+            maxZoom: 20,
+            maxNativeZoom: 19, 
+            minZoom: 16
+        }).addTo(map);
+
+        geoLogs.forEach(log => {
+            L.marker([log.latitude, log.longitude])
+                .addTo(map)
+                .bindPopup(`<b>${log.violation_type}</b><br>${new Date(log.violation_time).toLocaleTimeString()}`);
+        });
+    } else {
+        document.getElementById('violationMap').innerHTML =
+            '<div class="d-flex h-100 align-items-center justify-content-center text-muted small">No location data captured.</div>';
+    }
+    });
+</script>
 {% endblock %}

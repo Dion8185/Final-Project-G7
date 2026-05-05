@@ -69,7 +69,8 @@
             position: fixed;
             inset: 0;
             background: rgba(15, 14, 17, 0.98);
-            z-index: 99999;
+            /* Set below Bootstrap Modals (1050) but above Navbar (1030) */
+            z-index: 1040;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -77,6 +78,13 @@
             text-align: center;
             padding: 24px;
             gap: 16px;
+        }
+
+        /* Prevent icon and text from blocking button clicks */
+        #lockdown-overlay .lock-icon,
+        #lockdown-overlay h2,
+        #lockdown-overlay p {
+            pointer-events: none;
         }
 
         #lockdown-overlay .lock-icon {
@@ -106,6 +114,8 @@
         }
 
         #lockdown-overlay .btn-enter {
+            pointer-events: auto;
+            /* Re-enable for the button */
             margin-top: 15px;
             padding: 14px 40px;
             background: var(--tp-student-accent);
@@ -117,6 +127,7 @@
             cursor: pointer;
             transition: all .2s;
             box-shadow: 0 4px 15px rgba(45, 91, 227, 0.4);
+            z-index: 1041;
         }
 
         /* ── EXAM GRID LAYOUT ── */
@@ -347,10 +358,10 @@
             <i class="fas fa-shield-alt fa-3x text-danger"></i>
         </div>
         <h2>Secure Exam Environment</h2>
-        <p>Fullscreen mode is mandatory. Exiting fullscreen or switching windows will trigger a security violation and
-            be logged.</p>
-        <button class="btn-enter" onclick="startLockdown()">
-            <i class="fas fa-expand mr-2"></i> Activate Lockdown & Begin
+        <p>Geolocation and Fullscreen mode are mandatory. Please click below to provide location access and activate
+            lockdown to begin.</p>
+        <button class="btn-enter" onclick="initializeExam()">
+            <i class="fas fa-expand mr-2"></i> Provide Access & Begin
         </button>
     </div>
 
@@ -538,6 +549,28 @@
         </div>
     </div>
 
+    <!-- LOCATION CONFIRMATION MODAL -->
+    <div class="modal fade" id="locationConfirmModal" tabindex="-1" role="dialog" aria-hidden="true"
+        data-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
+                <div class="modal-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-map-marked-alt fa-4x text-primary animate__animated animate__bounceIn"></i>
+                    </div>
+                    <h3 class="font-weight-bold text-dark mb-3" style="font-family: var(--tp-serif);">Location Required
+                    </h3>
+                    <p class="text-muted mb-4">TestPoint proctoring requires location access to verify your testing
+                        environment. Please click <strong>Allow</strong> when the browser asks for permission.</p>
+                    <button type="button" class="btn btn-primary btn-block rounded-pill font-weight-bold py-2"
+                        onclick="confirmGrantLocation()">
+                        Understood, Request Permission
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -553,10 +586,16 @@
         let isUnloading = false;
         let isBlocked = false;
 
-        // FIX: Move modal to body to bypass stacking context issues (Grey Area Fix)
-        $('#blockedModal').appendTo('body');
+        // SECURITY BYPASS & TRACKING FLAGS
+        let isRequestingPermission = false;
+        let proctoringArmed = false;
+        let initialLat = null;
+        let initialLng = null;
 
-        // FIX: Prevent Enter Key from submitting the form in identification questions
+        // FIX: Move modals to body to prevent overlay stacking issues
+        $('#blockedModal').appendTo('body');
+        $('#locationConfirmModal').appendTo('body');
+
         $(window).keydown(function (event) {
             if (event.keyCode == 13) {
                 event.preventDefault();
@@ -564,23 +603,98 @@
             }
         });
 
-        // 1. Fullscreen Lockdown
-        window.startLockdown = function () {
-            const el = document.documentElement;
-            if (el.requestFullscreen) el.requestFullscreen();
-            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-            else if (el.msRequestFullscreen) el.msRequestFullscreen();
-            $('#lockdown-overlay').fadeOut(300);
+        // 1. INITIALIZATION: Show confirmation modal
+        window.initializeExam = function () {
+            $('#locationConfirmModal').modal('show');
+        };
+
+        // 2. CONFIRMATION & PERMISSION FLOW
+        window.confirmGrantLocation = function () {
+            $('#locationConfirmModal').modal('hide');
+            const $btn = $('.btn-enter');
+            const originalText = $btn.html();
+
+            // Set state to ignore blur while system prompts are active
+            isRequestingPermission = true;
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Securing Access...');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Location secured
+                        initialLat = position.coords.latitude;
+                        initialLng = position.coords.longitude;
+
+                        // Request Fullscreen
+                        const el = document.documentElement;
+                        let fsPromise;
+                        if (el.requestFullscreen) fsPromise = el.requestFullscreen();
+                        else if (el.webkitRequestFullscreen) fsPromise = el.webkitRequestFullscreen();
+                        else if (el.msRequestFullscreen) fsPromise = el.msRequestFullscreen();
+
+                        const completeInit = () => {
+                            $('#lockdown-overlay').fadeOut(300);
+                            // LOG EXAM START
+                            sendViolationData('Exam Started', initialLat, initialLng);
+
+                            setTimeout(() => {
+                                isRequestingPermission = false;
+                                proctoringArmed = true;
+                                startTimer();
+                            }, 800);
+                        };
+
+                        if (fsPromise) {
+                            fsPromise.then(completeInit).catch(completeInit);
+                        } else {
+                            completeInit();
+                        }
+                    },
+                    (error) => {
+                        isRequestingPermission = false;
+                        $btn.prop('disabled', false).html(originalText);
+                        if (error.code === error.PERMISSION_DENIED) {
+                            alert("Location access is mandatory to begin this exam.");
+                        } else {
+                            alert("Position Unavailable. Please check your GPS settings.");
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+                $btn.prop('disabled', false).html(originalText);
+                isRequestingPermission = false;
+            }
         };
 
         document.addEventListener('fullscreenchange', () => {
-            if (!isUnloading && !document.fullscreenElement && !isBlocked) {
+            if (!isUnloading && !document.fullscreenElement && !isBlocked && proctoringArmed) {
                 $('#lockdown-overlay').fadeIn(200);
                 handleViolation('Fullscreen exited');
             }
         });
 
-        // 2. Timer Logic
+        // Timer Logic
+        let timerInt = null;
+        function startTimer() {
+            if (timerInt) return;
+            renderTimer();
+            timerInt = setInterval(() => {
+                if (isBlocked) return;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInt);
+                    isUnloading = true;
+                    // LOG EXAM END ON TIMEOUT
+                    sendViolationData('Exam Ended (Timeout)', initialLat, initialLng);
+                    setTimeout(() => { document.getElementById('exam-form').submit(); }, 500);
+                    return;
+                }
+                timeLeft--;
+                renderTimer();
+            }, 1000);
+        }
+
         function renderTimer() {
             if (isBlocked) return;
             const m = Math.floor(timeLeft / 60);
@@ -590,19 +704,7 @@
             if (timeLeft < 300) $t.addClass('warning');
         }
 
-        const timerInt = setInterval(() => {
-            if (isBlocked) return;
-            if (timeLeft <= 0) {
-                clearInterval(timerInt);
-                isUnloading = true;
-                document.getElementById('exam-form').submit();
-                return;
-            }
-            timeLeft--;
-            renderTimer();
-        }, 1000);
-
-        // 3. Navigation
+        // Navigation
         function showStep(idx) {
             if (idx < 0 || idx >= totalQ || isBlocked) return;
             $('.question-step').hide().removeClass('active');
@@ -634,7 +736,7 @@
             $('#progress-fill').css('width', progress + '%');
         }
 
-        // 4. Data Sync (Auto-save)
+        // Data Sync (Auto-save)
         function saveCurrentProgress() {
             if (isUnloading || isBlocked) return;
             const $step = $(`#step-${currentIdx}`);
@@ -664,17 +766,32 @@
 
         $(document).on('change keyup', '.ajax-save', function () { saveCurrentProgress(); });
 
-        // 5. Anti-Cheat & Violation Logging
+        // Anti-Cheat & Violation Logging
         function handleViolation(reason) {
-            if (isUnloading || isBlocked) return;
+            if (isUnloading || isBlocked || !proctoringArmed || isRequestingPermission) return;
             $('#violation-banner').slideDown(200);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    sendViolationData(reason, position.coords.latitude, position.coords.longitude);
+                }, () => {
+                    sendViolationData(reason, initialLat, initialLng);
+                });
+            } else {
+                sendViolationData(reason, initialLat, initialLng);
+            }
+        }
+
+        function sendViolationData(reason, lat, lng) {
             fetch("{{ url_for('student.log_violation') }}", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     attempt_id: {{ attempt_id }},
-                violation_type: reason
-                })
+                violation_type: reason,
+                lat: lat,
+                lng: lng
+                    })
                 }).then(res => {
                     if (res.status === 403) triggerBlockedState();
                 });
@@ -682,7 +799,7 @@
 
         let violationCooldown = false;
         function throttledViolation() {
-            if (violationCooldown || isUnloading || isBlocked) return;
+            if (violationCooldown || isUnloading || isBlocked || !proctoringArmed || isRequestingPermission) return;
             violationCooldown = true;
             handleViolation('Window switch/blur');
             setTimeout(() => { violationCooldown = false; }, 2000);
@@ -691,24 +808,20 @@
         document.addEventListener('visibilitychange', () => { if (document.hidden && !isUnloading) throttledViolation(); });
         window.addEventListener('blur', () => { if (!isUnloading) throttledViolation(); });
 
-        // 6. Security Blocking State
+        // Security Blocking State
         function triggerBlockedState() {
             if (isBlocked) return;
             isBlocked = true;
             isUnloading = true;
 
-            // Exit fullscreen to reset UI
             if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
 
-            // Clear overlay and blur background
             $('#lockdown-overlay').remove();
             $('body').addClass('is-blocked');
 
-            // Disable all interaction
             $('input, button, .ajax-save').prop('disabled', true);
             $('.q-indicator').css('pointer-events', 'none');
 
-            // Show the modal (Now at Body level)
             $('#blockedModal').modal({ backdrop: 'static', keyboard: false, show: true });
 
             let count = 5;
@@ -726,12 +839,13 @@
             if (isBlocked) return;
             if (confirm('Are you sure you want to finalize and submit your exam?')) {
                 isUnloading = true;
-                document.getElementById('exam-form').submit();
+                // LOG EXAM END ON SUBMIT
+                sendViolationData('Exam Ended (Submitted)', initialLat, initialLng);
+                setTimeout(() => { document.getElementById('exam-form').submit(); }, 500);
             }
         };
 
         // Init Exam View
-        renderTimer();
         showStep(currentIdx);
         updateProgressBar();
 

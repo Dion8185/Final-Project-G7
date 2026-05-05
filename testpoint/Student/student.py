@@ -514,7 +514,9 @@ def review_exam(attempt_id):
 def log_violation():
     data = request.get_json()
     attempt_id = data.get('attempt_id')
-    violation_type = data.get('violation_type', 'Tab Switch/Blur') # Default type
+    violation_type = data.get('violation_type', 'Tab Switch/Blur')
+    lat = data.get('lat')
+    lng = data.get('lng')
     
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor(dictionary=True)
@@ -527,26 +529,31 @@ def log_violation():
         if not attempt or attempt['status'] == 'blocked':
             return jsonify({"status": "blocked"}), 403
 
-        # 1. Increment the summary counter
-        cursor.execute("UPDATE exam_attempts SET tab_switches = tab_switches + 1 WHERE attempt_id = %s", (attempt_id,))
+        # 1. Define which events actually count as "Violations" to increment the counter
+        # Events like 'Exam Started' and 'Exam Ended' will NOT increment this count.
+        violations_to_count = ['Window switch/blur', 'Fullscreen exited', 'Tab Switch']
         
-        # 2. Insert detailed timestamped log
+        if violation_type in violations_to_count:
+            cursor.execute("UPDATE exam_attempts SET tab_switches = tab_switches + 1 WHERE attempt_id = %s", (attempt_id,))
+        
+        # 2. ALWAYS log the entry to the detailed violation_logs table for the teacher's timeline
         cursor.execute("""
-            INSERT INTO violation_logs (attempt_id, violation_type, violation_time) 
-            VALUES (%s, %s, NOW())
-        """, (attempt_id, violation_type))
+            INSERT INTO violation_logs (attempt_id, violation_type, violation_time, latitude, longitude) 
+            VALUES (%s, %s, NOW(), %s, %s)
+        """, (attempt_id, violation_type, lat, lng))
         
         connection.commit()
         
+        # Fetch new count to return to UI
         cursor.execute("SELECT tab_switches FROM exam_attempts WHERE attempt_id = %s", (attempt_id,))
         result = cursor.fetchone()
         new_count = result['tab_switches'] if result else 0
+        
         return jsonify({"status": "logged", "new_count": new_count})
     finally:
         cursor.close()
         connection.close()
-
-
+        
 #! 4. FINAL SUBMISSION
 @student.route('/submit_exam/<int:attempt_id>', methods=['POST'])
 def submit_exam(attempt_id):
