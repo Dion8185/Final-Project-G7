@@ -22,6 +22,14 @@
     .prog-wrong { background-color: #ff7675; height: 100%; transition: width 0.6s ease; }
     
     .legend-box { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+
+    /* ── ANTI-GREY AREA MODAL FIX ── */
+    #fullReportModal {
+        z-index: 1060 !important;
+    }
+    .modal-backdrop {
+        z-index: 1050 !important;
+    }
 </style>
 {% endblock %}
 
@@ -150,10 +158,10 @@
 </div>
 
 <!-- ── FULL REPORT MODAL ── -->
-<div class="modal fade" id="fullReportModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="fullReportModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-dark text-white">
+            <div class="modal-header bg-dark text-white border-0">
                 <h5 class="modal-title font-weight-bold">Full Item Analysis: {{ selected_exam.title }}</h5>
                 <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
             </div>
@@ -169,13 +177,13 @@
                         <tbody>
                             {% for item in item_analysis %}
                             <tr>
-                                <td class="small font-weight-bold">{{ item.text }}</td>
-                                <td class="align-middle">
+                                <td class="small font-weight-bold p-3">{{ item.text }}</td>
+                                <td class="align-middle p-3">
                                     <div class="d-flex justify-content-between mb-1 small">
-                                        <span class="text-success">{{ item.correct_p }}%</span>
-                                        <span class="text-danger">{{ item.incorrect_p }}%</span>
+                                        <span class="text-success font-weight-bold">{{ item.correct_p }}% Correct</span>
+                                        <span class="text-danger font-weight-bold">{{ item.incorrect_p }}% Wrong</span>
                                     </div>
-                                    <div class="analysis-progress" style="height: 8px;">
+                                    <div class="analysis-progress" style="height: 10px;">
                                         <div class="prog-correct" style="width: {{ item.correct_p }}%"></div>
                                         <div class="prog-wrong" style="width: {{ item.incorrect_p }}%"></div>
                                     </div>
@@ -186,8 +194,8 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close Report</button>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-dismiss="modal">Close Report</button>
             </div>
         </div>
     </div>
@@ -201,4 +209,12 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#fullReportModal').appendTo('body');
+    });
+</script>
 {% endblock %}

@@ -11,16 +11,29 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .question-card.selected {
         background-color: #fffafb !important;
         border-color: var(--tp-teacher-accent) !important;
         box-shadow: 0 0 0 1px var(--tp-teacher-accent);
     }
 
-    .tp-accent-bar { width: 4px; position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; }
-    .bg-bank { background-color: var(--tp-teacher-accent) !important; }
-    .bg-isolated { background-color: #0891b2 !important; }
+    .tp-accent-bar {
+        width: 4px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 2;
+    }
+
+    .bg-bank {
+        background-color: var(--tp-teacher-accent) !important;
+    }
+
+    .bg-isolated {
+        background-color: #0891b2 !important;
+    }
 
     /* SECTIONS */
     .section-divider {
@@ -28,6 +41,7 @@
         border-top: 1.5px solid var(--tp-teacher-border);
         position: relative;
     }
+
     .section-badge {
         position: absolute;
         top: -12px;
@@ -49,7 +63,8 @@
         z-index: 1040;
         background: #0f0e11;
         border-radius: 50px;
-        display: none !important; /* Managed by JS */
+        display: none !important;
+        /* Managed by JS */
         color: #fff;
     }
 
@@ -60,8 +75,17 @@
         border: 1px solid var(--tp-teacher-border);
         border-radius: 10px;
     }
-    .bank-item-card:hover { border-color: var(--tp-teacher-accent); background-color: #fffafb; }
-    .bank-item-card.is-selected { border-color: var(--tp-teacher-accent); background-color: #fffafb; box-shadow: 0 0 0 1px var(--tp-teacher-accent); }
+
+    .bank-item-card:hover {
+        border-color: var(--tp-teacher-accent);
+        background-color: #fffafb;
+    }
+
+    .bank-item-card.is-selected {
+        border-color: var(--tp-teacher-accent);
+        background-color: #fffafb;
+        box-shadow: 0 0 0 1px var(--tp-teacher-accent);
+    }
 
     .id-tag {
         font-family: 'JetBrains Mono', monospace;
@@ -79,7 +103,13 @@
         font-weight: 600;
     }
 
-    .lock-overlay-text { font-weight: 800; color: #ef4444; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+    .lock-overlay-text {
+        font-weight: 800;
+        color: #ef4444;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 1px;
+    }
 
     /* FILTERS */
     .filter-wrapper {
@@ -99,22 +129,28 @@
     <!-- ── HEADER SECTION ── -->
     <div class="row mb-4 align-items-center">
         <div class="col-lg-6">
-            <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.2rem;" class="mb-1">Assessment Pool</h1>
-            <p class="text-muted small mb-0">{{ exam.title }} <span class="mx-1">•</span> <span class="font-weight-bold text-dark">{{ exam.course_code }}</span></p>
+            <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.2rem;" class="mb-1">
+                Assessment Pool</h1>
+            <p class="text-muted small mb-0">{{ exam.title }} <span class="mx-1">•</span> <span
+                    class="font-weight-bold text-dark">{{ exam.course_code }}</span></p>
         </div>
         <div class="col-lg-6 text-lg-right mt-3 mt-lg-0">
             <div class="d-flex flex-wrap justify-content-lg-end" style="gap: 8px;">
                 {% if not is_locked %}
-                <button class="btn btn-dark px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal" data-target="#aiModal">
+                <button class="btn btn-dark px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal"
+                    data-target="#aiModal">
                     <i class="fas fa-robot mr-1"></i> AI Generator
                 </button>
-                <button class="btn btn-danger px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal" data-target="#bankModal">
+                <button class="btn btn-danger px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal"
+                    data-target="#bankModal">
                     <i class="fas fa-university mr-1"></i> Master Bank
                 </button>
-                <button class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal" data-target="#excelModal">
+                <button class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm shadow-sm"
+                    data-toggle="modal" data-target="#excelModal">
                     <i class="fas fa-file-excel mr-1 text-success"></i> Import
                 </button>
-                <button class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal" data-target="#manualModal">
+                <button class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm shadow-sm"
+                    data-toggle="modal" data-target="#manualModal">
                     <i class="fas fa-plus mr-1 text-primary"></i> New Item
                 </button>
                 {% else %}
@@ -124,7 +160,8 @@
                     </button>
                 </form>
                 {% endif %}
-                <a href="{{ url_for('teacher.manage_exams') }}" class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm">
+                <a href="{{ url_for('teacher.manage_exams') }}"
+                    class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm">
                     <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
@@ -135,13 +172,15 @@
     {% if is_locked %}
     <div class="alert bg-white border-0 shadow-sm border-left-danger mb-4 py-3 animate__animated animate__shakeX">
         <div class="d-flex align-items-center">
-            <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
+            <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center mr-3"
+                style="width: 40px; height: 40px;">
                 <i class="fas fa-lock"></i>
             </div>
             <div>
                 <h6 class="font-weight-bold text-dark mb-0">Pool Environment Locked</h6>
                 <p class="mb-0 small text-muted">
-                    {% if exam.is_active == 1 %}This assessment is currently <strong>Active</strong>.{% else %}This exam has <strong>{{ exam.attempt_count }} submissions</strong>.{% endif %} 
+                    {% if exam.is_active == 1 %}This assessment is currently <strong>Active</strong>.{% else %}This exam
+                    has <strong>{{ exam.attempt_count }} submissions</strong>.{% endif %}
                     Manual modification is disabled to ensure data integrity.
                 </p>
             </div>
@@ -151,17 +190,22 @@
 
     <!-- ── SMART BULK ACTIONS BAR ── -->
     {% if not is_locked %}
-    <div class="bulk-actions-bar shadow-lg px-4 py-2 mb-4 mx-auto" id="bulkBar" style="width: fit-content; min-width: 500px;">
+    <div class="bulk-actions-bar shadow-lg px-4 py-2 mb-4 mx-auto" id="bulkBar"
+        style="width: fit-content; min-width: 500px;">
         <div class="d-flex justify-content-between align-items-center">
             <div class="small font-weight-bold mr-4">
-                <span class="text-danger"><i class="fas fa-check-circle mr-1"></i></span> <span id="selectedCount">0</span> Selected
+                <span class="text-danger"><i class="fas fa-check-circle mr-1"></i></span> <span
+                    id="selectedCount">0</span> Selected
             </div>
             <div class="d-flex align-items-center" style="gap: 10px;">
-                <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none font-weight-bold" id="btnDeselectAll">Clear</button>
-                <button type="submit" form="bulkActionForm" name="action" value="unlink" id="btnBulkUnlink" class="btn btn-primary btn-sm rounded-pill px-3 font-weight-bold">
+                <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none font-weight-bold"
+                    id="btnDeselectAll">Clear</button>
+                <button type="submit" form="bulkActionForm" name="action" value="unlink" id="btnBulkUnlink"
+                    class="btn btn-primary btn-sm rounded-pill px-3 font-weight-bold">
                     Unlink from Bank (<span id="linkCount">0</span>)
                 </button>
-                <button type="submit" form="bulkActionForm" name="action" value="delete" id="btnBulkDelete" class="btn btn-danger btn-sm rounded-pill px-3 font-weight-bold">
+                <button type="submit" form="bulkActionForm" name="action" value="delete" id="btnBulkDelete"
+                    class="btn btn-danger btn-sm rounded-pill px-3 font-weight-bold">
                     Delete Unique (<span id="deleteCount">0</span>)
                 </button>
             </div>
@@ -200,24 +244,30 @@
             </div>
             <div class="col-md-5 px-3">
                 <label class="id-tag text-muted text-uppercase d-block mb-1">Search Keywords</label>
-                <input type="text" class="form-control form-control-sm border-0 font-weight-bold p-0 shadow-none" id="searchInput" placeholder="Search question text...">
+                <input type="text" class="form-control form-control-sm border-0 font-weight-bold p-0 shadow-none"
+                    id="searchInput" placeholder="Search question text...">
             </div>
             <div class="col-md-1 d-flex align-items-center justify-content-center">
-                <button type="button" id="resetFilters" class="btn btn-light btn-circle-sm border" title="Reset All"><i class="fas fa-undo"></i></button>
+                <button type="button" id="resetFilters" class="btn btn-light btn-circle-sm border" title="Reset All"><i
+                        class="fas fa-undo"></i></button>
             </div>
         </form>
     </div>
 
-    <form id="bulkActionForm" action="{{ url_for('teacher.bulk_question_action', exam_id=exam.exam_id) }}" method="POST">
+    <form id="bulkActionForm" action="{{ url_for('teacher.bulk_question_action', exam_id=exam.exam_id) }}"
+        method="POST">
 
         <!-- ── SECTION 1: MASTER BANK ── -->
         <div id="bankSection" class="source-group">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="m-0 font-weight-bold text-dark" style="font-size: 1.1rem;"><i class="fas fa-university text-danger mr-2"></i>Master Bank Items</h5>
+                <h5 class="m-0 font-weight-bold text-dark" style="font-size: 1.1rem;"><i
+                        class="fas fa-university text-danger mr-2"></i>Master Bank Items</h5>
                 {% if not is_locked %}
                 <div class="custom-control custom-checkbox">
-                    <input type="checkbox" class="custom-control-input section-select" id="selectBankAll" data-target="bank">
-                    <label class="custom-control-label small font-weight-bold text-muted" for="selectBankAll">Select Visible</label>
+                    <input type="checkbox" class="custom-control-input section-select" id="selectBankAll"
+                        data-target="bank">
+                    <label class="custom-control-label small font-weight-bold text-muted" for="selectBankAll">Select
+                        Visible</label>
                 </div>
                 {% endif %}
             </div>
@@ -225,32 +275,43 @@
             <div class="container-items">
                 {% set bank_items = questions|rejectattr('is_isolated', 'equalto', 1)|list %}
                 {% for q in bank_items %}
-                <div class="card shadow-sm mb-3 question-card" data-source="bank" data-type="{{ q.question_type }}" data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
+                <div class="card shadow-sm mb-3 question-card" data-source="bank" data-type="{{ q.question_type }}"
+                    data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
                     <div class="tp-accent-bar bg-bank"></div>
                     <div class="card-body p-4">
                         <div class="row align-items-start">
                             <div class="col-auto mr-2">
                                 <div class="custom-control custom-checkbox pt-1">
-                                    <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}" class="custom-control-input q-checkbox bank-chk" id="chk-{{ q.question_id }}" data-is-isolated="false" {% if is_locked %}disabled{% endif %}>
+                                    <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}"
+                                        class="custom-control-input q-checkbox bank-chk" id="chk-{{ q.question_id }}"
+                                        data-is-isolated="false" {% if is_locked %}disabled{% endif %}>
                                     <label class="custom-control-label" for="chk-{{ q.question_id }}"></label>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="d-flex align-items-center flex-wrap mb-2" style="gap: 8px;">
-                                    <span class="badge badge-light border id-tag text-uppercase px-2">Bank Reference</span>
-                                    <span class="badge badge-light border text-muted id-tag text-uppercase px-2">{{ q.question_type.replace('_',' ') }}</span>
-                                    <span class="badge rounded-pill id-tag text-white px-2 {{ 'bg-success' if q.difficulty == 'easy' else 'bg-warning' if q.difficulty == 'medium' else 'bg-danger' }}">{{ q.difficulty|upper }}</span>
+                                    <span class="badge badge-light border id-tag text-uppercase px-2">Bank
+                                        Reference</span>
+                                    <span class="badge badge-light border text-muted id-tag text-uppercase px-2">{{
+                                        q.question_type.replace('_',' ') }}</span>
+                                    <span
+                                        class="badge rounded-pill id-tag text-white px-2 {{ 'bg-success' if q.difficulty == 'easy' else 'bg-warning' if q.difficulty == 'medium' else 'bg-danger' }}">{{
+                                        q.difficulty|upper }}</span>
                                 </div>
-                                <h6 class="text-dark font-weight-bold mb-3" style="line-height: 1.5;">{{ loop.index }}. {{ q.question_text }}</h6>
+                                <h6 class="text-dark font-weight-bold mb-3" style="line-height: 1.5;">{{ loop.index }}.
+                                    {{ q.question_text }}</h6>
                                 <div class="answer-preview d-inline-block">
-                                    {% for opt in q.options if opt.is_correct %}<i class="fas fa-check-double mr-2"></i>Correct: {{ opt.option_text }}{% endfor %}
+                                    {% for opt in q.options if opt.is_correct %}<i
+                                        class="fas fa-check-double mr-2"></i>Correct: {{ opt.option_text }}{% endfor %}
                                 </div>
                             </div>
                             <div class="col-auto text-right">
                                 {% if is_locked %}
                                 <span class="lock-overlay-text"><i class="fas fa-lock mr-1"></i>Read Only</span>
                                 {% else %}
-                                <button type="button" class="btn btn-light btn-circle-sm border" onclick="unlinkSingle({{ q.question_id }})"><i class="fas fa-unlink text-muted"></i></button>
+                                <button type="button" class="btn btn-light btn-circle-sm border"
+                                    onclick="unlinkSingle({{ q.question_id }})"><i
+                                        class="fas fa-unlink text-muted"></i></button>
                                 {% endif %}
                             </div>
                         </div>
@@ -269,11 +330,14 @@
         <!-- ── SECTION 2: ISOLATED ── -->
         <div id="isolatedSection" class="source-group">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="m-0 font-weight-bold text-dark" style="font-size: 1.1rem;"><i class="fas fa-lock-open text-info mr-2"></i>Unique Exam Questions</h5>
+                <h5 class="m-0 font-weight-bold text-dark" style="font-size: 1.1rem;"><i
+                        class="fas fa-lock-open text-info mr-2"></i>Unique Exam Questions</h5>
                 {% if not is_locked %}
                 <div class="custom-control custom-checkbox">
-                    <input type="checkbox" class="custom-control-input section-select" id="selectIsoAll" data-target="isolated">
-                    <label class="custom-control-label small font-weight-bold text-muted" for="selectIsoAll">Select Visible</label>
+                    <input type="checkbox" class="custom-control-input section-select" id="selectIsoAll"
+                        data-target="isolated">
+                    <label class="custom-control-label small font-weight-bold text-muted" for="selectIsoAll">Select
+                        Visible</label>
                 </div>
                 {% endif %}
             </div>
@@ -281,32 +345,43 @@
             <div class="container-items">
                 {% set iso_items = questions|selectattr('is_isolated', 'equalto', 1)|list %}
                 {% for q in iso_items %}
-                <div class="card shadow-sm mb-3 question-card" data-source="isolated" data-type="{{ q.question_type }}" data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
+                <div class="card shadow-sm mb-3 question-card" data-source="isolated" data-type="{{ q.question_type }}"
+                    data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
                     <div class="tp-accent-bar bg-isolated"></div>
                     <div class="card-body p-4">
                         <div class="row align-items-start">
                             <div class="col-auto mr-2">
                                 <div class="custom-control custom-checkbox pt-1">
-                                    <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}" class="custom-control-input q-checkbox iso-chk" id="chk-{{ q.question_id }}" data-is-isolated="true" {% if is_locked %}disabled{% endif %}>
+                                    <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}"
+                                        class="custom-control-input q-checkbox iso-chk" id="chk-{{ q.question_id }}"
+                                        data-is-isolated="true" {% if is_locked %}disabled{% endif %}>
                                     <label class="custom-control-label" for="chk-{{ q.question_id }}"></label>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="d-flex align-items-center flex-wrap mb-2" style="gap: 8px;">
-                                    <span class="badge badge-light border text-info id-tag text-uppercase px-2">Exam Only</span>
-                                    <span class="badge badge-light border text-muted id-tag text-uppercase px-2">{{ q.question_type.replace('_',' ') }}</span>
-                                    <span class="badge rounded-pill id-tag text-white px-2 {{ 'bg-success' if q.difficulty == 'easy' else 'bg-warning' if q.difficulty == 'medium' else 'bg-danger' }}">{{ q.difficulty|upper }}</span>
+                                    <span class="badge badge-light border text-info id-tag text-uppercase px-2">Exam
+                                        Only</span>
+                                    <span class="badge badge-light border text-muted id-tag text-uppercase px-2">{{
+                                        q.question_type.replace('_',' ') }}</span>
+                                    <span
+                                        class="badge rounded-pill id-tag text-white px-2 {{ 'bg-success' if q.difficulty == 'easy' else 'bg-warning' if q.difficulty == 'medium' else 'bg-danger' }}">{{
+                                        q.difficulty|upper }}</span>
                                 </div>
-                                <h6 class="text-dark font-weight-bold mb-3" style="line-height: 1.5;">{{ loop.index }}. {{ q.question_text }}</h6>
+                                <h6 class="text-dark font-weight-bold mb-3" style="line-height: 1.5;">{{ loop.index }}.
+                                    {{ q.question_text }}</h6>
                                 <div class="answer-preview d-inline-block">
-                                    {% for opt in q.options if opt.is_correct %}<i class="fas fa-check-double mr-2"></i>Correct: {{ opt.option_text }}{% endfor %}
+                                    {% for opt in q.options if opt.is_correct %}<i
+                                        class="fas fa-check-double mr-2"></i>Correct: {{ opt.option_text }}{% endfor %}
                                 </div>
                             </div>
                             <div class="col-auto text-right">
                                 {% if is_locked %}
                                 <span class="lock-overlay-text"><i class="fas fa-lock mr-1"></i>Read Only</span>
                                 {% else %}
-                                <button type="button" class="btn btn-light btn-circle-sm border text-danger" onclick="deleteSingleIsolated({{ q.question_id }})"><i class="fas fa-trash-alt"></i></button>
+                                <button type="button" class="btn btn-light btn-circle-sm border text-danger"
+                                    onclick="deleteSingleIsolated({{ q.question_id }})"><i
+                                        class="fas fa-trash-alt"></i></button>
                                 {% endif %}
                             </div>
                         </div>
@@ -330,31 +405,39 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-robot text-danger mr-2"></i>AI Question Generator</h5>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i
+                            class="fas fa-robot text-danger mr-2"></i>AI Question Generator</h5>
                     <button class="close" type="button" data-dismiss="modal"><span>&times;</span></button>
                 </div>
-                <form action="{{ url_for('teacher.import_ai_questions', exam_id=exam.exam_id) }}" method="POST" enctype="multipart/form-data" id="aiForm">
+                <form action="{{ url_for('teacher.import_ai_questions', exam_id=exam.exam_id) }}" method="POST"
+                    enctype="multipart/form-data" id="aiForm">
                     <div class="modal-body p-4">
                         <div class="form-group mb-4">
                             <label class="id-tag text-muted text-uppercase d-block mb-2">Upload Reference (PDF)</label>
                             <div class="custom-file">
-                                <input type="file" name="pdf_file" class="custom-file-input" id="pdfFile" accept=".pdf" required>
+                                <input type="file" name="pdf_file" class="custom-file-input" id="pdfFile" accept=".pdf"
+                                    required>
                                 <label class="custom-file-label rounded-pill" for="pdfFile">Choose material...</label>
                             </div>
                         </div>
                         <div class="form-group mb-4">
-                            <label class="id-tag text-muted text-uppercase d-block mb-2">Focus & Style Instructions</label>
-                            <textarea name="teacher_notes" class="form-control rounded-lg" rows="3" placeholder="e.g., Focus on Chapter 2 concepts. Create challenging identification items."></textarea>
+                            <label class="id-tag text-muted text-uppercase d-block mb-2">Focus & Style
+                                Instructions</label>
+                            <textarea name="teacher_notes" class="form-control rounded-lg" rows="3"
+                                placeholder="e.g., Focus on Chapter 2 concepts. Create challenging identification items."></textarea>
                         </div>
                         <div class="row">
                             <div class="col-6">
                                 <label class="id-tag text-muted text-uppercase d-block mb-2">Quantity</label>
-                                <input type="number" name="num_questions" class="form-control rounded-pill" value="10" min="1" max="50">
+                                <input type="number" name="num_questions" class="form-control rounded-pill" value="10"
+                                    min="1" max="50">
                             </div>
                             <div class="col-6 d-flex align-items-end justify-content-center">
                                 <div class="custom-control custom-switch mb-2">
-                                    <input type="checkbox" name="save_to_bank" class="custom-control-input" id="aiSaveBank">
-                                    <label class="custom-control-label id-tag text-muted text-uppercase" for="aiSaveBank">Sync to Bank</label>
+                                    <input type="checkbox" name="save_to_bank" class="custom-control-input"
+                                        id="aiSaveBank">
+                                    <label class="custom-control-label id-tag text-muted text-uppercase"
+                                        for="aiSaveBank">Sync to Bank</label>
                                 </div>
                             </div>
                         </div>
@@ -364,7 +447,8 @@
                         </div>
                     </div>
                     <div class="modal-footer border-0 p-4 pt-0">
-                        <button class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm" type="submit" id="aiSubmitBtn">Initialize Generation</button>
+                        <button class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm" type="submit"
+                            id="aiSubmitBtn">Initialize Generation</button>
                     </div>
                 </form>
             </div>
@@ -374,23 +458,38 @@
     <!-- Master Bank Modal -->
     <div class="modal fade" id="bankModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <form action="{{ url_for('teacher.bulk_link_from_bank', exam_id=exam.exam_id) }}" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <form action="{{ url_for('teacher.bulk_link_from_bank', exam_id=exam.exam_id) }}" method="POST"
+                class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0">
-                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i class="fas fa-university text-danger mr-2"></i>Subject Bank Retrieval</h5>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);"><i
+                            class="fas fa-university text-danger mr-2"></i>Subject Bank Retrieval</h5>
                     <button class="close" type="button" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body bg-light px-4">
                     <div class="sticky-top bg-light pb-3" style="z-index: 10;">
                         <div class="row no-gutters bg-white p-3 rounded-lg border shadow-sm" style="gap: 8px;">
                             <div class="col-12 mb-2">
-                                <input type="text" id="bankSearch" class="form-control rounded-pill" placeholder="Search course pool...">
+                                <input type="text" id="bankSearch" class="form-control rounded-pill"
+                                    placeholder="Search course pool...">
                             </div>
-                            <div class="col"><select id="bankTypeFilter" class="form-control rounded-pill small"><option value="">Types</option><option value="multiple_choice">MCQ</option><option value="true_false">T/F</option><option value="identification">IDEN</option></select></div>
-                            <div class="col"><select id="bankDifficultyFilter" class="form-control rounded-pill small"><option value="">Difficulty</option><option value="easy">Easy</option><option value="medium">Med</option><option value="hard">Hard</option></select></div>
+                            <div class="col"><select id="bankTypeFilter" class="form-control rounded-pill small">
+                                    <option value="">Types</option>
+                                    <option value="multiple_choice">MCQ</option>
+                                    <option value="true_false">T/F</option>
+                                    <option value="identification">IDEN</option>
+                                </select></div>
+                            <div class="col"><select id="bankDifficultyFilter" class="form-control rounded-pill small">
+                                    <option value="">Difficulty</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Med</option>
+                                    <option value="hard">Hard</option>
+                                </select></div>
                             <div class="col-auto">
-                                <div class="custom-control custom-checkbox pt-1 px-3 border rounded-pill bg-light" style="height:38px; display:flex; align-items:center;">
+                                <div class="custom-control custom-checkbox pt-1 px-3 border rounded-pill bg-light"
+                                    style="height:38px; display:flex; align-items:center;">
                                     <input type="checkbox" class="custom-control-input" id="selectAllBank">
-                                    <label class="custom-control-label id-tag text-uppercase" for="selectAllBank">All</label>
+                                    <label class="custom-control-label id-tag text-uppercase"
+                                        for="selectAllBank">All</label>
                                 </div>
                             </div>
                         </div>
@@ -399,15 +498,24 @@
                         {% for diff in ['easy', 'medium', 'hard'] %}
                         {% set group = bank_questions|selectattr('difficulty', 'equalto', diff)|list %}
                         {% if group|length > 0 %}
-                        <div class="bank-section-title id-tag text-muted text-uppercase mb-3 mt-4" style="letter-spacing: 2px;">{{ diff }} Items</div>
+                        <div class="bank-section-title id-tag text-muted text-uppercase mb-3 mt-4"
+                            style="letter-spacing: 2px;">{{ diff }} Items</div>
                         {% for bq in group %}
-                        <div class="bank-item-card bg-white p-3 mb-2 shadow-sm" data-search="{{ bq.question_text|lower }}" data-type="{{ bq.question_type }}" data-difficulty="{{ bq.difficulty }}">
+                        <div class="bank-item-card bg-white p-3 mb-2 shadow-sm"
+                            data-search="{{ bq.question_text|lower }}" data-type="{{ bq.question_type }}"
+                            data-difficulty="{{ bq.difficulty }}">
                             <div class="custom-control custom-checkbox">
-                                <input type="checkbox" name="bank_q_ids[]" value="{{ bq.question_id }}" class="custom-control-input bank-checkbox" id="bank-q-{{ bq.question_id }}">
-                                <label class="custom-control-label d-block w-100" for="bank-q-{{ bq.question_id }}" style="cursor: pointer;">
-                                    <span class="badge badge-light border id-tag text-uppercase px-2 mb-1">{{ bq.question_type.replace('_',' ') }}</span>
-                                    <p class="mb-1 text-dark font-weight-bold" style="font-size: 13.5px;">{{ bq.question_text }}</p>
-                                    <div class="text-success id-tag text-uppercase"><i class="fas fa-check-circle mr-1"></i> {% for opt in bq.options if opt.is_correct %}{{ opt.option_text }}{% endfor %}</div>
+                                <input type="checkbox" name="bank_q_ids[]" value="{{ bq.question_id }}"
+                                    class="custom-control-input bank-checkbox" id="bank-q-{{ bq.question_id }}">
+                                <label class="custom-control-label d-block w-100" for="bank-q-{{ bq.question_id }}"
+                                    style="cursor: pointer;">
+                                    <span class="badge badge-light border id-tag text-uppercase px-2 mb-1">{{
+                                        bq.question_type.replace('_',' ') }}</span>
+                                    <p class="mb-1 text-dark font-weight-bold" style="font-size: 13.5px;">{{
+                                        bq.question_text }}</p>
+                                    <div class="text-success id-tag text-uppercase"><i
+                                            class="fas fa-check-circle mr-1"></i> {% for opt in bq.options if
+                                        opt.is_correct %}{{ opt.option_text }}{% endfor %}</div>
                                 </label>
                             </div>
                         </div>
@@ -417,7 +525,8 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4">
-                    <button type="submit" class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Link Selected Items</button>
+                    <button type="submit" class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Link
+                        Selected Items</button>
                 </div>
             </form>
         </div>
@@ -426,25 +535,45 @@
     <!-- Excel Import Modal -->
     <div class="modal fade" id="excelModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data" class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data"
+                class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <input type="hidden" name="exam_id" value="{{ exam.exam_id }}">
                 <input type="hidden" name="course_code" value="{{ exam.course_code }}">
                 <div class="modal-header border-0">
-                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">Structured Excel Import</h5>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">Structured Excel
+                        Import</h5>
                     <button class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body p-4">
+
+                    <!-- DOWNLOAD TEMPLATE SECTION -->
+                    <div class="bg-light p-3 rounded-lg border mb-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="font-weight-bold mb-1" style="font-size: 0.9rem;">Standard Template</h6>
+                                <p class="text-muted small mb-0">Use our official format for error-free importing.</p>
+                            </div>
+                            <a href="{{ url_for('teacher.download_template') }}"
+                                class="btn btn-sm btn-outline-success rounded-pill px-3 font-weight-bold">
+                                <i class="fas fa-download mr-1"></i> Download
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label class="id-tag text-muted text-uppercase d-block mb-2">Select Spreadsheet (.xlsx)</label>
                         <input type="file" name="excel_file" class="form-control rounded-pill" accept=".xlsx" required>
                     </div>
                     <div class="custom-control custom-switch mt-3">
                         <input type="checkbox" class="custom-control-input" id="saveBankCheck" name="save_to_bank">
-                        <label class="custom-control-label id-tag text-muted text-uppercase" for="saveBankCheck">Store globally in Master Bank</label>
+                        <label class="custom-control-label id-tag text-muted text-uppercase" for="saveBankCheck">Store
+                            globally in Master Bank</label>
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0">
-                    <button type="submit" class="btn btn-success btn-block rounded-pill font-weight-bold shadow-sm">Execute Bulk Import</button>
+                    <button type="submit"
+                        class="btn btn-success btn-block rounded-pill font-weight-bold shadow-sm">Execute Bulk
+                        Import</button>
                 </div>
             </form>
         </div>
@@ -453,15 +582,18 @@
     <!-- Manual Entry Modal -->
     <div class="modal fade" id="manualModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <form action="{{ url_for('teacher.add_question', exam_id=exam.exam_id) }}" method="POST"
+                class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0">
-                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">New Item Configuration</h5>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">New Item
+                        Configuration</h5>
                     <button class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body bg-light px-4 py-4">
                     <div class="form-group mb-4">
                         <label class="id-tag text-muted text-uppercase d-block mb-2">Primary Question Content</label>
-                        <textarea name="question_text" class="form-control rounded-lg shadow-sm" rows="3" required placeholder="Type the question prompt here..."></textarea>
+                        <textarea name="question_text" class="form-control rounded-lg shadow-sm" rows="3" required
+                            placeholder="Type the question prompt here..."></textarea>
                     </div>
                     <div class="row mb-4">
                         <div class="col-md-6">
@@ -483,36 +615,45 @@
                     </div>
                     <div class="custom-control custom-switch mb-4">
                         <input type="checkbox" class="custom-control-input" id="saveBankManual" name="save_to_bank">
-                        <label class="custom-control-label id-tag text-muted text-uppercase" for="saveBankManual">Sync item to Master Course Bank</label>
+                        <label class="custom-control-label id-tag text-muted text-uppercase" for="saveBankManual">Sync
+                            item to Master Course Bank</label>
                     </div>
-                    
+
                     <div id="section_mc" class="manual-section px-3 py-3 bg-white rounded-lg border">
                         <label class="id-tag text-muted text-uppercase d-block mb-3">Answer Alternatives</label>
                         {% for i in range(4) %}
                         <div class="input-group mb-2">
                             <div class="input-group-prepend">
-                                <div class="input-group-text bg-light border-right-0" style="border-radius: 50px 0 0 50px;">
-                                    <input type="radio" name="correct_option" value="{{ i }}" {% if i==0 %}checked{% endif %}>
+                                <div class="input-group-text bg-light border-right-0"
+                                    style="border-radius: 50px 0 0 50px;">
+                                    <input type="radio" name="correct_option" value="{{ i }}" {% if i==0 %}checked{%
+                                        endif %}>
                                 </div>
                             </div>
-                            <input type="text" name="options[]" class="form-control" placeholder="Choice {{ i + 1 }}" style="border-radius: 0 50px 50px 0;">
+                            <input type="text" name="options[]" class="form-control" placeholder="Choice {{ i + 1 }}"
+                                style="border-radius: 0 50px 50px 0;">
                         </div>
                         {% endfor %}
                     </div>
-                    <div id="section_tf" class="manual-section px-3 py-3 bg-white rounded-lg border" style="display:none;">
+                    <div id="section_tf" class="manual-section px-3 py-3 bg-white rounded-lg border"
+                        style="display:none;">
                         <label class="id-tag text-muted text-uppercase d-block mb-3">Truth Value Selection</label>
                         <select name="tf_correct" class="form-control rounded-pill">
                             <option value="True">Statement is TRUE</option>
                             <option value="False">Statement is FALSE</option>
                         </select>
                     </div>
-                    <div id="section_ident" class="manual-section px-3 py-3 bg-white rounded-lg border" style="display:none;">
+                    <div id="section_ident" class="manual-section px-3 py-3 bg-white rounded-lg border"
+                        style="display:none;">
                         <label class="id-tag text-muted text-uppercase d-block mb-3">Concise Key Answer</label>
-                        <input type="text" name="ident_answer" class="form-control rounded-pill" placeholder="Exact string to match against...">
+                        <input type="text" name="ident_answer" class="form-control rounded-pill"
+                            placeholder="Exact string to match against...">
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-4">
-                    <button type="submit" class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Finalize & Add Item</button>
+                    <button type="submit"
+                        class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm">Finalize & Add
+                        Item</button>
                 </div>
             </form>
         </div>

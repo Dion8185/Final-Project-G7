@@ -757,6 +757,7 @@ def import_ai_questions(exam_id):
         2. **Difficulty**: Assign 'easy', 'medium', or 'hard' based on conceptual depth (Bloom’s Taxonomy), not length or vocabulary.
         3. **Paraphrase**: Never copy verbatim. Rephrase concepts to test understanding rather than rote memorization.
         4. **No Meta-References**: Do not mention the text structure, page numbers, "the author," or "the passage." Questions must stand alone.
+        5. **No Hallucinated Content**: All questions must be strictly derived from the provided source material. Do not invent facts, details, or concepts that are not explicitly supported by the input.
 
         ### QUESTION-SPECIFIC LOGIC
         - **multiple_choice**: Exactly 4 plausible options. No "all of the above" or joke answers. Only 1 correct answer.
@@ -817,6 +818,25 @@ def import_ai_questions(exam_id):
         cursor.close(); connection.close()
 
     return redirect(url_for('teacher.manage_questions', exam_id=exam_id))
+
+@teacher.route('/download_template')
+def download_template():
+    if not teacher_logged_in():
+        return redirect(url_for('auth.login'))
+    
+    from flask import current_app
+    file_path = os.path.join(current_app.root_path, 'static', 'templates', 'TEMPLATE TESTPOINT.xlsx')
+    
+    if os.path.exists(file_path):
+        return send_file(
+            file_path,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name="TestPoint_Import_Template.xlsx"
+        )
+    else:
+        flash("Template file not found on the server.", "danger")
+        return redirect(request.referrer or url_for('teacher.teacher_dashboard'))
 
 @teacher.route('/import_questions', methods=['POST'])
 def import_questions():

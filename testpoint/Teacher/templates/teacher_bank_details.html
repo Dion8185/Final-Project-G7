@@ -15,7 +15,7 @@
 
     .question-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05) !important;
         border-color: #cbd5e1 !important;
     }
 
@@ -26,10 +26,26 @@
     }
 
     /* Difficulty Accents */
-    .tp-accent-bar { width: 4px; position: absolute; top: 0; bottom: 0; left: 0; z-index: 2; }
-    .bg-easy { background-color: #10b981 !important; }
-    .bg-medium { background-color: #f59e0b !important; }
-    .bg-hard { background-color: #ef4444 !important; }
+    .tp-accent-bar {
+        width: 4px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 2;
+    }
+
+    .bg-easy {
+        background-color: #10b981 !important;
+    }
+
+    .bg-medium {
+        background-color: #f59e0b !important;
+    }
+
+    .bg-hard {
+        background-color: #ef4444 !important;
+    }
 
     /* Bulk Bar - Floating Pill Style */
     .bulk-actions-bar {
@@ -39,13 +55,25 @@
         background: #0f0e11;
         border-radius: 50px;
         color: #fff;
-        display: none !important; /* Controlled by JS */
+        display: none !important;
+        /* Controlled by JS */
     }
 
     /* Options UI */
-    .options-list { list-style: none; padding-left: 0; margin-top: 1.25rem; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    
-    @media (max-width: 768px) { .options-list { grid-template-columns: 1fr; } }
+    .options-list {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 1.25rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .options-list {
+            grid-template-columns: 1fr;
+        }
+    }
 
     .option-item {
         font-size: 13px;
@@ -65,36 +93,61 @@
         font-weight: 700;
     }
 
-    .id-tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .id-tag {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
     /* Filter Wrapper */
-    .filter-card { border: 1px solid var(--tp-teacher-border); border-radius: 12px; background: #fff; }
-    .filter-card .form-control { border: none !important; font-weight: 700; font-size: 13.5px; color: var(--tp-teacher-ink); }
-    .filter-card .form-control:focus { box-shadow: none; }
+    .filter-card {
+        border: 1px solid var(--tp-teacher-border);
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .filter-card .form-control {
+        border: none !important;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: var(--tp-teacher-ink);
+    }
+
+    .filter-card .form-control:focus {
+        box-shadow: none;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="animate__animated animate__fadeIn">
-    
+
     <!-- ── HEADER SECTION ── -->
     <div class="row mb-4 align-items-center">
         <div class="col-lg-6">
-            <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.2rem;" class="mb-1">Subject <span style="color: var(--tp-teacher-accent);">Repository</span></h1>
-            <p class="text-muted small mb-0">{{ course.course_name }} <span class="mx-1">•</span> <span class="font-weight-bold text-dark">{{ course.course_code }}</span></p>
+            <h1 style="font-family: var(--tp-serif); color: var(--tp-teacher-ink); font-size: 2.2rem;" class="mb-1">
+                Subject <span style="color: var(--tp-teacher-accent);">Repository</span></h1>
+            <p class="text-muted small mb-0">{{ course.course_name }} <span class="mx-1">•</span> <span
+                    class="font-weight-bold text-dark">{{ course.course_code }}</span></p>
         </div>
         <div class="col-lg-6 text-lg-right mt-3 mt-lg-0">
             <div class="d-flex flex-wrap justify-content-lg-end" style="gap: 8px;">
-                <a href="{{ url_for('teacher.export_bank_questions', course_code=course.course_code) }}" class="btn btn-dark px-3 rounded-pill font-weight-bold btn-sm shadow-sm">
+                <a href="{{ url_for('teacher.export_bank_questions', course_code=course.course_code) }}"
+                    class="btn btn-dark px-3 rounded-pill font-weight-bold btn-sm shadow-sm">
                     <i class="fas fa-file-export mr-1"></i> Export
                 </a>
-                <button class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal" data-target="#excelImportModal">
+                <button class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm shadow-sm"
+                    data-toggle="modal" data-target="#excelImportModal">
                     <i class="fas fa-file-excel mr-1 text-success"></i> Import
                 </button>
-                <button class="btn btn-danger px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal" data-target="#addBankModal">
+                <button class="btn btn-danger px-3 rounded-pill font-weight-bold btn-sm shadow-sm" data-toggle="modal"
+                    data-target="#addBankModal">
                     <i class="fas fa-plus mr-1"></i> Add Entry
                 </button>
-                <a href="{{ url_for('teacher.question_bank') }}" class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm">
+                <a href="{{ url_for('teacher.question_bank') }}"
+                    class="btn btn-light border px-3 rounded-pill font-weight-bold btn-sm">
                     <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
@@ -102,14 +155,19 @@
     </div>
 
     <!-- ── FLOATING BULK ACTIONS ── -->
-    <div class="bulk-actions-bar shadow-lg px-4 py-2 mb-4 mx-auto" id="bulkBar" style="width: fit-content; min-width: 400px;">
+    <div class="bulk-actions-bar shadow-lg px-4 py-2 mb-4 mx-auto" id="bulkBar"
+        style="width: fit-content; min-width: 400px;">
         <div class="d-flex justify-content-between align-items-center">
             <div class="small font-weight-bold mr-4">
-                <span class="text-danger"><i class="fas fa-check-circle mr-1"></i></span> <span id="selectedCount">0</span> Selected
+                <span class="text-danger"><i class="fas fa-check-circle mr-1"></i></span> <span
+                    id="selectedCount">0</span> Selected
             </div>
             <div class="d-flex align-items-center" style="gap: 10px;">
-                <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none font-weight-bold" id="btnDeselectAll">Clear</button>
-                <button type="submit" form="bulkDeleteForm" class="btn btn-danger btn-sm rounded-pill px-4 font-weight-bold" onclick="return confirm('Permanently delete selected questions from the master bank?')">
+                <button type="button" class="btn btn-sm btn-link text-white-50 text-decoration-none font-weight-bold"
+                    id="btnDeselectAll">Clear</button>
+                <button type="submit" form="bulkDeleteForm"
+                    class="btn btn-danger btn-sm rounded-pill px-4 font-weight-bold"
+                    onclick="return confirm('Permanently delete selected questions from the master bank?')">
                     Delete from Bank
                 </button>
             </div>
@@ -139,10 +197,12 @@
             </div>
             <div class="col-md-5 px-3">
                 <label class="id-tag text-muted d-block mb-1">Content Search</label>
-                <input type="text" class="form-control p-0 h-auto shadow-none" id="searchInput" placeholder="Search prompt text...">
+                <input type="text" class="form-control p-0 h-auto shadow-none" id="searchInput"
+                    placeholder="Search prompt text...">
             </div>
             <div class="col-md-1 d-flex align-items-center justify-content-center">
-                <button type="button" id="resetFilters" class="btn btn-light btn-circle-sm border" title="Reset All"><i class="fas fa-undo"></i></button>
+                <button type="button" id="resetFilters" class="btn btn-light btn-circle-sm border" title="Reset All"><i
+                        class="fas fa-undo"></i></button>
             </div>
         </form>
     </div>
@@ -151,38 +211,46 @@
     <div class="d-flex align-items-center mb-3 px-2">
         <div class="custom-control custom-checkbox">
             <input type="checkbox" class="custom-control-input" id="selectAll">
-            <label class="custom-control-label id-tag text-muted" for="selectAll">Select all visible validated items</label>
+            <label class="custom-control-label id-tag text-muted" for="selectAll">Select all visible validated
+                items</label>
         </div>
     </div>
 
     <!-- ── QUESTIONS LIST ── -->
-    <form id="bulkDeleteForm" action="{{ url_for('teacher.bulk_delete_bank_questions', course_code=course.course_code) }}" method="POST">
+    <form id="bulkDeleteForm"
+        action="{{ url_for('teacher.bulk_delete_bank_questions', course_code=course.course_code) }}" method="POST">
         {% for q in questions %}
-        <div class="card shadow-sm mb-3 question-card" data-type="{{ q.question_type }}" data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
+        <div class="card shadow-sm mb-3 question-card" data-type="{{ q.question_type }}"
+            data-difficulty="{{ q.difficulty }}" data-text="{{ q.question_text|lower }}">
             <div class="tp-accent-bar bg-{{ q.difficulty }}"></div>
             <div class="card-body p-4">
                 <div class="row no-gutters">
                     <div class="col-auto mr-3">
                         <div class="custom-control custom-checkbox pt-1">
-                            <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}" class="custom-control-input q-checkbox" id="chk-{{ q.question_id }}">
+                            <input type="checkbox" name="question_ids[]" value="{{ q.question_id }}"
+                                class="custom-control-input q-checkbox" id="chk-{{ q.question_id }}">
                             <label class="custom-control-label" for="chk-{{ q.question_id }}"></label>
                         </div>
                     </div>
                     <div class="col">
                         <div class="d-flex align-items-center mb-2" style="gap: 8px;">
-                            <span class="badge badge-light border id-tag px-2">{{ q.question_type.replace('_',' ') }}</span>
-                            <span class="badge rounded-pill id-tag text-white px-2 
+                            <span class="badge badge-light border id-tag px-2">{{ q.question_type.replace('_',' ')
+                                }}</span>
+                            <span
+                                class="badge rounded-pill id-tag text-white px-2 
                                   {{ 'bg-easy' if q.difficulty == 'easy' else 'bg-medium' if q.difficulty == 'medium' else 'bg-hard' }}">
                                 {{ q.difficulty|upper }}
                             </span>
                         </div>
 
-                        <h5 class="text-dark font-weight-bold mb-0" style="line-height: 1.5; font-size: 1.1rem;">{{ q.question_text }}</h5>
+                        <h5 class="text-dark font-weight-bold mb-0" style="line-height: 1.5; font-size: 1.1rem;">{{
+                            q.question_text }}</h5>
 
                         <ul class="options-list">
                             {% for opt in q.options %}
                             <li class="option-item {% if opt.is_correct == 1 %}is-correct-row shadow-sm{% endif %}">
-                                <i class="fas {% if opt.is_correct == 1 %}fa-check-circle mr-2{% else %}fa-circle mr-2 opacity-25{% endif %}" style="font-size: 10px;"></i>
+                                <i class="fas {% if opt.is_correct == 1 %}fa-check-circle mr-2{% else %}fa-circle mr-2 opacity-25{% endif %}"
+                                    style="font-size: 10px;"></i>
                                 {{ opt.option_text }}
                                 {% if opt.is_correct == 1 %}
                                 <span class="id-tag ml-auto text-success" style="font-size: 9px;">Key Answer</span>
@@ -208,19 +276,22 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">New Repository Entry</h5>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">New Repository Entry
+                    </h5>
                     <button class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <form action="{{ url_for('teacher.add_bank_question', course_code=course.course_code) }}" method="POST">
                     <div class="modal-body p-4 bg-light">
                         <div class="form-group mb-4">
                             <label class="id-tag text-muted text-uppercase mb-2 d-block">Question Prompt</label>
-                            <textarea name="question_text" class="form-control rounded-lg shadow-sm" rows="3" required placeholder="Type the assessment prompt..."></textarea>
+                            <textarea name="question_text" class="form-control rounded-lg shadow-sm" rows="3" required
+                                placeholder="Type the assessment prompt..."></textarea>
                         </div>
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label class="id-tag text-muted text-uppercase mb-2 d-block">Item Type</label>
-                                <select name="question_type" class="form-control rounded-pill shadow-sm" id="modal_qType">
+                                <select name="question_type" class="form-control rounded-pill shadow-sm"
+                                    id="modal_qType">
                                     <option value="multiple_choice">Multiple Choice</option>
                                     <option value="true_false">True / False</option>
                                     <option value="identification">Identification</option>
@@ -236,21 +307,24 @@
                             </div>
                         </div>
                         <hr class="my-4">
-                        
+
                         <div id="modal_mc" class="px-3 py-3 bg-white rounded-lg border">
                             <label class="id-tag text-muted text-uppercase mb-3 d-block">Choice Alternatives</label>
                             {% for i in range(4) %}
                             <div class="input-group mb-2">
                                 <div class="input-group-prepend">
-                                    <div class="input-group-text bg-light border-right-0" style="border-radius: 50px 0 0 50px;">
-                                        <input type="radio" name="correct_option" value="{{ i }}" {{ 'checked' if i==0 }}>
+                                    <div class="input-group-text bg-light border-right-0"
+                                        style="border-radius: 50px 0 0 50px;">
+                                        <input type="radio" name="correct_option" value="{{ i }}" {{ 'checked' if i==0
+                                            }}>
                                     </div>
                                 </div>
-                                <input type="text" name="options[]" class="form-control" placeholder="Option {{ i+1 }}" style="border-radius: 0 50px 50px 0;">
+                                <input type="text" name="options[]" class="form-control" placeholder="Option {{ i+1 }}"
+                                    style="border-radius: 0 50px 50px 0;">
                             </div>
                             {% endfor %}
                         </div>
-                        
+
                         <div id="modal_tf" style="display:none;" class="px-3 py-3 bg-white rounded-lg border">
                             <label class="id-tag text-muted text-uppercase mb-3 d-block">Truth Assignment</label>
                             <select name="tf_correct" class="form-control rounded-pill">
@@ -258,14 +332,17 @@
                                 <option value="False">Statement is FALSE</option>
                             </select>
                         </div>
-                        
+
                         <div id="modal_ident" style="display:none;" class="px-3 py-3 bg-white rounded-lg border">
                             <label class="id-tag text-muted text-uppercase mb-3 d-block">Accepted Exact Match</label>
-                            <input type="text" name="ident_answer" class="form-control rounded-pill" placeholder="Exact string key...">
+                            <input type="text" name="ident_answer" class="form-control rounded-pill"
+                                placeholder="Exact string key...">
                         </div>
                     </div>
                     <div class="modal-footer border-0 p-4">
-                        <button type="submit" class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm py-2">Commit to Subject Bank</button>
+                        <button type="submit"
+                            class="btn btn-danger btn-block rounded-pill font-weight-bold shadow-sm py-2">Commit to
+                            Subject Bank</button>
                     </div>
                 </form>
             </div>
@@ -277,100 +354,123 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">Structured Import</h5>
+                    <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif);">Structured Import
+                    </h5>
                     <button class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <form action="{{ url_for('teacher.import_questions') }}" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="course_code" value="{{ course.course_code }}">
-                    <div class="modal-body p-4 text-center">
-                        <div class="mb-4">
-                            <i class="fas fa-file-excel fa-3x text-success opacity-25"></i>
+                    <div class="modal-body p-4">
+
+                        <!-- DOWNLOAD TEMPLATE SECTION -->
+                        <div class="bg-light p-3 rounded-lg border mb-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="font-weight-bold mb-1" style="font-size: 0.9rem;">Standard Template</h6>
+                                    <p class="text-muted small mb-0">Use our official format for error-free importing.
+                                    </p>
+                                </div>
+                                <a href="{{ url_for('teacher.download_template') }}"
+                                    class="btn btn-sm btn-outline-success rounded-pill px-3 font-weight-bold">
+                                    <i class="fas fa-download mr-1"></i> Download
+                                </a>
+                            </div>
                         </div>
-                        <p class="text-muted small mb-4">Upload an Excel file (.xlsx) following the standard system template for bulk entry.</p>
-                        <input type="file" name="excel_file" class="form-control rounded-pill" accept=".xlsx" required>
+
+                        <div class="mb-3">
+                            <i class="fas fa-file-excel fa-2x text-success opacity-25"></i>
+                        </div>
+                        <p class="text-muted small mb-3">Upload your completed spreadsheet (.xlsx) below to initiate the
+                            bulk validation process.</p>
+
+                        <div class="form-group mb-0">
+                            <input type="file" name="excel_file" class="form-control rounded-pill" accept=".xlsx"
+                                required>
+                        </div>
                     </div>
                     <div class="modal-footer border-0 p-4 pt-0">
-                        <button type="submit" class="btn btn-success btn-block rounded-pill font-weight-bold">Initiate Bulk Process</button>
+                        <button type="submit"
+                            class="btn btn-success btn-block rounded-pill font-weight-bold shadow-sm">Initiate Bulk
+                            Process</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
+    {% endblock %}
 
-{% block extra_js %}
-<script>
-    $(document).ready(function () {
-        // Modal cleanup
-        $('.modal').appendTo('body');
+    {% block extra_js %}
+    <script>
+        $(document).ready(function () {
+            // Modal cleanup
+            $('.modal').appendTo('body');
 
-        const bulkBar = $('#bulkBar');
-        const countLabel = $('#selectedCount');
-        const selectAll = $('#selectAll');
+            const bulkBar = $('#bulkBar');
+            const countLabel = $('#selectedCount');
+            const selectAll = $('#selectAll');
 
-        function updateUI() {
-            const checkedCount = $('.q-checkbox:checked').length;
-            countLabel.text(checkedCount);
+            function updateUI() {
+                const checkedCount = $('.q-checkbox:checked').length;
+                countLabel.text(checkedCount);
 
-            if (checkedCount > 0) {
-                bulkBar.attr('style', 'display: flex !important');
-            } else {
-                bulkBar.attr('style', 'display: none !important');
-                selectAll.prop('checked', false);
-            }
-        }
-
-        updateUI();
-
-        $(document).on('change', '.q-checkbox', function () {
-            $(this).closest('.question-card').toggleClass('selected', this.checked);
-            updateUI();
-        });
-
-        selectAll.on('change', function () {
-            const isChecked = this.checked;
-            $('.question-card:visible').each(function () {
-                $(this).find('.q-checkbox').prop('checked', isChecked);
-                $(this).toggleClass('selected', isChecked);
-            });
-            updateUI();
-        });
-
-        $('#btnDeselectAll').on('click', function () {
-            $('.q-checkbox').prop('checked', false);
-            $('.question-card').removeClass('selected');
-            updateUI();
-        });
-
-        $('#modal_qType').on('change', function () {
-            const val = $(this).val();
-            $('#modal_mc, #modal_tf, #modal_ident').hide();
-            if (val === 'multiple_choice') $('#modal_mc').show();
-            else if (val === 'true_false') $('#modal_tf').show();
-            else $('#modal_ident').show();
-        });
-
-        function performFilter() {
-            var searchVal = $('#searchInput').val().toLowerCase();
-            var typeVal = $('#typeFilter').val();
-            var diffVal = $('#difficultyFilter').val();
-            $('.question-card').each(function () {
-                var card = $(this);
-                var matchesType = (typeVal === '' || card.attr('data-type') === typeVal);
-                var matchesDiff = (diffVal === '' || card.attr('data-difficulty') === diffVal);
-                var matchesSearch = (searchVal === '' || card.attr('data-text').indexOf(searchVal) > -1);
-                card.toggle(matchesType && matchesDiff && matchesSearch);
-                if (!card.is(':visible')) {
-                    card.find('.q-checkbox').prop('checked', false);
-                    card.removeClass('selected');
+                if (checkedCount > 0) {
+                    bulkBar.attr('style', 'display: flex !important');
+                } else {
+                    bulkBar.attr('style', 'display: none !important');
+                    selectAll.prop('checked', false);
                 }
-            });
+            }
+
             updateUI();
-        }
-        $('#searchInput').on('keyup', performFilter);
-        $('#typeFilter, #difficultyFilter').on('change', performFilter);
-        $('#resetFilters').on('click', function () { $('#searchInput, #typeFilter, #difficultyFilter').val(''); performFilter(); });
-    });
-</script>
-{% endblock %}
+
+            $(document).on('change', '.q-checkbox', function () {
+                $(this).closest('.question-card').toggleClass('selected', this.checked);
+                updateUI();
+            });
+
+            selectAll.on('change', function () {
+                const isChecked = this.checked;
+                $('.question-card:visible').each(function () {
+                    $(this).find('.q-checkbox').prop('checked', isChecked);
+                    $(this).toggleClass('selected', isChecked);
+                });
+                updateUI();
+            });
+
+            $('#btnDeselectAll').on('click', function () {
+                $('.q-checkbox').prop('checked', false);
+                $('.question-card').removeClass('selected');
+                updateUI();
+            });
+
+            $('#modal_qType').on('change', function () {
+                const val = $(this).val();
+                $('#modal_mc, #modal_tf, #modal_ident').hide();
+                if (val === 'multiple_choice') $('#modal_mc').show();
+                else if (val === 'true_false') $('#modal_tf').show();
+                else $('#modal_ident').show();
+            });
+
+            function performFilter() {
+                var searchVal = $('#searchInput').val().toLowerCase();
+                var typeVal = $('#typeFilter').val();
+                var diffVal = $('#difficultyFilter').val();
+                $('.question-card').each(function () {
+                    var card = $(this);
+                    var matchesType = (typeVal === '' || card.attr('data-type') === typeVal);
+                    var matchesDiff = (diffVal === '' || card.attr('data-difficulty') === diffVal);
+                    var matchesSearch = (searchVal === '' || card.attr('data-text').indexOf(searchVal) > -1);
+                    card.toggle(matchesType && matchesDiff && matchesSearch);
+                    if (!card.is(':visible')) {
+                        card.find('.q-checkbox').prop('checked', false);
+                        card.removeClass('selected');
+                    }
+                });
+                updateUI();
+            }
+            $('#searchInput').on('keyup', performFilter);
+            $('#typeFilter, #difficultyFilter').on('change', performFilter);
+            $('#resetFilters').on('click', function () { $('#searchInput, #typeFilter, #difficultyFilter').val(''); performFilter(); });
+        });
+    </script>
+    {% endblock %}

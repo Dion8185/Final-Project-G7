@@ -384,7 +384,6 @@ def empty_trash():
         return redirect(url_for('admin.trashed_accounts'))
     return redirect(url_for('auth.login'))
 
-
 #! 2. MANAGE PROGRAMS (NEW)
 @admin.route('/manage_programs', methods=['GET', 'POST'])
 def manage_programs():
@@ -395,7 +394,7 @@ def manage_programs():
         cursor.execute("INSERT INTO programs (program_name, description) VALUES (%s, %s)", (name, desc))
         connection.commit(); flash("Program added.", "success"); return redirect(url_for('admin.manage_programs'))
     
-    cursor.execute("SELECT * FROM programs WHERE is_active = 1")
+    cursor.execute("SELECT * FROM programs WHERE is_active = 1 ORDER BY program_name")
     progs = cursor.fetchall()
     cursor.close(); connection.close()
     return render_template('admin_programs.html', programs=progs, firstname=session.get('firstname'))
@@ -1171,6 +1170,11 @@ def approve_user(pending_id):
     
     if p:
         new_id = generate_id('S' if p['role'] == 'student' else 'T')
+        
+        if p['document_path']:
+                file_path = os.path.join(UPLOAD_FOLDER, p['document_path'])
+                if os.path.exists(file_path): os.remove(file_path)
+
         try:
             cursor.execute("INSERT INTO users (user_id, email, password, role, is_verified) VALUES (%s, %s, %s, %s, 1)", 
                            (new_id, p['email'], p['password'], p['role']))
@@ -1194,24 +1198,61 @@ def approve_user(pending_id):
                 recipients=[p['email']]
             )
             msg.html = f"""
-            <body style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
-                    <tr><td align="center"><table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                        <tr><td style="height: 6px; background-color: #2d58d1; border-radius: 12px 12px 0 0;"></td></tr>
-                        <tr><td align="center" style="padding: 40px 40px 20px;"><h1 style="font-size: 42px; margin:0;">📑</h1><div style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">TestPoint Examination System</div></td></tr>
-                        <tr><td style="text-align: justify; padding: 0 40px 40px;">
-                            <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a;">Hello <strong>{p['firstname']}</strong>,</p>
-                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">Your registration has been reviewed and <strong>approved</strong>. You can now access the system using the ID assigned to you below.</p>
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 8px;">
-                                <tr><td align="center" style="padding: 25px;"><p style="margin: 0 0 10px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1e40af; opacity: 0.7;">Your Login ID</p>
-                                <p style="margin: 0; font-family: 'Courier New', monospace; font-size: 35px; font-weight: 700; color: #1e40af;">{new_id}</p></td></tr>
+            <body
+    style="margin:0;padding:0;font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fc;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 50px 15px;">
+        <tr>
+            <td align="center">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                    style="max-width: 500px; background-color: #ffffff; border: 1px solid #e1e7ef; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <tr>
+                        <td style="height: 6px; background-color: #2d58d1; border-radius: 12px 12px 0 0;"></td>
+                    </tr>
+                    <tr>
+                        <td align="center" style="padding: 40px 40px 20px;">
+                            <h1 style="font-size: 42px; margin:0;">📑</h1>
+                            <div
+                                style="font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2d58d1; font-weight: bold; margin-top: 10px;">
+                                TestPoint Examination System</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: justify; padding: 0 40px 40px;">
+                            <p style="margin: 0 0 10px; font-size: 20px; color: #1a1a1a;">Hello
+                                <strong>{p['firstname']}</strong>,</p>
+                            <p style="margin: 0 0 30px; font-size: 15px; color: #5e6d7a; line-height: 1.6;">Your
+                                registration has been reviewed and <strong>approved</strong>. You can now access the
+                                system using the email and password you used during registration.</p>
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                                style="background-color: #f0f7ff; border: 1px solid #dbeafe; border-radius: 8px;">
+                                <tr>
+                                    <td align="center" style="padding: 25px;">
+                                        <p
+                                            style="margin: 0 0 10px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #1e40af; opacity: 0.7;">
+                                            Your User ID:</p>
+                                        <p
+                                            style="margin: 0; font-family: 'Courier New', monospace; font-size: 35px; font-weight: 700; color: #1e40af;">
+                                            {new_id}</p>
+                                    </td>
+                                </tr>
                             </table>
-                            <p style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">Please keep your credentials secure.</p>
-                        </td></tr>
-                        <tr><td align="center" style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;"><p style="margin: 0; font-size: 11px; color: #94a3b8;">© TestPoint 2026 · All rights reserved</p></td></tr>
-                    </table></td></tr>
+                            <p
+                                style="margin: 30px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.5; text-align: center;">
+                                Please keep your credentials secure.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center"
+                            style="padding: 25px 40px; border-top: 1px solid #f1f5f9; background-color: #f8fafc; border-radius: 0 0 12px 12px;">
+                            <p style="margin: 0; font-size: 11px; color: #94a3b8;">© TestPoint 2026 · All rights
+                                reserved</p>
+                        </td>
+                    </tr>
                 </table>
-            </body>"""
+            </td>
+        </tr>
+    </table>
+</body>"""
             mail.send(msg)
             connection.commit()
             return jsonify({"message": "User approved"}), 200

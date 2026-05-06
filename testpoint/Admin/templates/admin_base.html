@@ -1,73 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{% block title %}Admin - System Control{% endblock %}</title>
-    
+
     <!-- ── CSS Stack ── -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="icon" type="image/svg+xml" href="{{ url_for('auth.static', filename='img/testpoint.svg') }}">
-    
+
     <style>
         :root {
             --tp-admin-ink: #0f0e11;
             --tp-admin-gray: #1e1e24;
             --tp-admin-bg: #f8f9fa;
-            --tp-admin-border: rgba(0,0,0,0.06);
+            --tp-admin-border: rgba(0, 0, 0, 0.06);
             --tp-admin-radius: 12px;
             --tp-font: 'DM Sans', sans-serif;
             --tp-serif: 'DM Serif Display', serif;
         }
 
-        body { font-family: var(--tp-font); background: var(--tp-admin-bg) !important; color: var(--tp-admin-ink); }
-
-        #wrapper { display: flex; min-height: 100vh; }
-
-        /* ── SIDEBAR OVERRIDE ── */
-        .sidebar { 
-            background: var(--tp-admin-gray) !important;
-            background-image: none !important;
-            position: sticky; top: 0; height: 100vh; z-index: 1020;
-            overflow-y: auto; overflow-x: hidden;
-            transition: width 0.2s ease-in-out !important; 
-            border-right: 1px solid rgba(255,255,255,0.05);
+        body {
+            font-family: var(--tp-font);
+            background: var(--tp-admin-bg) !important;
+            color: var(--tp-admin-ink);
         }
 
-        .sidebar .nav-item .nav-link { font-weight: 500; padding: 1rem; color: rgba(255,255,255,0.6) !important; }
-        .sidebar .nav-item .nav-link:hover { color: #fff !important; }
-        .sidebar .nav-item .nav-link i { font-size: 0.9rem; margin-right: 0.75rem; opacity: 0.5; }
-        .sidebar .sidebar-brand { height: 4.375rem; text-transform: none; font-family: var(--tp-serif); font-size: 1.25rem; letter-spacing: -0.5px; }
+        #wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── SIDEBAR OVERRIDE ── */
+        .sidebar {
+            background: var(--tp-admin-gray) !important;
+            background-image: none !important;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 1020;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.2s ease-in-out !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar .nav-item .nav-link {
+            font-weight: 500;
+            padding: 1rem;
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        .sidebar .nav-item .nav-link:hover {
+            color: #fff !important;
+        }
+
+        .sidebar .nav-item .nav-link i {
+            font-size: 0.9rem;
+            margin-right: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .sidebar .sidebar-brand {
+            height: 4.375rem;
+            text-transform: none;
+            font-family: var(--tp-serif);
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
 
         /* ── CONTENT WRAPPER ── */
-        #content-wrapper { background: var(--tp-admin-bg); }
+        #content-wrapper {
+            background: var(--tp-admin-bg);
+        }
 
-        .topbar { 
-            background: #fff !important; border-bottom: 1px solid var(--tp-admin-border);
-            box-shadow: none !important; position: sticky; top: 0; z-index: 1030;
+        .topbar {
+            background: #fff !important;
+            border-bottom: 1px solid var(--tp-admin-border);
+            box-shadow: none !important;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
         }
 
         /* ── MODERN CARDS ── */
-        .card { 
-            border: 1px solid var(--tp-admin-border) !important; 
+        .card {
+            border: 1px solid var(--tp-admin-border) !important;
             border-radius: var(--tp-admin-radius) !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        .card-header { background: transparent !important; border-bottom: 1px solid var(--tp-admin-border) !important; padding: 1.25rem !important; }
+
+        .card-header {
+            background: transparent !important;
+            border-bottom: 1px solid var(--tp-admin-border) !important;
+            padding: 1.25rem !important;
+        }
 
         /* ── UTILITIES ── */
-        .sidebar::-webkit-scrollbar { width: 4px; }
-        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        
-        .sticky-footer { padding: 1.5rem 0; background: #fff !important; border-top: 1px solid var(--tp-admin-border); }
-        
-        .dropdown-chevron { transition: transform 0.3s ease; opacity: 0.5; }
-        .nav-link:not(.collapsed) .dropdown-chevron { transform: rotate(180deg); opacity: 1; }
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .sticky-footer {
+            padding: 1.5rem 0;
+            background: #fff !important;
+            border-top: 1px solid var(--tp-admin-border);
+        }
+
+        .dropdown-chevron {
+            transition: transform 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .nav-link:not(.collapsed) .dropdown-chevron {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
 
         /* ── MOBILE SIDEBAR ACCORDION FIX ── */
         /* SB Admin 2 clips the sidebar on mobile, hiding collapse dropdowns */
@@ -76,6 +138,7 @@
                 overflow-y: visible !important;
                 overflow-x: visible !important;
             }
+
             .sidebar .nav-item .collapse,
             .sidebar .nav-item .collapsing {
                 position: static !important;
@@ -85,14 +148,45 @@
     </style>
     {% block head %}{% endblock %}
 </head>
+
 <body id="page-top">
     <div id="wrapper">
         {% include 'admin_sidebar.html' %}
         <div id="content-wrapper" class="d-flex flex-column">
             <div id="content">
                 {% include 'admin_navbar.html' %}
-                
+
                 <div class="container-fluid animate__animated animate__fadeIn">
+                    <!-- ── FLASH MESSAGES (THE FIX) ── -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-4 animate__animated animate__fadeInDown"
+                        role="alert" style="border-radius: 12px; border-left: 5px solid;">
+                        <div class="d-flex align-items-center">
+                            <div class="mr-3">
+                                {% if category == 'success' %}
+                                <i class="fas fa-check-circle fa-lg text-success"></i>
+                                {% elif category == 'danger' %}
+                                <i class="fas fa-exclamation-circle fa-lg text-danger"></i>
+                                {% elif category == 'warning' %}
+                                <i class="fas fa-exclamation-triangle fa-lg text-warning"></i>
+                                {% else %}
+                                <i class="fas fa-info-circle fa-lg text-info"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <span class="font-weight-bold">{{ message }}</span>
+                            </div>
+                        </div>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
                     {% block content %}{% endblock %}
                 </div>
             </div>
@@ -109,10 +203,13 @@
             <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
                     <div class="modal-header border-0 pb-0 pt-4 px-4">
-                        <h5 class="modal-title font-weight-bold" style="font-family: var(--tp-serif); font-size: 1.5rem;"><i class="fas fa-sign-out-alt mr-2 text-danger"></i> End Session?</h5>
+                        <h5 class="modal-title font-weight-bold"
+                            style="font-family: var(--tp-serif); font-size: 1.5rem;"><i
+                                class="fas fa-sign-out-alt mr-2 text-danger"></i> End Session?</h5>
                         <button class="close" type="button" data-dismiss="modal"><span>×</span></button>
                     </div>
-                    <div class="modal-body text-gray-600 px-4">Are you sure you want to log out of the command center?</div>
+                    <div class="modal-body text-gray-600 px-4">Are you sure you want to log out of the command center?
+                    </div>
                     <div class="modal-footer border-0 pt-3 pb-4 px-4">
                         <button class="btn btn-light px-4" type="button" data-dismiss="modal">Cancel</button>
                         <form action="{{ url_for('auth.logout') }}" method="POST" class="d-inline">
@@ -140,25 +237,26 @@
         })(jQuery);
     </script>
     <script>
-    $(document).ready(function() {
-        $('#accordionSidebar .collapse').each(function() {
-            var id = $(this).attr('id');
-            var state = localStorage.getItem('sidebar_' + id);
-            if (state === 'show') {
-                $(this).addClass('show');
-                $('[data-target="#' + id + '"]').removeClass('collapsed').attr('aria-expanded', 'true');
-            }
+        $(document).ready(function () {
+            $('#accordionSidebar .collapse').each(function () {
+                var id = $(this).attr('id');
+                var state = localStorage.getItem('sidebar_' + id);
+                if (state === 'show') {
+                    $(this).addClass('show');
+                    $('[data-target="#' + id + '"]').removeClass('collapsed').attr('aria-expanded', 'true');
+                }
+            });
+            $('#accordionSidebar .collapse').on('shown.bs.collapse', function () {
+                var id = $(this).attr('id');
+                localStorage.setItem('sidebar_' + id, 'show');
+            });
+            $('#accordionSidebar .collapse').on('hidden.bs.collapse', function () {
+                var id = $(this).attr('id');
+                localStorage.removeItem('sidebar_' + id);
+            });
         });
-        $('#accordionSidebar .collapse').on('shown.bs.collapse', function() {
-            var id = $(this).attr('id');
-            localStorage.setItem('sidebar_' + id, 'show');
-        });
-        $('#accordionSidebar .collapse').on('hidden.bs.collapse', function() {
-            var id = $(this).attr('id');
-            localStorage.removeItem('sidebar_' + id);
-        });
-    });
     </script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>
