@@ -119,7 +119,7 @@ def manage_accounts():
                             LEFT JOIN programs p ON b.program_id = p.program_id
                             LEFT JOIN teachers t ON u.user_id = t.teacher_id
                             LEFT JOIN admins a ON u.user_id = a.admin_id
-                            WHERE u.is_active IN (0, 1);
+                            WHERE u.is_active IN (1);
         """)
         users = cursor.fetchall()
         
