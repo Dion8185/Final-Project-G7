@@ -362,13 +362,13 @@
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="tp-label">Middle Name</label>
-                            <input type="text" class="form-control" id="middlename" name="middlename" 
+                            <input type="text" class="form-control" id="middlename" name="middlename"
                                 value="{{ request.form.get('middlename', '') }}">
                             <span class="field-feedback" id="middlename-feedback"></span>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label class="tp-label">Last Name</label>
-                            <input type="text" class="form-control" id="lastname" name="lastname" 
+                            <input type="text" class="form-control" id="lastname" name="lastname"
                                 value="{{ request.form.get('lastname', '') }}" required>
                             <span class="field-feedback" id="lastname-feedback"></span>
                         </div>
@@ -381,7 +381,7 @@
 
                     <div class="form-group">
                         <label class="tp-label">Email Address</label>
-                        <input type="email" class="form-control" id="email" name="email" 
+                        <input type="email" class="form-control" id="email" name="email"
                             value="{{ request.form.get('email', '') }}" required>
                         <span class="field-feedback" id="email-feedback"></span>
                     </div>
@@ -389,14 +389,13 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="tp-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password"
-                                 required>
+                            <input type="password" class="form-control" id="password" name="password" required>
                             <span class="field-feedback" id="password-feedback"></span>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="tp-label">Confirm Password</label>
                             <input type="password" class="form-control" id="confirm_password" name="confirm_password"
-                                 required>
+                                required>
                             <span class="field-feedback" id="confirm-feedback"></span>
                         </div>
                     </div>
@@ -537,78 +536,60 @@
                 middlename: { fbId: 'middlename-feedback', check: function (v) { return checkNameField(v, 'Middle name', false); } },
                 lastname: { fbId: 'lastname-feedback', check: function (v) { return checkNameField(v, 'Last name', true); } },
 
-                // ──────────────── EMAIL NETWORK RESOLUTION BLOCK ──────────────── 
+                // ──────────────── EXCLUSIVE WHITE-LIST EMAIL VALIDATION ──────────────── 
                 email: {
                     fbId: 'email-feedback',
-                    check: async function (v, forceServerPing) {
-                        // (Phase 1) STRING PATTERNS & REGULAR EXAMPLES TEST
+                    check: async function (v) {
                         if (!v) return { ok: false, msg: 'Email is required.' };
-                        if (v.length > 254) return { ok: false, msg: 'Email is too long.' };
-                        if (/\s/.test(v)) return { ok: false, msg: 'Email must not contain spaces.' };
 
-                        var atParts = v.split('@');
-                        if (atParts.length !== 2) return { ok: false, msg: 'Email must contain exactly one @ symbol.' };
+                        var parts = v.split('@');
+                        if (parts.length !== 2) return { ok: false, msg: 'Please enter a valid email address.' };
 
-                        var local = atParts[0].toLowerCase(), domain = atParts[1].toLowerCase();
-                        if (!local || !domain) return { ok: false, msg: 'Enter a valid complete email address.' };
+                        var local = parts[0].toLowerCase();
+                        var domain = parts[1].toLowerCase();
 
-                        // Username Checks (Stops typical left side spam algorithms out locally immediately)
-                        if (local.length < 3) return { ok: false, msg: 'Email username is too short.' };
-                        if (/\.{2,}/.test(local)) return { ok: false, msg: 'Consecutive dots are not allowed.' };
-                        if (/^\.|\.$/.test(local)) return { ok: false, msg: 'Cannot start or end with a dot.' };
+                        // 1. THE BRUTE-FORCE LIST (Explicit authorized providers/servers)
+                        var authorizedExplicit = [
+                            "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "rocketmail.com",
+                            "outlook.com", "hotmail.com", "live.com", "msn.com", "icloud.com",
+                            "me.com", "mac.com", "proton.me", "protonmail.com", "zoho.com",
+                            "zoho.eu", "aol.com", "fastmail.com", "gmx.com", "mail.com", "yandex.com",
+                            "pldtmail.com", "pldtdsl.net", "globe.com.ph", "smart.com.ph",
+                            "aspmx.l.google.com", "alt1.aspmx.l.google.com", "alt2.aspmx.l.google.com",
+                            "alt3.aspmx.l.google.com", "alt4.aspmx.l.google.com",
+                            "mail.protection.outlook.com", "mx.zoho.com", "mx2.zoho.com", "mx3.zoho.com",
+                            "mail.protonmail.ch", "mailsec.protonmail.ch", "mta5.am0.yahoodns.net",
+                            "mta6.am0.yahoodns.net", "mta7.am0.yahoodns.net",
+                            "in1-smtp.messagingengine.com", "in2-smtp.messagingengine.com",
+                            "inbound-smtp.us-east-1.amazonaws.com", "inbound-smtp.us-west-2.amazonaws.com",
+                            "mail.domain.com", "smtp.domain.com", "mx.domain.com"
+                        ];
+
+                        // 2. SUFFIX VALIDATION (.edu, .ph, .edu.ph)
+                        var isExplicitMatch = authorizedExplicit.indexOf(domain) !== -1;
+                        var isEduOrPh = domain.endsWith('.edu') ||
+                            domain.endsWith('.ph') ||
+                            domain.endsWith('.edu.ph') ||
+                            domain.endsWith('.gov.ph');
+
+                        // STRICT REJECTION: If it's not in the list AND not an edu/ph domain
+                        if (!isExplicitMatch && !isEduOrPh) {
+                            return {
+                                ok: false,
+                                msg: 'Unauthorized provider. Use a major provider, .edu, or .ph email.'
+                            };
+                        }
+
+                        // 3. Username Integrity Checks
+                        if (local.length < 3) return { ok: false, msg: 'Username is too short.' };
+                        if (/\.{2,}/.test(local)) return { ok: false, msg: 'Invalid dot pattern.' };
                         if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/.test(local)) return { ok: false, msg: 'Username contains invalid characters.' };
-                        if (/^(.)\1{4,}$/.test(local)) return { ok: false, msg: 'Username has too many identical/repeated keys sequentially.' };
 
-                        var localGibTest = checkGibberish(local, 'The prefix before the @ sign');
+                        // 4. Gibberish check for the username (stops random string bots)
+                        var localGibTest = checkGibberish(local, 'The prefix');
                         if (localGibTest) return localGibTest;
 
-                        // String Server Constraints Setup  
-                        var domParts = domain.split('.');
-                        if (domParts.length < 2) return { ok: false, msg: 'Requires suffix extension identifier formats (e.g., .com)' };
-                        for (var i = 0; i < domParts.length; i++) {
-                            if (domParts[i].length === 0 || domParts[i].startsWith('-') || domParts[i].endsWith('-')) {
-                                return { ok: false, msg: 'The host server pattern structural breaks allowed convention limits.' };
-                            }
-                        }
-
-                        // Known disposable bin filtering 
-                        var spamDomainsBoxsArray = ['mailinator.com', 'guerrillamail.com', 'trashmail.com', 'tempmail.com', '10minutemail.com', 'yopmail.com', 'getnada.com'];
-                        if (spamDomainsBoxsArray.indexOf(domain) !== -1) { return { ok: false, msg: 'Throwaway email platforms denied.' }; }
-
-                        // (Phase 2) DNS VERIFICATION USING LIVE PINGS TO VERIFY GIBBERISH/EXISTENCE   
-                        if (!forceServerPing) {
-                            return { ok: true, msg: 'Verifying syntax format logic structure matching...' };
-                        }
-
-                        try {
-                            // Uses public safe google networking DoH resolving the actual existence query locally securely inside standard Browser
-                            var targetURIResolvingName = encodeURIComponent(domain);
-                            var resolvePingingGoogleDoHDNSResponseRawPayloadDataJsonBlockNetworkOutsourceReturnFormatAPI = await fetch("https://dns.google/resolve?name=" + targetURIResolvingName + "&type=MX", { cache: "no-store" });
-
-                            var networkVerificationAPIOnlineReturnBlocksStatusCheck = await resolvePingingGoogleDoHDNSResponseRawPayloadDataJsonBlockNetworkOutsourceReturnFormatAPI.json();
-
-                            // Native Returns block array error triggers if "Domain Completely Incorrect Out Of DNS Web" / (E.g NXDOMAIN / NOError = Dead Sites parked out or null routing paths locally identified globally server-side check )
-                            if (networkVerificationAPIOnlineReturnBlocksStatusCheck.Status === 3 || networkVerificationAPIOnlineReturnBlocksStatusCheck.Status === 2) {
-                                return { ok: false, msg: 'Rejected Offline Ping: The Domain Address (' + domain + ') doesn\'t truly officially formally globally exist!' };
-                            }
-
-                            var validatesAcceptableHostServerBindingRouteTrueResult = false;
-                            // Confirms domain specifies routing capabilities indicating a Mail Network operates actively there natively
-                            if (networkVerificationAPIOnlineReturnBlocksStatusCheck.Answer && Array.isArray(networkVerificationAPIOnlineReturnBlocksStatusCheck.Answer)) {
-                                for (var iRecordOutDataRowValueKeysTestArrayPointerCheckTypeSetMatchValidationLimitLengthConstraintsValueOutputArrayOutputIteratorBoundsTestVal = 0; iRecordOutDataRowValueKeysTestArrayPointerCheckTypeSetMatchValidationLimitLengthConstraintsValueOutputArrayOutputIteratorBoundsTestVal < networkVerificationAPIOnlineReturnBlocksStatusCheck.Answer.length; iRecordOutDataRowValueKeysTestArrayPointerCheckTypeSetMatchValidationLimitLengthConstraintsValueOutputArrayOutputIteratorBoundsTestVal++) {
-                                    if (networkVerificationAPIOnlineReturnBlocksStatusCheck.Answer[iRecordOutDataRowValueKeysTestArrayPointerCheckTypeSetMatchValidationLimitLengthConstraintsValueOutputArrayOutputIteratorBoundsTestVal].type === 15) validatesAcceptableHostServerBindingRouteTrueResult = true;
-                                }
-                            }
-
-                            if (!validatesAcceptableHostServerBindingRouteTrueResult) {
-                                return { ok: false, msg: 'DNS Resolution Error Blocked Fake (' + domain + ') completely - Valid explicit Mail Exchange parameters disconnected.' };
-                            }
-
-                        } catch (netFallbackFailDropOffLimitsConnectionNetworkErrorsBypassNetworkTimeoutIssueSafelyForcedOnlineCheckPingsReturnValuesArraysResultFallbackDefaultPathCheckSuccessCheckFormatResultValueBypassReturnOutputPathSafetyOpenLogicTriggerPassResultObjectObjectStringReturnObjectOutput) {
-                            return { ok: true, msg: 'Live DNS Test Fallback / Server Check Format Parsed Secure Logic Allowed ' };
-                        }
-
-                        return { ok: true, msg: '✓ Online Pinging Check Complete Domain Secure Verified Successfully Real !' };
+                        return { ok: true, msg: '✓ Authorized Domain Verified' };
                     }
                 },
                 password: {
