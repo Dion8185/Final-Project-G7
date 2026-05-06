@@ -348,7 +348,8 @@
         </div>
         <h2>Secure Exam Environment</h2>
         <p>Fullscreen mode is mandatory. Exiting fullscreen or switching windows will trigger a security violation and
-            be logged.</p>
+            be logged.
+            <i>Reload the page if button is stucked on Securing Access</i></p>
         <button class="btn-enter" onclick="startLockdown()">
             <i class="fas fa-expand mr-2"></i> Activate Lockdown & Begin
         </button>
@@ -542,219 +543,243 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
+<script>
+        
         $(document).ready(function () {
             "use strict";
 
-            const totalQ = {{ questions| length
-        }};
-        let timeLeft = {{ remaining_seconds }};
-        let currentIdx = {{ current_q }};
-        let isUnloading = false;
-        let isBlocked = false;
+            const totalQ = {{ questions| length }};
+            let timeLeft = {{ remaining_seconds }};
+            let currentIdx = {{ current_q }};
+            let isUnloading = false;
+            let isBlocked = false;
+            
+            $('#blockedModal').appendTo('body');
 
-        // FIX: Move modal to body to bypass stacking context issues (Grey Area Fix)
-        $('#blockedModal').appendTo('body');
+            // FIX: Prevent Enter Key from submitting the form in identification questions
+            $(window).keydown(function (event) {
+                if (event.keyCode == 13) {
+                    event.preventDefault();
+                    return false;
+                }
+            });
 
-        // FIX: Prevent Enter Key from submitting the form in identification questions
-        $(window).keydown(function (event) {
-            if (event.keyCode == 13) {
-                event.preventDefault();
-                return false;
+            // 1. Fullscreen Lockdown & INITIAL Geolocation Trigger
+            window.startLockdown = function () {
+                const $btn = $(event.currentTarget);
+                const originalText = $btn.html();
+                
+                // Show loading state while waiting for GPS/Fullscreen
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i> Securing Access...');
+ 
+
+                const proceedToFullscreen = (lat = null, lng = null) => {
+                    const el = document.documentElement;
+                    if (el.requestFullscreen) el.requestFullscreen();
+                    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                    else if (el.msRequestFullscreen) el.msRequestFullscreen();
+                    
+                    $('#lockdown-overlay').fadeOut(300);
+                    
+                    // Log the initial "Exam Started" event with coordinates
+                    sendViolationData('Exam Started', lat, lng);
+                    $btn.prop('disabled', false).html('<i class="fas fa-expand mr-2"></i> Activate Lockdown & Begin');
+                };
+
+                
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            proceedToFullscreen(position.coords.latitude, position.coords.longitude);
+                        },
+                        (error) => {
+                            console.warn("Location denied or unavailable");
+                            proceedToFullscreen(null, null);
+                        },
+                        { enableHighAccuracy: true, timeout: 5000 }
+                    );
+                } else {
+                    proceedToFullscreen(null, null);
+                }
+            };
+
+            document.addEventListener('fullscreenchange', () => {
+                if (!isUnloading && !document.fullscreenElement && !isBlocked) {
+                    $('#lockdown-overlay').fadeIn(200);
+                    handleViolation('Fullscreen exited');
+                }
+            });
+
+            // 2. Timer Logic
+            function renderTimer() {
+                if (isBlocked) return;
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                const $t = $('#timer');
+                $t.text(String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'));
+                if (timeLeft < 300) $t.addClass('warning');
             }
-        });
 
-        // 1. Fullscreen Lockdown
-        window.startLockdown = function () {
-            const el = document.documentElement;
-            if (el.requestFullscreen) el.requestFullscreen();
-            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-            else if (el.msRequestFullscreen) el.msRequestFullscreen();
-            $('#lockdown-overlay').fadeOut(300);
-        };
+            const timerInt = setInterval(() => {
+                if (isBlocked) return;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInt);
+                    isUnloading = true;
+                    document.getElementById('exam-form').submit();
+                    return;
+                }
+                timeLeft--;
+                renderTimer();
+            }, 1000);
 
-        document.addEventListener('fullscreenchange', () => {
-            if (!isUnloading && !document.fullscreenElement && !isBlocked) {
-                $('#lockdown-overlay').fadeIn(200);
-                handleViolation('Fullscreen exited');
+            // 3. Navigation
+            function showStep(idx) {
+                if (idx < 0 || idx >= totalQ || isBlocked) return;
+                $('.question-step').hide().removeClass('active');
+                $('.q-indicator').removeClass('active');
+                $(`#step-${idx}`).show().addClass('active');
+                $(`#map-${idx}`).addClass('active');
+                $('#q-idx-text').text(idx + 1);
+                $('#btn-prev').prop('disabled', idx === 0);
+                $('#btn-next').toggle(idx < totalQ - 1);
+                $('#btn-submit').toggle(idx === totalQ - 1);
+                $('#btn-flag').toggleClass('active', $(`#map-${idx}`).hasClass('flagged'));
+                currentIdx = idx;
+                updateProgressBar();
             }
-        });
 
-        // 2. Timer Logic
-        function renderTimer() {
-            if (isBlocked) return;
-            const m = Math.floor(timeLeft / 60);
-            const s = timeLeft % 60;
-            const $t = $('#timer');
-            $t.text(String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'));
-            if (timeLeft < 300) $t.addClass('warning');
-        }
+            window.jumpTo = idx => { saveCurrentProgress(); showStep(idx); };
+            $('#btn-next').click(() => { saveCurrentProgress(); showStep(currentIdx + 1); });
+            $('#btn-prev').click(() => { saveCurrentProgress(); showStep(currentIdx - 1); });
 
-        const timerInt = setInterval(() => {
-            if (isBlocked) return;
-            if (timeLeft <= 0) {
-                clearInterval(timerInt);
-                isUnloading = true;
-                document.getElementById('exam-form').submit();
-                return;
+            $('#btn-flag').click(function () {
+                if (isBlocked) return;
+                $(`#map-${currentIdx}`).toggleClass('flagged');
+                $(this).toggleClass('active');
+                saveCurrentProgress();
+            });
+
+            function updateProgressBar() {
+                const progress = Math.round(($('.q-indicator.answered').length / totalQ) * 100);
+                $('#progress-fill').css('width', progress + '%');
             }
-            timeLeft--;
-            renderTimer();
-        }, 1000);
 
-        // 3. Navigation
-        function showStep(idx) {
-            if (idx < 0 || idx >= totalQ || isBlocked) return;
-            $('.question-step').hide().removeClass('active');
-            $('.q-indicator').removeClass('active');
-            $(`#step-${idx}`).show().addClass('active');
-            $(`#map-${idx}`).addClass('active');
-            $('#q-idx-text').text(idx + 1);
-            $('#btn-prev').prop('disabled', idx === 0);
-            $('#btn-next').toggle(idx < totalQ - 1);
-            $('#btn-submit').toggle(idx === totalQ - 1);
-            $('#btn-flag').toggleClass('active', $(`#map-${idx}`).hasClass('flagged'));
-            currentIdx = idx;
-            updateProgressBar();
-        }
+            // 4. Data Sync (Auto-save)
+            function saveCurrentProgress() {
+                if (isUnloading || isBlocked) return;
+                const $step = $(`#step-${currentIdx}`);
+                const qId = $step.data('q-id');
+                const qType = $step.data('q-type');
+                let val = (qType === 'identification') ? $step.find('input[type="text"]').val() : $step.find('input:checked').val();
+                val = val || '';
 
-        window.jumpTo = idx => { saveCurrentProgress(); showStep(idx); };
-        $('#btn-next').click(() => { saveCurrentProgress(); showStep(currentIdx + 1); });
-        $('#btn-prev').click(() => { saveCurrentProgress(); showStep(currentIdx - 1); });
+                const $indicator = $(`#map-${currentIdx}`);
+                if (val.trim() !== "") $indicator.addClass('answered'); else $indicator.removeClass('answered');
+                updateProgressBar();
 
-        $('#btn-flag').click(function () {
-            if (isBlocked) return;
-            $(`#map-${currentIdx}`).toggleClass('flagged');
-            $(this).toggleClass('active');
-            saveCurrentProgress();
-        });
-
-        function updateProgressBar() {
-            const progress = Math.round(($('.q-indicator.answered').length / totalQ) * 100);
-            $('#progress-fill').css('width', progress + '%');
-        }
-
-        // 4. Data Sync (Auto-save)
-        function saveCurrentProgress() {
-            if (isUnloading || isBlocked) return;
-            const $step = $(`#step-${currentIdx}`);
-            const qId = $step.data('q-id');
-            const qType = $step.data('q-type');
-            let val = (qType === 'identification') ? $step.find('input[type="text"]').val() : $step.find('input:checked').val();
-            val = val || '';
-
-            const $indicator = $(`#map-${currentIdx}`);
-            if (val.trim() !== "") $indicator.addClass('answered'); else $indicator.removeClass('answered');
-            updateProgressBar();
-
-            fetch("{{ url_for('student.save_progress') }}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    attempt_id: {{ attempt_id }},
-                question_id: qId,
-                answer: val,
-                is_flagged: $indicator.hasClass('flagged') ? 1 : 0,
-                current_idx: currentIdx
+                fetch("{{ url_for('student.save_progress') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        attempt_id: {{ attempt_id }},
+                        question_id: qId,
+                        answer: val,
+                        is_flagged: $indicator.hasClass('flagged') ? 1 : 0,
+                        current_idx: currentIdx
                     })
                 }).then(res => {
                     if (res.status === 403) triggerBlockedState();
                 });
             }
 
-        $(document).on('change keyup', '.ajax-save', function () { saveCurrentProgress(); });
+            $(document).on('change keyup', '.ajax-save', function () { saveCurrentProgress(); });
 
-        // 5. Anti-Cheat & Violation Logging with Geolocation
-function handleViolation(reason) {
-    if (isUnloading || isBlocked) return;
-    $('#violation-banner').slideDown(200);
+            // 5. Anti-Cheat & Violation Logging
+            function handleViolation(reason) {
+                if (isUnloading || isBlocked) return;
+                $('#violation-banner').slideDown(200);
 
-    // Get location then log
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-            sendViolationData(reason, position.coords.latitude, position.coords.longitude);
-        }, () => {
-            // If user denied location, log anyway with null
-            sendViolationData(reason, null, null);
-        });
-    } else {
-        sendViolationData(reason, null, null);
-    }
-}
-
-function sendViolationData(reason, lat, lng) {
-    fetch("{{ url_for('student.log_violation') }}", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            attempt_id: {{ attempt_id }},
-            violation_type: reason,
-            lat: lat,
-            lng: lng
-        })
-    }).then(res => {
-        if (res.status === 403) triggerBlockedState();
-    });
-}
-        let violationCooldown = false;
-        function throttledViolation() {
-            if (violationCooldown || isUnloading || isBlocked) return;
-            violationCooldown = true;
-            handleViolation('Window switch/blur');
-            setTimeout(() => { violationCooldown = false; }, 2000);
-        }
-
-        document.addEventListener('visibilitychange', () => { if (document.hidden && !isUnloading) throttledViolation(); });
-        window.addEventListener('blur', () => { if (!isUnloading) throttledViolation(); });
-
-        // 6. Security Blocking State
-        function triggerBlockedState() {
-            if (isBlocked) return;
-            isBlocked = true;
-            isUnloading = true;
-
-            // Exit fullscreen to reset UI
-            if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
-
-            // Clear overlay and blur background
-            $('#lockdown-overlay').remove();
-            $('body').addClass('is-blocked');
-
-            // Disable all interaction
-            $('input, button, .ajax-save').prop('disabled', true);
-            $('.q-indicator').css('pointer-events', 'none');
-
-            // Show the modal (Now at Body level)
-            $('#blockedModal').modal({ backdrop: 'static', keyboard: false, show: true });
-
-            let count = 5;
-            const logoutInt = setInterval(() => {
-                count--;
-                $('#logout-countdown').text(count);
-                if (count <= 0) {
-                    clearInterval(logoutInt);
-                    window.location.href = "{{ url_for('auth.logout') }}";
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        sendViolationData(reason, position.coords.latitude, position.coords.longitude);
+                    }, () => {
+                        sendViolationData(reason, null, null);
+                    });
+                } else {
+                    sendViolationData(reason, null, null);
                 }
-            }, 1000);
-        }
-
-        window.confirmFinalSubmit = () => {
-            if (isBlocked) return;
-            if (confirm('Are you sure you want to finalize and submit your exam?')) {
-                isUnloading = true;
-                document.getElementById('exam-form').submit();
             }
-        };
 
-        // Init Exam View
-        renderTimer();
-        showStep(currentIdx);
-        updateProgressBar();
+            function sendViolationData(reason, lat, lng) {
+                fetch("{{ url_for('student.log_violation') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        attempt_id: {{ attempt_id }},
+                        violation_type: reason,
+                        lat: lat,
+                        lng: lng
+                    })
+                }).then(res => {
+                    if (res.status === 403) triggerBlockedState();
+                });
+            }
 
-        // Prevent Browser Back Button
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () { history.go(1); };
-        document.addEventListener('contextmenu', e => e.preventDefault());
+            let violationCooldown = false;
+            function throttledViolation() {
+                if (violationCooldown || isUnloading || isBlocked) return;
+                violationCooldown = true;
+                handleViolation('Window switch/blur');
+                setTimeout(() => { violationCooldown = false; }, 2000);
+            }
+
+            document.addEventListener('visibilitychange', () => { if (document.hidden && !isUnloading) throttledViolation(); });
+            window.addEventListener('blur', () => { if (!isUnloading) throttledViolation(); });
+
+            // 6. Security Blocking State
+            function triggerBlockedState() {
+                if (isBlocked) return;
+                isBlocked = true;
+                isUnloading = true;
+
+                if (document.fullscreenElement) document.exitFullscreen().catch(() => { });
+
+                $('#lockdown-overlay').remove();
+                $('body').addClass('is-blocked');
+
+                $('input, button, .ajax-save').prop('disabled', true);
+                $('.q-indicator').css('pointer-events', 'none');
+
+                $('#blockedModal').modal({ backdrop: 'static', keyboard: false, show: true });
+
+                let count = 5;
+                const logoutInt = setInterval(() => {
+                    count--;
+                    $('#logout-countdown').text(count);
+                    if (count <= 0) {
+                        clearInterval(logoutInt);
+                        window.location.href = "{{ url_for('auth.logout') }}";
+                    }
+                }, 1000);
+            }
+
+            window.confirmFinalSubmit = () => {
+                if (isBlocked) return;
+                if (confirm('Are you sure you want to finalize and submit your exam?')) {
+                    isUnloading = true;
+                    document.getElementById('exam-form').submit();
+                }
+            };
+
+            // Init Exam View
+            renderTimer();
+            showStep(currentIdx);
+            updateProgressBar();
+
+            // Prevent Browser Back Button
+            history.pushState(null, null, location.href);
+            window.onpopstate = function () { history.go(1); };
+            document.addEventListener('contextmenu', e => e.preventDefault());
         });
     </script>
 </body>

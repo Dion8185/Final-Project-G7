@@ -142,69 +142,10 @@
     </div>
 
     <div class="row">
-        <!-- ── LEFT: QUESTION BREAKDOWN ── -->
-        <div class="col-lg-8">
-            <div class="d-flex align-items-center justify-content-between mb-3 px-1">
-                <h6 class="font-weight-bold text-dark text-uppercase small m-0" style="letter-spacing: 1px;">Questions
-                    Served ({{ questions|length }})</h6>
-                <span class="badge badge-light border text-muted px-2 py-1" style="font-size: 10px;">ID: #{{
-                    attempt.attempt_id }}</span>
-            </div>
 
-            {% for q in questions %}
-            <div class="card audit-card shadow-sm mb-4 pl-2">
-                <!-- Color-Coded Vertical Accent -->
-                <div class="audit-accent-bar {{ 'bg-audit-correct' if q.is_correct else 'bg-audit-incorrect' }}"></div>
+    <!-- ── LEFT: AUDIT SUMMARY & MONITORING ── -->
 
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="d-flex align-items-center" style="gap: 8px;">
-                            <span class="badge badge-light border id-tag px-2 py-1">{{ q.question_type.replace('_',' ')
-                                }}</span>
-                            <span class="badge badge-light border id-tag px-2 py-1 text-muted">{{ q.difficulty }}</span>
-                        </div>
-                        {% if q.is_correct %}
-                        <span class="text-success font-weight-bold small"><i class="fas fa-check-circle mr-1"></i>
-                            VALIDATED</span>
-                        {% else %}
-                        <span class="text-danger font-weight-bold small"><i class="fas fa-times-circle mr-1"></i>
-                            INCORRECT</span>
-                        {% endif %}
-                    </div>
-
-                    <h5 class="text-dark font-weight-bold mb-4" style="line-height: 1.5; font-size: 1.1rem;">
-                        {{ loop.index }}. {{ q.question_text }}
-                    </h5>
-
-                    <div class="row">
-                        <!-- Student Answer -->
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <label class="meta-label d-block mb-2">Examinee Response</label>
-                            <div
-                                class="response-box response-student font-weight-bold {{ 'text-success' if q.is_correct else 'text-danger' }}">
-                                {{ q.submitted_answer if q.submitted_answer else '[No Response Captured]' }}
-                            </div>
-                        </div>
-
-                        <!-- Correct Reference (Only if incorrect) -->
-                        {% if not q.is_correct %}
-                        <div class="col-md-6">
-                            <label class="meta-label d-block mb-2">System Key (Correct)</label>
-                            <div class="response-box response-key font-weight-bold">
-                                {% for opt in q.options %}
-                                {% if opt.is_correct %}{{ opt.option_text }}{% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- ── RIGHT: AUDIT SUMMARY ── -->
-        <div class="col-lg-4">
+         <div class="col-lg-4">
             <div class="sticky-summary">
                 <div class="card audit-card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3 border-bottom"
@@ -278,7 +219,7 @@
                             {% for log in violation_logs %}
                             <div class="timeline-item">
                                 <div style="background:{% if log.violation_type == 'Exam Started' or log.violation_type == 'Exam Ended (Submitted)' %} #16a34a; {% else %} #e74a3b {% endif %};" class="timeline-dot"></div>
-                                <span class="timeline-time">{{ log.violation_time.strftime('%I:%M:%S %p') }}</span>
+                                <span class="timeline-time">{{ log.violation_time.strftime('%H:%M:%S') }}</span>
                                 <span class="timeline-reason {% if log.violation_type == 'Exam Started' or log.violation_type == 'Exam Ended (Submitted)' %} text-success {% else %} text-danger {% endif %}">{{ log.violation_type }}</span>
                             </div>
                             {% endfor %}
@@ -302,6 +243,70 @@
             </div>
 
         </div>
+
+        <!-- ── RIGHT: QUESTION BREAKDOWN ── -->
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                <h6 class="font-weight-bold text-dark text-uppercase small m-0" style="letter-spacing: 1px;">Questions
+                    Served ({{ questions|length }})</h6>
+                <span class="badge badge-light border text-muted px-2 py-1" style="font-size: 10px;">ID: #{{
+                    attempt.attempt_id }}</span>
+            </div>
+
+            {% for q in questions %}
+            <div class="card audit-card shadow-sm mb-10 pl-2">
+                <!-- Color-Coded Vertical Accent -->
+                <div class="audit-accent-bar {{ 'bg-audit-correct' if q.is_correct else 'bg-audit-incorrect' }}"></div>
+
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center" style="gap: 8px;">
+                            <span class="badge badge-light border id-tag px-2 py-1">{{ q.question_type.replace('_',' ')
+                                }}</span>
+                            <span class="badge badge-light border id-tag px-2 py-1 text-muted">{{ q.difficulty }}</span>
+                        </div>
+                        {% if q.is_correct %}
+                        <span class="text-success font-weight-bold small"><i class="fas fa-check-circle mr-1"></i>
+                            VALIDATED</span>
+                        {% else %}
+                        <span class="text-danger font-weight-bold small"><i class="fas fa-times-circle mr-1"></i>
+                            INCORRECT</span>
+                        {% endif %}
+                    </div>
+
+                    <h5 class="text-dark font-weight-bold mb-4" style="line-height: 1.5; font-size: 1.1rem;">
+                        {{ loop.index }}. {{ q.question_text }}
+                    </h5>
+
+                    <div class="row">
+                        <!-- Student Answer -->
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label class="meta-label d-block mb-2">Examinee Response</label>
+                            <div
+                                class="response-box response-student font-weight-bold {{ 'text-success' if q.is_correct else 'text-danger' }}">
+                                {{ q.submitted_answer if q.submitted_answer else '[No Response Captured]' }}
+                            </div>
+                        </div>
+
+                        <!-- Correct Reference (Only if incorrect) -->
+                        {% if not q.is_correct %}
+                        <div class="col-md-6">
+                            <label class="meta-label d-block mb-2">System Key (Correct)</label>
+                            <div class="response-box response-key font-weight-bold">
+                                {% for opt in q.options %}
+                                {% if opt.is_correct %}{{ opt.option_text }}{% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        
+       
     </div>
 </div>
 <script>
