@@ -28,9 +28,9 @@ def inject_teacher_courses():
             cursor = connection.cursor(dictionary=True)
             # Fetch courses assigned to this teacher
             cursor.execute("""
-                SELECT cl.class_code, c.course_name 
+                SELECT cl.class_code, c.course_name
                 FROM classes cl 
-                JOIN courses c ON cl.course_code = c.course_code 
+                JOIN courses c ON cl.course_code = c.course_code
                 WHERE cl.teacher_id = %s AND cl.is_active = 1
             """, (teacher_id,))
             courses = cursor.fetchall()
@@ -179,10 +179,11 @@ def my_courses():
         connection = mysql.connector.connect(**db_config)
         cursor = connection.cursor(dictionary=True)
         cursor.execute("""
-            SELECT c.*, cl.class_code, b.block_name 
+            SELECT c.*, cl.class_code, b.block_name, b.program_id, p.program_name
             FROM courses c 
             JOIN classes cl ON c.course_code = cl.course_code 
             JOIN blocks b ON cl.block_id = b.block_id
+            JOIN programs p ON p.program_id = b.program_id
             WHERE cl.teacher_id = %s
         """, (session.get('user_id'),))
         courses = cursor.fetchall()
@@ -1036,10 +1037,11 @@ def manage_enrollees(class_code):
     try:
         # 1. Fetch Course and Class Metadata
         cursor.execute("""
-            SELECT c.*, cl.class_code, b.block_name 
+            SELECT c.*, cl.class_code, b.block_name, b.program_id, p.program_name
             FROM classes cl
             JOIN courses c ON cl.course_code = c.course_code
             JOIN blocks b ON cl.block_id = b.block_id
+            JOIN programs p ON p.program_id = b.program_id
             WHERE cl.class_code = %s AND cl.teacher_id = %s
         """, (class_code, session.get('user_id')))
         course = cursor.fetchone()
