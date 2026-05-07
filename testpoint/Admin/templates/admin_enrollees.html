@@ -148,8 +148,11 @@
 <script>
     $(document).ready(function() {
         "use strict";
+
+        // 1. Initialize Pagination and Search Logic
         const rows = Array.from(document.querySelectorAll('#enrollTable tbody tr.enrollee-row'));
         let filtered = [...rows];
+        
         const paginator = createPaginator({
             tableBodySelector: '#enrollTable tbody',
             paginationSelector: '#enrollee-pagination',
@@ -158,23 +161,32 @@
         });
         paginator.render();
 
+        // 2. Real-time Search Filter
         $('#enrolleeSearch').on('keyup', function() {
             const val = $(this).val().toLowerCase();
             filtered = rows.filter(r => r.textContent.toLowerCase().includes(val));
             paginator.reset();
         });
 
+        // 3. Dynamic URL Generation for Unenrollment Modal
         $('#confirmUnenrollModal').on('show.bs.modal', function (e) {
             var btn = $(e.relatedTarget);
             var enrollmentId = btn.data('enrollment');
             var studentName = btn.data('name');
-            var classCode = "{{ class_info.class_code }}";
+            var classCode = "{{ class_info.class_code }}"; // e.g., "#104"
+
             $('#studentNameDisplay').text(studentName);
+
+            var encodedClassCode = encodeURIComponent(classCode);
+            
             var actionUrl = '{{ url_for("admin.unenroll_student", enrollment_id=0, class_code="_code_") }}'
                 .replace('0', enrollmentId)
-                .replace('_code_', classCode);
+                .replace('_code_', encodedClassCode);
+
             $(this).find('form').attr('action', actionUrl);
         });
+
+        $('#enrollModal, #confirmUnenrollModal').appendTo('body');
     });
 </script>
 {% endblock %}

@@ -959,20 +959,49 @@ def delete_class_permanently(class_code):
 #! 6. BULK ENROLLMENT (By Block)
 @admin.route('/enroll_block', methods=['POST'])
 def enroll_block():
-    if not admin_logged_in(): return redirect(url_for('auth.login'))
+    if not admin_logged_in(): 
+        return redirect(url_for('auth.login'))
+        
     class_code = request.form.get('class_code')
-    connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    
     try:
-        cursor.execute("SELECT block_id FROM classes WHERE class_code = %s", (class_code,))
+        # Get target class and its course_code
+        cursor.execute("SELECT block_id, course_code FROM classes WHERE class_code = %s", (class_code,))
         class_info = cursor.fetchone()
+        
         if class_info:
+            # Insert students from the block ONLY if they are not already enrolled 
+            # in any class that has the same course_code
             cursor.execute("""
-                INSERT IGNORE INTO enrollments (student_id, class_code)
-                SELECT student_id, %s FROM students WHERE block_id = %s
-            """, (class_code, class_info['block_id']))
-            connection.commit(); flash(f"Block enrolled into {class_code}.", "success")
+                INSERT INTO enrollments (student_id, class_code)
+                SELECT s.student_id, %s 
+                FROM students s
+                WHERE s.block_id = %s
+                AND NOT EXISTS (
+                    SELECT 1 FROM enrollments e
+                    JOIN classes cl ON e.class_code = cl.class_code
+                    WHERE e.student_id = s.student_id 
+                    AND cl.course_code = %s
+                )
+            """, (class_code, class_info['block_id'], class_info['course_code']))
+            
+            enrolled_count = cursor.rowcount
+            connection.commit()
+            
+            if enrolled_count > 0:
+                flash(f"Processed block enrollment. {enrolled_count} students added to {class_code}.", "success")
+            else:
+                flash("No students were added. All students in this block are already enrolled in this course.", "info")
+                
+    except mysql.connector.Error as err:
+        connection.rollback()
+        flash(f"Error during bulk enrollment: {err}", "danger")
     finally:
-        cursor.close(); connection.close()
+        cursor.close()
+        connection.close()
+        
     return redirect(url_for('admin.manage_classes'))
 
 
@@ -1093,56 +1122,131 @@ def profile():
 
 
 #! 11. ENROLLMENT MANAGEMENT
-@admin.route('/manage_enrollments/<string:class_code>')
+#! 11. ENROLLMENT MANAGEMENT - REFINED FILTERING
+@admin.route('/manage_enrollments/<path:class_code>')
 def manage_enrollments(class_code):
     if admin_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT cl.*, c.course_name FROM classes cl 
-            JOIN courses c ON cl.course_code = c.course_code 
-            WHERE cl.class_code = %s
-        """, (class_code,))
-        class_info = cursor.fetchone()
-        cursor.execute("""
-            SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id, e.enrolled_at
-            FROM students s
-            JOIN enrollments e ON s.student_id = e.student_id
-            WHERE e.class_code = %s
-        """, (class_code,))
-        enrollees = cursor.fetchall()
-        cursor.execute("""
-            SELECT s.student_id, s.firstname, s.lastname
-            FROM students s
-            LEFT JOIN enrollments e ON s.student_id = e.student_id AND e.class_code = %s
-            WHERE e.student_id IS NULL AND s.student_id IN (SELECT user_id FROM users WHERE is_verified = 1 AND is_active = 1)
-        """, (class_code,))
-        all_students = cursor.fetchall()
-        cursor.close(); connection.close()
-        return render_template('admin_enrollees.html', class_info=class_info, enrollees=enrollees, all_students=all_students)
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        try:
+            # 1. Fetch current class info and its associated course_code
+            cursor.execute("""
+                SELECT cl.*, c.course_name, c.course_code 
+                FROM classes cl 
+                JOIN courses c ON cl.course_code = c.course_code 
+                WHERE cl.class_code = %s
+            """, (class_code,))
+            class_info = cursor.fetchone()
+            
+            if not class_info:
+                flash("Class not found.", "danger")
+                return redirect(url_for('admin.manage_classes'))
+
+            # 2. Fetch students currently enrolled in THIS specific class
+            cursor.execute("""
+                SELECT s.student_id, s.firstname, s.lastname, s.email, e.enrollment_id, e.enrolled_at
+                FROM students s
+                JOIN enrollments e ON s.student_id = e.student_id
+                WHERE e.class_code = %s
+                ORDER BY s.lastname ASC
+            """, (class_code,))
+            enrollees = cursor.fetchall()
+
+            # 3. Fetch "Verified Students" for the dropdown
+            # RULE: Exclude students who are already enrolled in ANY class that shares this same course_code
+            cursor.execute("""
+                SELECT s.student_id, s.firstname, s.lastname
+                FROM students s
+                JOIN users u ON s.student_id = u.user_id
+                WHERE u.is_verified = 1 
+                AND u.is_active = 1
+                AND s.student_id NOT IN (
+                    SELECT e.student_id 
+                    FROM enrollments e
+                    JOIN classes cl ON e.class_code = cl.class_code
+                    WHERE cl.course_code = %s
+                )
+                ORDER BY s.lastname ASC
+            """, (class_info['course_code'],))
+            all_students = cursor.fetchall()
+
+            return render_template('admin_enrollees.html', 
+                                   class_info=class_info, 
+                                   enrollees=enrollees, 
+                                   all_students=all_students)
+        finally:
+            cursor.close()
+            connection.close()
+            
     return redirect(url_for('auth.login'))
 
 @admin.route('/enroll_student', methods=['POST'])
 def enroll_student():
-    if admin_logged_in():
-        student_id = request.form.get('student_id'); class_code = request.form.get('class_code')
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        try:
-            cursor.execute("INSERT INTO enrollments (student_id, class_code) VALUES (%s, %s)", (student_id, class_code))
-            connection.commit(); flash('Student enrolled.', 'success')
-        finally:
-            cursor.close(); connection.close()
-        return redirect(url_for('admin.manage_enrollments', class_code=class_code))
-    return redirect(url_for('auth.login'))
+    if not admin_logged_in():
+        return redirect(url_for('auth.login'))
+        
+    student_id = request.form.get('student_id')
+    class_code = request.form.get('class_code')
+    
+    connection = mysql.connector.connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # 1. Get the course_code for the class we are trying to enroll them in
+        cursor.execute("SELECT course_code FROM classes WHERE class_code = %s", (class_code,))
+        target_class = cursor.fetchone()
+        
+        if not target_class:
+            flash('Invalid class selection.', 'danger')
+            return redirect(url_for('admin.manage_classes'))
+            
+        course_code = target_class['course_code']
 
-@admin.route('/unenroll_student/<int:enrollment_id>/<string:class_code>', methods=['POST'])
+        # 2. Check if the student is already enrolled in ANY class with this same course_code
+        cursor.execute("""
+            SELECT e.class_code 
+            FROM enrollments e
+            JOIN classes cl ON e.class_code = cl.class_code
+            WHERE e.student_id = %s AND cl.course_code = %s
+        """, (student_id, course_code))
+        
+        existing_enrollment = cursor.fetchone()
+
+        if existing_enrollment:
+            flash(f'Student is already enrolled in this course via Class {existing_enrollment["class_code"]}.', 'warning')
+        else:
+            # 3. Proceed with enrollment if no duplicate course found
+            cursor.execute("INSERT INTO enrollments (student_id, class_code) VALUES (%s, %s)", (student_id, class_code))
+            connection.commit()
+            flash('Student successfully enrolled.', 'success')
+            
+    except mysql.connector.Error as err:
+        connection.rollback()
+        flash(f'Database Error: {err}', 'danger')
+    finally:
+        cursor.close()
+        connection.close()
+        
+    return redirect(url_for('admin.manage_enrollments', class_code=class_code))
+
+@admin.route('/unenroll_student/<int:enrollment_id>/<path:class_code>', methods=['POST'])
 def unenroll_student(enrollment_id, class_code):
     if admin_logged_in():
-        connection = mysql.connector.connect(**db_config); cursor = connection.cursor()
-        cursor.execute("DELETE FROM enrollments WHERE enrollment_id = %s", (enrollment_id,))
-        connection.commit(); cursor.close(); connection.close()
-        flash('Student removed.', 'success'); return redirect(url_for('admin.manage_enrollments', class_code=class_code))
+        connection = mysql.connector.connect(**db_config)
+        cursor = connection.cursor()
+        try:
+            # The <path:> converter is used instead of <string:> to better handle 
+            # characters that might be part of the encoded string.
+            cursor.execute("DELETE FROM enrollments WHERE enrollment_id = %s", (enrollment_id,))
+            connection.commit()
+            flash('Student successfully unenrolled.', 'success')
+        except mysql.connector.Error as err:
+            flash(f'Database Error: {err}', 'danger')
+        finally:
+            cursor.close()
+            connection.close()
+            
+        return redirect(url_for('admin.manage_enrollments', class_code=class_code))
     return redirect(url_for('auth.login'))
-
 
 #! 12. VERIFICATIONS
 @admin.route('/verifications')
