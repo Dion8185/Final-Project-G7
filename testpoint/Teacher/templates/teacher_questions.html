@@ -368,7 +368,7 @@
                                         class="badge rounded-pill id-tag text-white px-2 {{ 'bg-success' if q.difficulty == 'easy' else 'bg-warning' if q.difficulty == 'medium' else 'bg-danger' }}">{{
                                         q.difficulty|upper }}</span>
                                 </div>
-                                <h6 class="text-dark font-weight-bold mb-3" style="line-height: 1.5;">{{ loop.index }}.
+                                <h6 class="text-dark font-weight-bold mb-3" style="line-height: 1.5;">{{ loop.index }} .
                                     {{ q.question_text }}</h6>
                                 <div class="answer-preview d-inline-block">
                                     {% for opt in q.options if opt.is_correct %}<i
@@ -546,17 +546,50 @@
                 </div>
                 <div class="modal-body p-4">
 
-                    <!-- DOWNLOAD TEMPLATE SECTION -->
+                    <!-- TEMPLATE SECTION -->
                     <div class="bg-light p-3 rounded-lg border mb-4">
-                        <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
                             <div>
-                                <h6 class="font-weight-bold mb-1" style="font-size: 0.9rem;">Standard Template</h6>
-                                <p class="text-muted small mb-0">Use our official format for error-free importing.</p>
+                                <h6 class="font-weight-bold mb-1" style="font-size: 0.9rem;">Microsoft Excel Template
+                                </h6>
+                                <p class="text-muted small mb-0">Direct local download.</p>
                             </div>
                             <a href="{{ url_for('teacher.download_template') }}"
                                 class="btn btn-sm btn-outline-success rounded-pill px-3 font-weight-bold">
                                 <i class="fas fa-download mr-1"></i> Download
                             </a>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pt-2 border-top">
+                            <div>
+                                <h6 class="font-weight-bold mb-1" style="font-size: 0.9rem;">Google Sheets Template</h6>
+                                <p class="text-muted small mb-0">Copy to your Google Drive.</p>
+                            </div>
+                            <a href="https://docs.google.com/spreadsheets/d/1EBgMF1eZRewSn41HML28RPFEyNzcfyDowS-icgewbj8/copy"
+                                target="_blank"
+                                class="btn btn-sm btn-outline-primary rounded-pill px-3 font-weight-bold">
+                                <i class="fab fa-google mr-1"></i> Make a Copy
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="alert bg-white border shadow-sm mb-4 py-3"
+                        style="border-left: 4px solid #10b981 !important;">
+                        <div class="d-flex">
+                            <div class="mr-3">
+                                <div class="rounded-circle bg-light text-success d-flex align-items-center justify-content-center"
+                                    style="width: 32px; height: 32px;">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                            </div>
+                            <div class="small text-dark">
+                                <h6 class="font-weight-bold mb-1 text-success">Google Sheets Instructions:</h6>
+                                <ol class="pl-3 mb-0">
+                                    <li>Click <strong>"Make a Copy"</strong> for Google Sheets.</li>
+                                    <li>Populate the rows with your data.</li>
+                                    <li>Go to <strong>File &rsaquo; Download &rsaquo; .xlsx</strong>.</li>
+                                    <li>Select that file below and click <strong>Initiate Process</strong>.</li>
+                                </ol>
+                            </div>
                         </div>
                     </div>
 

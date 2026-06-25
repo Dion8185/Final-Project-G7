@@ -4,162 +4,381 @@
 
 {% block head %}
 <style>
-    /* Custom styles for the Setup Page to override the standard dashboard layout */
-    #wrapper #content-wrapper {
-        background: var(--tp-student-bg);
+    /* ─── TOKENS (Student Blue) ─── */
+    :root {
+        --tp-ink: #0f0e11;
+        --tp-ink-2: #3a3640;
+        --tp-ink-3: #7a7585;
+        --tp-surface: #faf9f7;
+        --tp-surface-2: #f0ede8;
+        --tp-border: rgba(15, 14, 17, 0.1);
+        --tp-accent: #2d5be3;
+        /* Student Blue */
+        --tp-accent-lt: #eef2ff;
+        --tp-panel: #0f0e11;
+        --tp-radius: 12px;
+        --tp-font: 'DM Sans', sans-serif;
+        --tp-serif: 'DM Serif Display', serif;
+    }
+
+    body {
+        font-family: var(--tp-font);
+        background: var(--tp-surface) !important;
+    }
+
+    /* ─── LAYOUT RESET (Fixes the white bar on the left) ─── */
+    .sidebar,
+    .topbar,
+    .sticky-footer {
+        display: none !important;
+    }
+
+    #content-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: var(--tp-surface) !important;
+        overflow-x: hidden;
+    }
+
+    /* This removes the 1.5rem padding SB Admin 2 adds to all page content */
+    .container-fluid {
+        padding: 0 !important;
+    }
+
+    .tp-wrapper {
+        display: flex;
         min-height: 100vh;
+        width: 100vw;
+    }
+
+    /* ─── LEFT PANEL ─── */
+    .tp-left {
+        width: 40%;
+        background: var(--tp-panel);
+        padding: 52px 56px;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .tp-left::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+    }
+
+    .tp-left::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse 70% 60% at 20% 80%, rgba(45, 91, 227, .2) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .tp-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .tp-brand-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--tp-accent);
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
+        color: #fff;
     }
 
-    .setup-card {
-        max-width: 550px;
-        width: 100%;
-        border: none !important;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.05) !important;
-        background: #fff;
-        margin-bottom: 5rem;
-    }
-
-    .setup-header {
-        text-align: center;
-        padding: 3rem 2rem 1.5rem;
-    }
-
-    .setup-logo {
-        width: 80px;
-        margin-bottom: 1.5rem;
-    }
-
-    .setup-title {
+    .tp-brand-name {
         font-family: var(--tp-serif);
-        font-size: 2rem;
-        color: var(--tp-student-ink);
-        margin-bottom: 0.5rem;
+        font-size: 22px;
+        color: #fff;
     }
 
-    .setup-subtitle {
-        color: #6c757d;
-        font-size: 0.95rem;
+    .tp-panel-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
     }
 
-    .form-label {
+    .tp-role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(45, 91, 227, .15);
+        border: 1px solid rgba(45, 91, 227, 0.3);
+        color: #a5b4fc;
+        font-size: 10px;
         font-weight: 600;
-        font-size: 0.85rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border-radius: 99px;
+        margin-bottom: 24px;
+        width: fit-content;
+    }
+
+    .tp-headline {
+        font-family: var(--tp-serif);
+        font-size: clamp(32px, 3.5vw, 48px);
+        line-height: 1.1;
+        color: #fff;
+        margin-bottom: 20px;
+    }
+
+    .tp-headline em {
+        font-style: italic;
+        color: rgba(255, 255, 255, .4);
+    }
+
+    /* ─── RIGHT PANEL ─── */
+    .tp-right {
+        flex: 1;
+        background: var(--tp-surface);
+        padding: 64px;
+        display: flex;
+        align-items: center;
+        overflow-y: auto;
+    }
+
+    .tp-form-shell {
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        animation: tpSlideUp .5s ease-out;
+    }
+
+    @keyframes tpSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .tp-form-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--tp-accent);
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+    .tp-form-tag::before {
+        content: '';
+        width: 18px;
+        height: 1.5px;
+        background: var(--tp-accent);
+    }
+
+    .tp-form-title {
+        font-family: var(--tp-serif);
+        font-size: 32px;
+        color: var(--tp-ink);
+        margin-bottom: 8px;
+    }
+
+    .tp-form-sub {
+        font-size: 14.5px;
+        color: var(--tp-ink-3);
+        margin-bottom: 32px;
+        line-height: 1.6;
+    }
+
+    /* ─── FORM ELEMENTS ─── */
+    .tp-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 28px 0 16px;
+    }
+
+    .tp-section-line {
+        flex: 1;
+        height: 1px;
+        background: var(--tp-border);
+    }
+
+    .tp-section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--tp-ink-3);
+    }
+
+    .tp-label {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--tp-ink-2);
+        margin-bottom: 8px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: var(--tp-student-gray);
-        margin-bottom: 0.75rem;
     }
 
-    .form-select-custom {
-        height: auto !important;
-        padding: 0.8rem 1rem !important;
-        border-radius: 10px !important;
-        border: 1px solid #e1e7ef !important;
-        font-size: 0.95rem !important;
+    .form-control-custom {
+        height: 54px !important;
+        border-radius: 12px !important;
+        border: 1.5px solid var(--tp-border) !important;
+        font-size: 15px !important;
+        padding: 0 16px !important;
         transition: all 0.2s ease;
+        background: #fff !important;
     }
 
-    .form-select-custom:focus {
-        border-color: var(--tp-student-accent) !important;
-        box-shadow: 0 0 0 4px var(--tp-student-accent-lt) !important;
+    .form-control-custom:focus {
+        border-color: var(--tp-accent) !important;
+        box-shadow: 0 0 0 4px rgba(45, 91, 227, 0.1) !important;
     }
 
-    .btn-setup {
-        background: var(--tp-student-accent);
-        border: none;
-        color: #fff;
-        padding: 1rem;
-        font-weight: 600;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        margin-top: 1rem;
+    .btn-tp-primary {
+        height: 56px !important;
+        background: var(--tp-ink) !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 14px !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        transition: all 0.3s ease !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
     }
 
-    .btn-setup:hover {
-        background: #1d46c7;
+    .btn-tp-primary:hover:not(:disabled) {
+        background: var(--tp-accent) !important;
         transform: translateY(-2px);
-        box-shadow: 0 8px 15px var(--tp-student-accent-lt);
-        color: #fff;
+        box-shadow: 0 8px 20px rgba(45, 91, 227, 0.2);
     }
 
-    .btn-setup:disabled {
-        background: #ced4da;
-        transform: none;
-        box-shadow: none;
+    .btn-tp-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
-    .capacity-badge {
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.25rem 0.6rem;
-        border-radius: 6px;
-        margin-top: 0.5rem;
-        display: inline-block;
+    .slot-badge {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 8px 16px;
+        border-radius: 8px;
+        margin-top: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ecfdf5;
+        color: #065f46;
+        border: 1px solid #d1fae5;
     }
 
-    .badge-available { background: #e6fffa; color: #047481; }
-    
-    /* Hide Navigation Elements during setup */
-    .sidebar, .topbar, .sticky-footer { display: none !important; }
-    #content-wrapper { padding-top: 0 !important; }
+    @media (max-width: 991px) {
+        .tp-left {
+            display: none;
+        }
+
+        .tp-right {
+            padding: 40px 24px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center w-100 m-0">
-    <div class="col-12 d-flex justify-content-center">
-        <div class="card setup-card animate__animated animate__fadeInUp">
-            <div class="setup-header">
-                <img src="{{ url_for('static', filename='img/testpoint.svg') }}" alt="TestPoint Logo" class="setup-logo">
-                <h1 class="setup-title">Finalize Your Profile</h1>
-                <p class="setup-subtitle">Your account is approved! Select your program and block to continue to your dashboard.</p>
-            </div>
+<div class="tp-wrapper">
+    <!-- LEFT PANEL: Decorative Branding -->
+    <div class="tp-left d-none d-lg-flex">
+        <div class="tp-brand">
+            <div class="tp-brand-icon"><i class="fas fa-graduation-cap"></i></div>
+            <span class="tp-brand-name">TestPoint.</span>
+        </div>
+        <div class="tp-panel-body">
+            <div class="tp-role-badge"><i class="fas fa-check-circle mr-2"></i> Verified Student</div>
+            <h1 class="tp-headline">Complete your<br><em>academic</em><br>profile.</h1>
+            <p style="color: rgba(255,255,255,0.4); font-size: 14.5px; line-height: 1.7; max-width: 380px;">
+                You're one step away from your dashboard. Select your program and block to gain access to your scheduled
+                examinations.
+            </p>
+        </div>
+    </div>
 
-            <div class="card-body px-5 pb-5">
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show rounded-pill mb-4" role="alert">
-                                <small class="font-weight-bold ml-2">{{ message }}</small>
-                                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-                            </div>
+    <!-- RIGHT PANEL: Onboarding Form -->
+    <div class="tp-right">
+        <div class="tp-form-shell">
+            <div class="tp-form-tag">Final Step</div>
+            <h2 class="tp-form-title">Account Setup</h2>
+            <p class="tp-form-sub">Your application has been approved! Please select your current enrollment details
+                below.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show rounded-lg mb-4" role="alert">
+                <small class="font-weight-bold">{{ message }}</small>
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" id="setupForm">
+                <div class="tp-section">
+                    <div class="tp-section-label">Enrollment Details</div>
+                    <div class="tp-section-line"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="program_id" class="tp-label">Academic Program</label>
+                    <select class="form-control form-control-custom" id="program_id" name="program_id" required>
+                        <option value="" selected disabled>-- Select your program --</option>
+                        {% for program in programs %}
+                        <option value="{{ program.program_id }}">{{ program.program_name }}</option>
                         {% endfor %}
-                    {% endif %}
-                {% endwith %}
+                    </select>
+                </div>
 
-                <form method="POST" id="setupForm">
-                    <div class="mb-4">
-                        <label for="program_id" class="form-label">Academic Program</label>
-                        <select class="form-control form-select-custom" id="program_id" name="program_id" required>
-                            <option value="" selected disabled>-- Select your program --</option>
-                            {% for program in programs %}
-                                <option value="{{ program.program_id }}">{{ program.program_name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="mb-4">
+                    <label for="block_id" class="tp-label">Assigned Block / Section</label>
+                    <select class="form-control form-control-custom" id="block_id" name="block_id" required disabled>
+                        <option value="" selected disabled>-- Choose a program first --</option>
+                    </select>
+                    <div id="slot_indicator"></div>
+                </div>
 
-                    <div class="mb-4">
-                        <label for="block_id" class="form-label">Block / Section</label>
-                        <select class="form-control form-select-custom" id="block_id" name="block_id" required disabled>
-                            <option value="" selected disabled>-- Choose a program first --</option>
-                        </select>
-                        <div id="slot_indicator"></div>
-                    </div>
+                <button type="submit" class="btn btn-tp-primary w-100 mt-4" id="submitBtn" disabled>
+                    Finalize Onboarding <i class="fas fa-arrow-right"></i>
+                </button>
 
-                    <button type="submit" class="btn btn-setup w-100" id="submitBtn" disabled>
-                        Confirm Enrollment <i class="fas fa-arrow-right ml-2"></i>
-                    </button>
-                    
-                    <div class="text-center mt-4">
-                        <a href="{{ url_for('auth.logout') }}" class="text-muted small text-decoration-none">
-                            <i class="fas fa-sign-out-alt mr-1"></i> Sign out and finish later
-                        </a>
-                    </div>
-                </form>
-            </div>
+                <div class="text-center mt-5">
+                    <a href="{{ url_for('auth.logout') }}" class="text-muted small text-decoration-none">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Sign out and complete later
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -167,23 +386,19 @@
 
 {% block scripts %}
 <script>
-    // Data passed from Flask
-    const blocksData = {{ blocks|tojson|safe }};
-    
+    const blocksData = {{ blocks| tojson | safe }};
+
     const programSelect = document.getElementById('program_id');
     const blockSelect = document.getElementById('block_id');
     const slotIndicator = document.getElementById('slot_indicator');
     const submitBtn = document.getElementById('submitBtn');
 
-    programSelect.addEventListener('change', function() {
+    programSelect.addEventListener('change', function () {
         const selectedProgramId = this.value;
-        
-        // Clear previous options
         blockSelect.innerHTML = '<option value="" selected disabled>-- Select a block --</option>';
         slotIndicator.innerHTML = '';
         submitBtn.disabled = true;
 
-        // Filter blocks belonging to selected program
         const filteredBlocks = blocksData.filter(b => b.program_id == selectedProgramId);
 
         if (filteredBlocks.length > 0) {
@@ -201,15 +416,15 @@
         }
     });
 
-    blockSelect.addEventListener('change', function() {
+    blockSelect.addEventListener('change', function () {
         if (this.value) {
             submitBtn.disabled = false;
             const selectedOption = this.options[this.selectedIndex];
             const slots = selectedOption.dataset.slots;
-            
+
             slotIndicator.innerHTML = `
-                <div class="capacity-badge badge-available animate__animated animate__fadeIn">
-                    <i class="fas fa-users mr-1"></i> ${slots} slots currently available in this section
+                <div class="slot-badge animate__animated animate__fadeIn">
+                    <i class="fas fa-users"></i> ${slots} slots currently available in this section
                 </div>
             `;
         } else {
@@ -218,9 +433,8 @@
         }
     });
 
-    // Handle form loading state
-    document.getElementById('setupForm').addEventListener('submit', function() {
-        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Processing...';
+    document.getElementById('setupForm').addEventListener('submit', function () {
+        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Finalizing Profile...';
         submitBtn.disabled = true;
     });
 </script>
