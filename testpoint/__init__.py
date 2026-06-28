@@ -23,21 +23,21 @@ mail = Mail()
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = "Secret@123_key" 
+    app.secret_key = "Secret@123_key"
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 465
     app.config['MAIL_USERNAME'] = email
     app.config['MAIL_PASSWORD'] = emailpassword
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_USE_SSL'] = True
-    
+
     mail.init_app(app)
-    
+
     from testpoint.Auth.login import auth
     from testpoint.Admin.admin import admin
     from testpoint.Student.student import student
     from testpoint.Teacher.teacher import teacher
-    
+
     app.register_blueprint(auth)
     app.register_blueprint(admin, url_prefix='/admin')
     app.register_blueprint(teacher, url_prefix='/teacher')
